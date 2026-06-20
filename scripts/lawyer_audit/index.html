@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>تقييم واجهة المحامي — سند</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'IBM Plex Sans Arabic', sans-serif; background: #fff; padding: 32px; color: #1a3a28; }
+  .container { max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 26px; font-weight: 700; color: #0F5132; margin-bottom: 6px; }
+  .sub { font-size: 14px; color: #6b7280; margin-bottom: 28px; font-style: italic; }
+
+  table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+  th, td { padding: 12px 14px; text-align: right; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+  th { background: #f7f9f5; font-weight: 600; color: #374151; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  th:first-child { border-radius: 8px 0 0 0; }
+  th:last-child { border-radius: 0 8px 0 0; }
+  tr:last-child td { border-bottom: none; }
+
+  .feature { font-weight: 600; color: #1a3a28; }
+  .feature-sub { font-size: 11px; color: #6b7280; margin-top: 2px; }
+
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .done { background: #dcfce7; color: #15803d; }
+  .partial { background: #fef3c7; color: #b45309; }
+  .missing { background: #fee2e2; color: #b91c1c; }
+  .critical { background: #7f1d1d; color: #fff; }
+
+  .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .dot-done { background: #16a34a; }
+  .dot-partial { background: #f59e0b; }
+  .dot-missing { background: #ef4444; }
+
+  .summary { margin-top: 32px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .stat { padding: 16px; border-radius: 8px; text-align: center; }
+  .stat-num { font-size: 28px; font-weight: 700; line-height: 1; }
+  .stat-label { font-size: 11px; color: #6b7280; margin-top: 4px; }
+  .stat-done { background: #f0fdf4; color: #15803d; }
+  .stat-partial { background: #fffbeb; color: #b45309; }
+  .stat-missing { background: #fef2f2; color: #b91c1c; }
+  .stat-critical { background: #fef2f2; color: #7f1d1d; border: 2px solid #fecaca; }
+
+  .legend { display: flex; gap: 16px; margin-bottom: 20px; font-size: 12px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; color: #4b5563; }
+
+  .footer { margin-top: 32px; padding: 16px 20px; background: linear-gradient(135deg, #fef3c7, #fee2e2); border-right: 4px solid #b45309; border-radius: 8px; }
+  .footer h3 { font-size: 14px; font-weight: 700; color: #92400e; margin-bottom: 8px; }
+  .footer p { font-size: 12px; line-height: 1.7; color: #78350f; }
+  .footer strong { color: #7c2d12; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>تقييم واجهة المحامي — سند</h1>
+<p class="sub">ما الذي يعمل فعلاً vs ما الذي ينقص المحامي في عمله اليومي</p>
+
+<div class="legend">
+  <div class="legend-item"><div class="dot dot-done"></div>مكتمل</div>
+  <div class="legend-item"><div class="dot dot-partial"></div>جزئي</div>
+  <div class="legend-item"><div class="dot dot-missing"></div>مفقود</div>
+  <div class="legend-item"><div class="dot" style="background:#7f1d1d"></div>حرج</div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>الميزة</th>
+      <th>الحالة</th>
+      <th>التفاصيل</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <div class="feature">لوحة التحكم الصباحية</div>
+        <div class="feature-sub">تنبيهات + KPIs + موجز يومي</div>
+      </td>
+      <td><span class="badge done"><div class="dot dot-done"></div>مكتمل</span></td>
+      <td>تعمل بشكل ممتاز — تنبيهات للمهام المتأخرة، الامتثال المنتهي، القضايا العاجلة</td>
+    </tr>
+    <tr>
+      <td>
+        <div class="feature">متتبع الامتثال</div>
+        <div class="feature-sub">إقامة، سجل تجاري، تأمينات، ضريبة</div>
+      </td>
+      <td><span class="badge partial"><div class="dot dot-partial"></div>جزئي</span></td>
+      <td>✓ عرض + إضافة + تجديد<br>✗ لا يمكن تعديل أو حذف البنود<br>✗ لا توجد مرفقات</td>
+    </tr>
+    <tr>
+      <td>
+        <div class="feature">لوحة القضايا (Kanban)</div>
+        <div class="feature-sub">سحب بين المراحل</div>
+      </td>
+      <td><span class="badge partial"><div class="dot dot-partial"></div>جزئي</span></td>
+      <td>✓ سحب وإفلات بين 4 مراحل<br>✗ <strong>لا توجد صفحة تفاصيل للقضية</strong><br>✗ لا يمكن تعديل أو حذف<br>✗ العميل مجرد نص حر</td>
+    </tr>
+    <tr>
+      <td>
+        <div class="feature">إدارة العملاء</div>
+        <div class="feature-sub">CRM — جهات اتصال منفصلة</div>
+      </td>
+      <td><span class="badge critical"><div class="dot"></div>مفقود — حرج</span></td>
+      <td><strong>لا يوجد نموذج Client إطلاقاً.</strong> العميل مجرد نص في حقل القضية. لا دليل عملاء، لا هاتف/بريد، لا سجل تعاملات</td>
+    </tr>
+    <tr>
+      <td>
+        <div class="feature">العمل العميق والفوترة</div>
+        <div class="feature-sub">مؤقت بومودورو + ساعات قابلة للفوترة</div>
+      </td>
+      <td><span class="badge partial"><div class="dot dot-partial"></div>جزئي</span></td>
+      <td>✓ مؤقت + تسجيل ساعات<br>✗ <strong>لا يمكن إنشاء فاتورة</strong> من الساعات<br>✗ لا يمكن تعديل/حذف السجلات<br>✗ وضع "اجتماع" غير متاح رغم وجوده في القاعدة</td>
+    </tr>
+    <tr>
+      <td>
+        <div class="feature">إنشاء الفواتير</div>
+        <div class="feature-sub">من الساعات القابلة للفوترة</div>
+      </td>
+      <td><span class="badge critical"><div class="dot"></div>مفقود — حرج</span></td>
+      <td><strong>لا يوجد نموذج Invoice.</strong> الساعات تُسجّل لكن لا تتحول إلى فاتورة. حلقة التحويل مكسورة</td>
+    </tr>
+    <tr>
+      <td>
+        <div class="feature">إدارة المهام</div>
+        <div class="feature-sub">قوائم يومية + متابعات تلقائية</div>
+      </td>
+      <td><span class="badge partial"><div class="dot dot-partial"></div>جزئي</span></td>
+      <td>✓ إضافة + إنجاز + تصفية<br>✗ لا يمكن تعديل أو حذف<br>✗ حالة "قيد العمل" غير مستخدمة<br>✗ لا توجد مهام فرعية</td>
+    </tr>
+    <tr>
+      <td>
+        <div class="feature">دورة حياة المستندات</div>
+        <div class="feature-sub">مسودة → مُرسل → ساري → منتهي</div>
+      </td>
+      <td><span class="badge partial"><div class="dot dot-partial"></div>جزئي</span></td>
+      <td>✓ تتبع الحالة + توليد مهام تلقائية<br>✗ لا توجد مرفقات ملفات<br>✗ لا قوالب مستندات<br>✗ لا يمكن تعديل أو حذف</td>
+    </tr>
+    <tr>
+      <td>
+        <div class="feature">سجل الاتصالات</div>
+        <div class="feature-sub">مكالمات، بريد، اجتماعات مع العميل</div>
+      </td>
+      <td><span class="badge critical"><div class="dot"></div>مفقود — حرج</span></td>
+      <td><strong>لا يوجد سجل اتصالات إطلاقاً.</strong> المحامي يدير علاقته بالعميل في ذاكرته فقط — خطر مهني</td>
+    </tr>
+    <tr>
+      <td>
+        <div class="feature">التقويم / مواعيد الجلسات</div>
+        <div class="feature-sub">عرض موحد للجلسات والمواعيد</div>
+      </td>
+      <td><span class="badge missing"><div class="dot dot-missing"></div>مفقود</span></td>
+      <td>لا يوجد تقويم. المواعيد منتشرة بين المهام والامتثال والقضايا بدون عرض موحد</td>
+    </tr>
+    <tr>
+      <td>
+        <div class="feature">فحص تضارب المصالح</div>
+        <div class="feature-sub">قبل قبول قضية جديدة</div>
+      </td>
+      <td><span class="badge missing"><div class="dot dot-missing"></div>مفقود</span></td>
+      <td>لا يوجد. مطلب أساسي للمسؤولية المهنية</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="summary">
+  <div class="stat stat-done">
+    <div class="stat-num">1</div>
+    <div class="stat-label">مكتمل</div>
+  </div>
+  <div class="stat stat-partial">
+    <div class="stat-num">5</div>
+    <div class="stat-label">جزئي</div>
+  </div>
+  <div class="stat stat-missing">
+    <div class="stat-num">2</div>
+    <div class="stat-label">مفقود</div>
+  </div>
+  <div class="stat stat-critical">
+    <div class="stat-num">3</div>
+    <div class="stat-label">حرج — مكسور</div>
+  </div>
+</div>
+
+<div class="footer">
+  <h3>الخلاصة</h3>
+  <p>
+    واجهة المحامي الحالية <strong>تعمل كلوحة عرض صباحية</strong> — تنبهك لما يحتاج اهتماماً. لكنها <strong>لا تُغلق الحلقة (close the loop)</strong> على المهام اليومية الحقيقية: لا تدير العملاء، لا تنتج فواتير، لا تسجّل اتصالات، ولا توجد صفحة تفاصيل للقضية تجمع كل ما يخصها.
+    <br><br>
+    <strong>الفجوات الثلاث الحرجة:</strong> إدارة العملاء، الفوترة، وسجل الاتصالات — بدونها، المنصة "تنبيه" وليست "تشغيل".
+  </p>
+</div>
+
+</div>
+</body>
+</html>
