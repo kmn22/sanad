@@ -1,12 +1,14 @@
 {
-  "name": "Sanad — Daily Legal Dashboard",
-  "short_name": "Sanad",
-  "description": "Operational dashboard for Saudi SMEs and legal professionals",
+  "name": "سند — لوحة العمليات اليومية",
+  "short_name": "سند",
+  "description": "لوحة العمليات اليومية للمحامين والمنشآت الصغيرة في السعودية",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f7f9f5",
   "theme_color": "#0f5132",
   "orientation": "any",
+  "dir": "rtl",
+  "lang": "ar",
   "icons": [
     {
       "src": "/icon-192.png",

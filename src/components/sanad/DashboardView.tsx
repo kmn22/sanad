@@ -15,14 +15,14 @@ import {
   Gavel,
   Newspaper,
   Timer,
-  TrendingUp,
   Zap,
 } from 'lucide-react'
+import { useLang } from '@/lib/sanad/i18n'
 import {
-  COMPLIANCE_LABELS,
-  DOC_STATUS_LABELS,
-  PRIORITY_LABELS,
-  SOURCE_LABELS,
+  COMPLIANCE_COLORS,
+  DOC_STATUS_COLORS,
+  PRIORITY_COLORS,
+  SOURCE_COLORS,
   daysUntil,
   formatDate,
   formatDuration,
@@ -37,10 +37,11 @@ interface Props {
 }
 
 export function DashboardView({ data, onNavigate }: Props) {
+  const { lang, t } = useLang()
   const { stats } = data
   const now = new Date()
   const hour = now.getHours()
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+  const greetingKey = hour < 12 ? 'greeting.morning' : hour < 17 ? 'greeting.afternoon' : 'greeting.evening'
 
   return (
     <div className="space-y-6">
@@ -48,20 +49,20 @@ export function DashboardView({ data, onNavigate }: Props) {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">
-            {greeting}, Ahmed.
+            {t(greetingKey)}
           </h2>
           <p className="text-sm text-muted-foreground">
-            {now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            {now.toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
             <span className="mx-2 text-muted-foreground/40">•</span>
-            <span className="text-muted-foreground">{formatHijri(now)}</span>
+            <span className="text-muted-foreground">{formatHijri(now, lang)}</span>
           </p>
         </div>
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={() => onNavigate('deepwork')}>
-            <Timer className="mr-1.5 h-4 w-4" /> Start focus
+            <Timer className="mx-1.5 h-4 w-4" /> {t('dash.start_focus')}
           </Button>
           <Button size="sm" onClick={() => onNavigate('tasks')}>
-            <CheckCircle2 className="mr-1.5 h-4 w-4" /> {stats.openTasks} tasks
+            <CheckCircle2 className="mx-1.5 h-4 w-4" /> {t('dash.tasks_count', { n: stats.openTasks })}
           </Button>
         </div>
       </div>
@@ -72,40 +73,40 @@ export function DashboardView({ data, onNavigate }: Props) {
           {stats.overdueTasks > 0 && (
             <button
               onClick={() => onNavigate('tasks')}
-              className="text-left rounded-lg border border-rose-200 bg-rose-50 dark:bg-rose-950/30 dark:border-rose-900 p-4 hover:bg-rose-100 dark:hover:bg-rose-950/50 transition-colors"
+              className="text-start rounded-lg border border-rose-200 bg-rose-50 dark:bg-rose-950/30 dark:border-rose-900 p-4 hover:bg-rose-100 dark:hover:bg-rose-950/50 transition-colors"
             >
               <div className="flex items-center gap-2 mb-1">
                 <AlertTriangle className="h-4 w-4 text-rose-600 dark:text-rose-400" />
-                <span className="text-sm font-medium text-rose-700 dark:text-rose-300">Overdue tasks</span>
+                <span className="text-sm font-medium text-rose-700 dark:text-rose-300">{t('dash.overdue_tasks')}</span>
               </div>
               <p className="text-2xl font-semibold text-rose-700 dark:text-rose-300">{stats.overdueTasks}</p>
-              <p className="text-xs text-rose-600/80 dark:text-rose-400/80 mt-1">Needs immediate attention</p>
+              <p className="text-xs text-rose-600/80 dark:text-rose-400/80 mt-1">{t('dash.needs_attention')}</p>
             </button>
           )}
           {stats.expiringCompliance > 0 && (
             <button
               onClick={() => onNavigate('compliance')}
-              className="text-left rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 p-4 hover:bg-amber-100 dark:hover:bg-amber-950/50 transition-colors"
+              className="text-start rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 p-4 hover:bg-amber-100 dark:hover:bg-amber-950/50 transition-colors"
             >
               <div className="flex items-center gap-2 mb-1">
                 <CalendarClock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                <span className="text-sm font-medium text-amber-700 dark:text-amber-300">Expiring soon</span>
+                <span className="text-sm font-medium text-amber-700 dark:text-amber-300">{t('dash.expiring_soon')}</span>
               </div>
               <p className="text-2xl font-semibold text-amber-700 dark:text-amber-300">{stats.expiringCompliance}</p>
-              <p className="text-xs text-amber-600/80 dark:text-amber-400/80 mt-1">Compliance items &lt; 30 days</p>
+              <p className="text-xs text-amber-600/80 dark:text-amber-400/80 mt-1">{t('dash.compliance_30')}</p>
             </button>
           )}
           {stats.urgentCases > 0 && (
             <button
               onClick={() => onNavigate('cases')}
-              className="text-left rounded-lg border border-purple-200 bg-purple-50 dark:bg-purple-950/30 dark:border-purple-900 p-4 hover:bg-purple-100 dark:hover:bg-purple-950/50 transition-colors"
+              className="text-start rounded-lg border border-purple-200 bg-purple-50 dark:bg-purple-950/30 dark:border-purple-900 p-4 hover:bg-purple-100 dark:hover:bg-purple-950/50 transition-colors"
             >
               <div className="flex items-center gap-2 mb-1">
                 <Zap className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                <span className="text-sm font-medium text-purple-700 dark:text-purple-300">Urgent cases</span>
+                <span className="text-sm font-medium text-purple-700 dark:text-purple-300">{t('dash.urgent_cases')}</span>
               </div>
               <p className="text-2xl font-semibold text-purple-700 dark:text-purple-300">{stats.urgentCases}</p>
-              <p className="text-xs text-purple-600/80 dark:text-purple-400/80 mt-1">Need same-day action</p>
+              <p className="text-xs text-purple-600/80 dark:text-purple-400/80 mt-1">{t('dash.same_day')}</p>
             </button>
           )}
         </div>
@@ -113,32 +114,10 @@ export function DashboardView({ data, onNavigate }: Props) {
 
       {/* KPI row */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <KpiCard
-          label="Active cases"
-          value={stats.activeCases}
-          icon={<Gavel className="h-4 w-4" />}
-          onClick={() => onNavigate('cases')}
-        />
-        <KpiCard
-          label="Open tasks"
-          value={stats.openTasks}
-          sub={stats.todayTasks ? `${stats.todayTasks} due today` : undefined}
-          icon={<CheckCircle2 className="h-4 w-4" />}
-          onClick={() => onNavigate('tasks')}
-        />
-        <KpiCard
-          label="Billable today"
-          value={formatDuration(stats.billableTodaySec)}
-          sub={formatSAR(stats.billableTodaySAR)}
-          icon={<Clock className="h-4 w-4" />}
-          onClick={() => onNavigate('deepwork')}
-        />
-        <KpiCard
-          label="Focus today"
-          value={formatDuration(stats.focusTodaySec)}
-          icon={<Timer className="h-4 w-4" />}
-          onClick={() => onNavigate('deepwork')}
-        />
+        <KpiCard label={t('dash.active_cases')} value={stats.activeCases} icon={<Gavel className="h-4 w-4" />} onClick={() => onNavigate('cases')} />
+        <KpiCard label={t('dash.open_tasks')} value={stats.openTasks} sub={stats.todayTasks ? `${stats.todayTasks} ${t('dash.due_today')}` : undefined} icon={<CheckCircle2 className="h-4 w-4" />} onClick={() => onNavigate('tasks')} />
+        <KpiCard label={t('dash.billable_today')} value={formatDuration(stats.billableTodaySec, lang)} sub={formatSAR(stats.billableTodaySAR, lang)} icon={<Clock className="h-4 w-4" />} onClick={() => onNavigate('deepwork')} />
+        <KpiCard label={t('dash.focus_today')} value={formatDuration(stats.focusTodaySec, lang)} icon={<Timer className="h-4 w-4" />} onClick={() => onNavigate('deepwork')} />
       </div>
 
       {/* Two-column main grid */}
@@ -150,42 +129,42 @@ export function DashboardView({ data, onNavigate }: Props) {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base font-semibold flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-primary" />
-                  Today&rsquo;s priorities
+                  {t('dash.todays_priorities')}
                 </CardTitle>
                 <Button variant="ghost" size="sm" onClick={() => onNavigate('tasks')}>
-                  View all
+                  {t('dash.view_all')}
                 </Button>
               </div>
             </CardHeader>
             <CardContent className="pt-0">
               {data.tasks.today.length === 0 && data.tasks.overdue.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-6 text-center">
-                  No tasks due today. Perfect day for deep work.
+                  {t('dash.no_tasks_today')}
                 </p>
               ) : (
                 <ul className="space-y-2">
-                  {[...data.tasks.overdue, ...data.tasks.today].slice(0, 6).map((t) => {
-                    const days = t.dueDate ? daysUntil(t.dueDate) : 0
+                  {[...data.tasks.overdue, ...data.tasks.today].slice(0, 6).map((task) => {
+                    const days = task.dueDate ? daysUntil(task.dueDate) : 0
                     const overdue = days < 0
                     return (
-                      <li key={t.id} className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors">
-                        <span className={`mt-1.5 h-2 w-2 rounded-full shrink-0 ${PRIORITY_LABELS[t.priority]?.dot || 'bg-muted-foreground'}`} />
+                      <li key={task.id} className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors">
+                        <span className={`mt-1.5 h-2 w-2 rounded-full shrink-0 ${PRIORITY_COLORS[task.priority]?.dot || 'bg-muted-foreground'}`} />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium leading-tight truncate">{t.title}</p>
-                          {t.description && (
-                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{t.description}</p>
+                          <p className="text-sm font-medium leading-tight truncate">{task.title}</p>
+                          {task.description && (
+                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{task.description}</p>
                           )}
                           <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${PRIORITY_LABELS[t.priority]?.color}`}>
-                              {PRIORITY_LABELS[t.priority]?.label}
+                            <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${PRIORITY_COLORS[task.priority]?.color}`}>
+                              {t(`prio.${task.priority}`)}
                             </Badge>
-                            {t.dueDate && (
+                            {task.dueDate && (
                               <span className={`text-[10px] ${overdue ? 'text-rose-600 dark:text-rose-400 font-medium' : 'text-muted-foreground'}`}>
-                                {overdue ? `${Math.abs(days)}d overdue` : `Due ${formatDate(t.dueDate)}`}
+                                {overdue ? t('dash.d_overdue', { n: Math.abs(days) }) : formatDate(task.dueDate, lang)}
                               </span>
                             )}
-                            {t.autoGen && (
-                              <span className="text-[10px] text-muted-foreground/70 italic">auto</span>
+                            {task.autoGen && (
+                              <span className="text-[10px] text-muted-foreground/70 italic">{t('tasks.auto_badge')}</span>
                             )}
                           </div>
                         </div>
@@ -202,17 +181,17 @@ export function DashboardView({ data, onNavigate }: Props) {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base font-semibold flex items-center gap-2">
                   <CalendarClock className="h-4 w-4 text-amber-600" />
-                  Expiring compliance
+                  {t('dash.expiring_compliance')}
                 </CardTitle>
                 <Button variant="ghost" size="sm" onClick={() => onNavigate('compliance')}>
-                  View all
+                  {t('dash.view_all')}
                 </Button>
               </div>
             </CardHeader>
             <CardContent className="pt-0">
               {data.compliance.expiringSoon.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-6 text-center">
-                  Nothing expiring in the next 30 days.
+                  {t('dash.nothing_expiring')}
                 </p>
               ) : (
                 <ul className="space-y-2">
@@ -225,12 +204,12 @@ export function DashboardView({ data, onNavigate }: Props) {
                           <div className="flex items-center justify-between gap-2">
                             <p className="text-sm font-medium truncate">{c.entityName}</p>
                             <span className={`text-xs font-semibold ${days <= 7 ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400'}`}>
-                              {days < 0 ? `${Math.abs(days)}d overdue` : `${days}d left`}
+                              {days < 0 ? t('comp.days_overdue', { n: Math.abs(days) }) : t('comp.days_left', { n: days })}
                             </span>
                           </div>
                           <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${COMPLIANCE_LABELS[c.category]?.color}`}>
-                              {COMPLIANCE_LABELS[c.category]?.label || c.category}
+                            <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${COMPLIANCE_COLORS[c.category] || 'bg-muted'}`}>
+                              {t(`cat.${c.category}`)}
                             </Badge>
                             <span className="text-xs text-muted-foreground">{c.title}</span>
                           </div>
@@ -251,28 +230,28 @@ export function DashboardView({ data, onNavigate }: Props) {
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <Newspaper className="h-4 w-4 text-primary" />
-                Daily Brief
+                {t('dash.daily_brief')}
               </CardTitle>
-              <p className="text-xs text-muted-foreground">MoJ, MHRSD &amp; ZATCA updates</p>
+              <p className="text-xs text-muted-foreground">{t('dash.brief_subtitle')}</p>
             </CardHeader>
             <CardContent className="pt-0">
-              <ScrollArea className="h-[420px] pr-2 scroll-thin">
+              <ScrollArea className="h-[420px] px-2 scroll-thin">
                 <div className="space-y-3">
                   {data.briefs.map((b, i) => (
                     <div key={b.id}>
                       {i > 0 && <Separator className="my-3" />}
                       <article className="space-y-1.5">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${SOURCE_LABELS[b.source]?.color || 'bg-muted'}`}>
-                            {SOURCE_LABELS[b.source]?.label || b.source}
+                          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${SOURCE_COLORS[b.source] || 'bg-muted'}`}>
+                            {t(`src.${b.source}`)}
                           </Badge>
-                          <span className="text-[10px] text-muted-foreground">{formatDate(b.publishedAt)}</span>
+                          <span className="text-[10px] text-muted-foreground">{formatDate(b.publishedAt, lang)}</span>
                         </div>
                         <h4 className="text-sm font-semibold leading-tight">{b.title}</h4>
                         <p className="text-xs text-muted-foreground leading-relaxed">{b.summary}</p>
                         {b.url && (
                           <a href={b.url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline inline-flex items-center gap-1">
-                            Read more
+                            {t('dash.read_more')}
                           </a>
                         )}
                       </article>
@@ -292,10 +271,10 @@ export function DashboardView({ data, onNavigate }: Props) {
             <div className="flex items-center justify-between">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <FileText className="h-4 w-4 text-orange-600" />
-                Documents expiring this month
+                {t('dash.docs_expiring')}
               </CardTitle>
               <Button variant="ghost" size="sm" onClick={() => onNavigate('documents')}>
-                View all
+                {t('dash.view_all')}
               </Button>
             </div>
           </CardHeader>
@@ -307,17 +286,17 @@ export function DashboardView({ data, onNavigate }: Props) {
                   <button
                     key={d.id}
                     onClick={() => onNavigate('documents')}
-                    className="text-left p-3 rounded-md border border-border hover:border-primary/50 hover:bg-muted/40 transition-colors"
+                    className="text-start p-3 rounded-md border border-border hover:border-primary/50 hover:bg-muted/40 transition-colors"
                   >
                     <div className="flex items-center justify-between gap-2 mb-1">
                       <p className="text-sm font-medium truncate">{d.title}</p>
-                      <Badge variant="outline" className={`text-[10px] px-1.5 py-0 shrink-0 ${DOC_STATUS_LABELS[d.status]?.color}`}>
-                        {DOC_STATUS_LABELS[d.status]?.label}
+                      <Badge variant="outline" className={`text-[10px] px-1.5 py-0 shrink-0 ${DOC_STATUS_COLORS[d.status]}`}>
+                        {t(`dstatus.${d.status}`)}
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground truncate">{d.parties}</p>
                     <p className={`text-xs mt-1 font-medium ${days <= 7 ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400'}`}>
-                      {days < 0 ? `${Math.abs(days)}d overdue` : `${days}d to expiry`}
+                      {days < 0 ? t('dash.d_overdue', { n: Math.abs(days) }) : t('dash.d_left', { n: days })}
                     </p>
                   </button>
                 )
@@ -344,7 +323,7 @@ function KpiCard({
   onClick: () => void
 }) {
   return (
-    <button onClick={onClick} className="text-left">
+    <button onClick={onClick} className="text-start">
       <Card className="hover:border-primary/40 hover:shadow-sm transition-all h-full">
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-2">

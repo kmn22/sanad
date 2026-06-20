@@ -23,12 +23,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { FileText, Plus, MoreVertical, FileSignature, Calendar, ArrowRight } from 'lucide-react'
 import { toast } from 'sonner'
+import { useLang } from '@/lib/sanad/i18n'
 import {
-  DOC_STATUS_LABELS,
-  DOC_TYPE_LABELS,
+  DOC_STATUS_COLORS,
   daysUntil,
   formatDate,
   type LegalDocument,
@@ -42,20 +41,20 @@ interface Props {
 }
 
 const STATUSES = ['draft', 'sent', 'active', 'expiring', 'expired']
+const DOC_TYPES = ['nda', 'employment', 'non_compete', 'msa', 'subcontract', 'policy']
 
 export function DocumentsView({ documents, cases, onChange }: Props) {
+  const { lang, t } = useLang()
   const [open, setOpen] = useState(false)
   const [filter, setFilter] = useState<string>('all')
 
   const sorted = [...documents].sort((a, b) => {
-    // Expiring docs first, then by status
     const aExp = a.expiryDate ? daysUntil(a.expiryDate) : 999
     const bExp = b.expiryDate ? daysUntil(b.expiryDate) : 999
     return aExp - bExp
   })
 
   const filtered = filter === 'all' ? sorted : sorted.filter((d) => d.status === filter)
-
   const counts: Record<string, number> = { all: documents.length }
   STATUSES.forEach((s) => { counts[s] = documents.filter((d) => d.status === s).length })
 
@@ -65,7 +64,7 @@ export function DocumentsView({ documents, cases, onChange }: Props) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
     })
-    toast.success(`${doc.title} → ${DOC_STATUS_LABELS[status]?.label}`)
+    toast.success(`${doc.title} → ${t(`dstatus.${status}`)}`)
     onChange()
   }
 
@@ -73,17 +72,10 @@ export function DocumentsView({ documents, cases, onChange }: Props) {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-semibold tracking-tight">Documents</h2>
-          <p className="text-sm text-muted-foreground">
-            Track every document across its full lifecycle — Draft → Sent → Active → Expired.
-          </p>
+          <h2 className="text-xl font-semibold tracking-tight">{t('docs.title')}</h2>
+          <p className="text-sm text-muted-foreground">{t('docs.subtitle')}</p>
         </div>
-        <AddDocDialog
-          open={open}
-          onOpenChange={setOpen}
-          cases={cases}
-          onSaved={() => { onChange(); setOpen(false) }}
-        />
+        <AddDocDialog open={open} onOpenChange={setOpen} cases={cases} onSaved={() => { onChange(); setOpen(false) }} />
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
@@ -93,9 +85,9 @@ export function DocumentsView({ documents, cases, onChange }: Props) {
             variant={filter === s ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilter(s)}
-            className="h-7 text-xs capitalize"
+            className="h-7 text-xs"
           >
-            {s === 'all' ? `All (${counts.all})` : `${DOC_STATUS_LABELS[s]?.label} (${counts[s]})`}
+            {s === 'all' ? t('comp.all', { n: counts.all }) : `${t(`dstatus.${s}`)} (${counts[s]})`}
           </Button>
         ))}
       </div>
@@ -119,10 +111,10 @@ export function DocumentsView({ documents, cases, onChange }: Props) {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <p className="text-[10px] text-muted-foreground px-2 py-1">Set status</p>
+                      <p className="text-[10px] text-muted-foreground px-2 py-1">{t('docs.set_status')}</p>
                       {STATUSES.map((s) => (
                         <DropdownMenuItem key={s} onClick={() => updateStatus(d, s)} disabled={d.status === s}>
-                          {DOC_STATUS_LABELS[s]?.label}
+                          {t(`dstatus.${s}`)}
                         </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>
@@ -130,11 +122,11 @@ export function DocumentsView({ documents, cases, onChange }: Props) {
                 </div>
 
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${DOC_STATUS_LABELS[d.status]?.color}`}>
-                    {DOC_STATUS_LABELS[d.status]?.label}
+                  <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${DOC_STATUS_COLORS[d.status]}`}>
+                    {t(`dstatus.${d.status}`)}
                   </Badge>
                   <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-muted/60">
-                    {DOC_TYPE_LABELS[d.docType] || d.docType}
+                    {t(`dtype.${d.docType}`)}
                   </Badge>
                 </div>
 
@@ -148,31 +140,29 @@ export function DocumentsView({ documents, cases, onChange }: Props) {
                 {d.signedDate && (
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground flex items-center gap-1">
-                      <FileSignature className="h-3 w-3" /> Signed
+                      <FileSignature className="h-3 w-3" /> {t('docs.signed')}
                     </span>
-                    <span>{formatDate(d.signedDate)}</span>
+                    <span>{formatDate(d.signedDate, lang)}</span>
                   </div>
                 )}
 
                 {d.expiryDate && (
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground flex items-center gap-1">
-                      <Calendar className="h-3 w-3" /> Expires
+                      <Calendar className="h-3 w-3" /> {t('docs.expires')}
                     </span>
                     <span className={`font-medium ${
                       days! < 0 ? 'text-rose-600 dark:text-rose-400' :
                       days! <= 30 ? 'text-amber-600 dark:text-amber-400' :
                       'text-muted-foreground'
                     }`}>
-                      {formatDate(d.expiryDate)}
-                      {days! < 0 ? ` (${Math.abs(days!)}d overdue)` : days! <= 90 ? ` (${days}d)` : ''}
+                      {formatDate(d.expiryDate, lang)}
+                      {days! < 0 ? ` (${t('docs.d_overdue', { n: Math.abs(days!) })})` : days! <= 90 ? ` (${t('dash.d_left', { n: days })})` : ''}
                     </span>
                   </div>
                 )}
 
-                {d.notes && (
-                  <p className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1.5">{d.notes}</p>
-                )}
+                {d.notes && <p className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1.5">{d.notes}</p>}
 
                 {/* Lifecycle visualization */}
                 <div className="flex items-center gap-1 pt-1">
@@ -199,7 +189,7 @@ export function DocumentsView({ documents, cases, onChange }: Props) {
         <Card>
           <CardContent className="py-12 text-center text-sm text-muted-foreground">
             <FileText className="h-8 w-8 mx-auto mb-2 opacity-40" />
-            No documents in this status.
+            {t('docs.empty')}
           </CardContent>
         </Card>
       )}
@@ -218,6 +208,7 @@ function AddDocDialog({
   cases: LegalCase[]
   onSaved: () => void
 }) {
+  const { t } = useLang()
   const [form, setForm] = useState({
     title: '',
     docType: 'nda',
@@ -231,7 +222,7 @@ function AddDocDialog({
 
   const submit = async () => {
     if (!form.title || !form.parties) {
-      toast.error('Title and parties are required')
+      toast.error(t('docs.req_fields'))
       return
     }
     await fetch('/api/documents', {
@@ -244,7 +235,7 @@ function AddDocDialog({
         caseId: form.caseId || null,
       }),
     })
-    toast.success('Document added — auto-tasks created if applicable')
+    toast.success(t('docs.added'))
     setForm({ title: '', docType: 'nda', status: 'draft', parties: '', signedDate: '', expiryDate: '', caseId: '', notes: '' })
     onSaved()
   }
@@ -253,72 +244,70 @@ function AddDocDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button size="sm">
-          <Plus className="mr-1.5 h-4 w-4" /> Add document
+          <Plus className="mx-1.5 h-4 w-4" /> {t('docs.add')}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add document</DialogTitle>
+          <DialogTitle>{t('docs.add')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label htmlFor="d-title">Title</Label>
-            <Input id="d-title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. Mutual NDA — TechCo" />
+            <Label htmlFor="d-title">{t('docs.f_title')}</Label>
+            <Input id="d-title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder={t('docs.f_title_ph')} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="d-type">Type</Label>
+              <Label htmlFor="d-type">{t('docs.f_type')}</Label>
               <Select value={form.docType} onValueChange={(v) => setForm({ ...form, docType: v })}>
                 <SelectTrigger id="d-type"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {Object.entries(DOC_TYPE_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                  {DOC_TYPES.map((dt) => <SelectItem key={dt} value={dt}>{t(`dtype.${dt}`)}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="d-status">Status</Label>
+              <Label htmlFor="d-status">{t('docs.f_status')}</Label>
               <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
                 <SelectTrigger id="d-status"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {STATUSES.map((s) => <SelectItem key={s} value={s}>{DOC_STATUS_LABELS[s]?.label}</SelectItem>)}
+                  {STATUSES.map((s) => <SelectItem key={s} value={s}>{t(`dstatus.${s}`)}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="d-parties">Parties</Label>
-            <Input id="d-parties" value={form.parties} onChange={(e) => setForm({ ...form, parties: e.target.value })} placeholder="e.g. Sanad Legal ↔ TechCo" />
+            <Label htmlFor="d-parties">{t('docs.f_parties')}</Label>
+            <Input id="d-parties" value={form.parties} onChange={(e) => setForm({ ...form, parties: e.target.value })} placeholder={t('docs.f_parties_ph')} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="d-signed">Signed date</Label>
+              <Label htmlFor="d-signed">{t('docs.f_signed')}</Label>
               <Input id="d-signed" type="date" value={form.signedDate} onChange={(e) => setForm({ ...form, signedDate: e.target.value })} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="d-expiry">Expiry date</Label>
+              <Label htmlFor="d-expiry">{t('docs.f_expiry')}</Label>
               <Input id="d-expiry" type="date" value={form.expiryDate} onChange={(e) => setForm({ ...form, expiryDate: e.target.value })} />
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="d-case">Link to case (optional)</Label>
+            <Label htmlFor="d-case">{t('docs.f_case')}</Label>
             <Select value={form.caseId} onValueChange={(v) => setForm({ ...form, caseId: v })}>
-              <SelectTrigger id="d-case"><SelectValue placeholder="None" /></SelectTrigger>
+              <SelectTrigger id="d-case"><SelectValue placeholder={t('tasks.none')} /></SelectTrigger>
               <SelectContent>
                 {cases.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="d-notes">Notes</Label>
+            <Label htmlFor="d-notes">{t('docs.f_notes')}</Label>
             <Textarea id="d-notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} />
           </div>
-          <p className="text-[11px] text-muted-foreground bg-muted/40 rounded px-2 py-1.5">
-            Sending an NDA auto-creates a &ldquo;Follow up on signature&rdquo; task in 3 days. Expiring contracts auto-create renewal reminders 30 days before expiry.
-          </p>
+          <p className="text-[11px] text-muted-foreground bg-muted/40 rounded px-2 py-1.5">{t('docs.autonote')}</p>
         </div>
         <DialogFooter>
-          <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-          <Button onClick={submit}>Add document</Button>
+          <DialogClose asChild><Button variant="outline">{t('comp.cancel')}</Button></DialogClose>
+          <Button onClick={submit}>{t('docs.create')}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

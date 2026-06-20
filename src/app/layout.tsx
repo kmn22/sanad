@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, IBM_Plex_Sans_Arabic } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
+import { LanguageProvider } from "@/lib/sanad/i18n";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,25 +15,32 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const plexArabic = IBM_Plex_Sans_Arabic({
+  variable: "--font-arabic",
+  subsets: ["arabic", "latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
 export const metadata: Metadata = {
-  title: "Sanad — Daily Legal & Compliance Dashboard",
+  title: "سند — لوحة العمليات اليومية للامتثال والمحاماة",
   description:
-    "The operational dashboard for Saudi SMEs and legal professionals. Track compliance, manage cases, run focus sessions, and never miss a renewal.",
+    "لوحة العمليات اليومية للمحامين والمنشآت الصغيرة في السعودية. تتبع الامتثال، إدارة القضايا، جلسات تركيز، ولا تفوّت أي تجديد.",
   keywords: [
+    "سند",
     "Sanad",
-    "Saudi legal",
-    "SME compliance",
-    "Iqama renewal",
-    "MoJ",
-    "MHRSD",
-    "case management",
+    "محاماة السعودية",
+    "امتثال المنشآت",
+    "تجديد إقامة",
+    "وزارة العدل",
+    "الموارد البشرية",
+    "إدارة قضايا",
   ],
   authors: [{ name: "Sanad" }],
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Sanad",
+    title: "سند",
   },
 };
 
@@ -49,13 +57,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+        className={`${geistSans.variable} ${geistMono.variable} ${plexArabic.variable} antialiased bg-background text-foreground`}
+        style={{ fontFamily: 'var(--font-arabic), var(--font-geist-sans), system-ui, sans-serif' }}
       >
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-          {children}
-          <Toaster />
+          <LanguageProvider>
+            {children}
+            <Toaster />
+          </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -1,4 +1,4 @@
-// Seed Sanad with realistic Saudi-context demo data
+// Seed Sanad with Arabic demo data — solo practitioner context
 import { PrismaClient } from '@prisma/client'
 
 const db = new PrismaClient()
@@ -19,96 +19,103 @@ async function main() {
   await db.complianceItem.deleteMany()
   await db.user.deleteMany()
 
+  // Demo user — solo lawyer
   await db.user.create({
-    data: { email: 'ahmed@sanad.sa', name: 'Ahmed Al-Qahtani', role: 'lawyer' },
+    data: { email: 'ahmed@sanad.sa', name: 'أحمد القحطاني', role: 'lawyer' },
   })
 
+  // Compliance items — Arabic, solo practice context
   const complianceItems = [
-    { title: 'Iqama Renewal', category: 'ikama', entityName: 'Mohammed Saeed (Accountant)', issueDate: daysFromNow(-365), expiryDate: daysFromNow(18), status: 'expiring', notes: 'Requires jawazat appointment + medical', notifyDays: 30 },
-    { title: 'Iqama Renewal', category: 'ikama', entityName: 'Layla Hassan (HR)', issueDate: daysFromNow(-360), expiryDate: daysFromNow(45), status: 'expiring', notifyDays: 30 },
-    { title: 'Commercial Registration', category: 'cr', entityName: 'Sanad Legal LLC', issueDate: daysFromNow(-700), expiryDate: daysFromNow(72), status: 'active', notes: 'Renew via MCI portal', notifyDays: 60 },
-    { title: 'Employment Contract', category: 'contract', entityName: 'Khalid Al-Otaibi (Driver)', issueDate: daysFromNow(-330), expiryDate: daysFromNow(35), status: 'expiring', notifyDays: 30 },
-    { title: 'Employment Contract', category: 'contract', entityName: 'Noura Al-Dossari (Marketing)', issueDate: daysFromNow(-200), expiryDate: daysFromNow(165), status: 'active', notifyDays: 30 },
-    { title: 'GOSI Filing', category: 'gosi', entityName: 'Sanad Legal LLC', issueDate: daysFromNow(-30), expiryDate: daysFromNow(7), status: 'expiring', notes: 'Monthly contribution due', notifyDays: 15 },
-    { title: 'VAT Return Q2', category: 'tax', entityName: 'Sanad Legal LLC', issueDate: daysFromNow(-90), expiryDate: daysFromNow(28), status: 'expiring', notifyDays: 30 },
-    { title: 'Professional License', category: 'license', entityName: 'Ahmed Al-Qahtani', issueDate: daysFromNow(-300), expiryDate: daysFromNow(220), status: 'active', notifyDays: 60 },
-    { title: 'Iqama Renewal', category: 'ikama', entityName: 'Yousef Al-Harbi (Operations)', issueDate: daysFromNow(-200), expiryDate: daysFromNow(165), status: 'active', notifyDays: 30 },
-    { title: 'Commercial Registration', category: 'cr', entityName: 'Gulf Tech SME', issueDate: daysFromNow(-720), expiryDate: daysFromNow(8), status: 'expiring', notifyDays: 60 },
+    { title: 'تجديد إقامة', category: 'ikama', entityName: 'محمد سعيد (محاسب)', issueDate: daysFromNow(-365), expiryDate: daysFromNow(18), status: 'expiring', notes: 'يحتاج موعد جوازات + فحص طبي', notifyDays: 30 },
+    { title: 'تجديد إقامة', category: 'ikama', entityName: 'ليلى حسن (موارد بشرية)', issueDate: daysFromNow(-360), expiryDate: daysFromNow(45), status: 'expiring', notifyDays: 30 },
+    { title: 'السجل التجاري', category: 'cr', entityName: 'مكتب أحمد القحطاني للمحاماة', issueDate: daysFromNow(-700), expiryDate: daysFromNow(72), status: 'active', notes: 'تجديد عبر بوابة وزارة التجارة', notifyDays: 60 },
+    { title: 'عقد عمل', category: 'contract', entityName: 'خالد العتيبي (سائق)', issueDate: daysFromNow(-330), expiryDate: daysFromNow(35), status: 'expiring', notifyDays: 30 },
+    { title: 'عقد عمل', category: 'contract', entityName: 'نورة الدوسري (تسويق)', issueDate: daysFromNow(-200), expiryDate: daysFromNow(165), status: 'active', notifyDays: 30 },
+    { title: 'اشتراك التأمينات الاجتماعية', category: 'gosi', entityName: 'مكتب أحمد القحطاني للمحاماة', issueDate: daysFromNow(-30), expiryDate: daysFromNow(7), status: 'expiring', notes: 'الاشتراك الشهري مستحق', notifyDays: 15 },
+    { title: 'ضريبة القيمة المضافة Q2', category: 'tax', entityName: 'مكتب أحمد القحطاني للمحاماة', issueDate: daysFromNow(-90), expiryDate: daysFromNow(28), status: 'expiring', notifyDays: 30 },
+    { title: 'رخصة مزاولة المهنة', category: 'license', entityName: 'أحمد القحطاني', issueDate: daysFromNow(-300), expiryDate: daysFromNow(220), status: 'active', notifyDays: 60 },
+    { title: 'تجديد إقامة', category: 'ikama', entityName: 'يوسف الحربي (عمليات)', issueDate: daysFromNow(-200), expiryDate: daysFromNow(165), status: 'active', notifyDays: 30 },
+    { title: 'السجل التجاري', category: 'cr', entityName: 'منشأة الخليج التقنية', issueDate: daysFromNow(-720), expiryDate: daysFromNow(8), status: 'expiring', notifyDays: 60 },
   ]
   for (const c of complianceItems) {
     await db.complianceItem.create({ data: c })
   }
 
+  // Cases — Arabic
   const cases = [
-    { title: 'Al-Faisaliah Contract Dispute', clientName: 'Al-Faisaliah Group', caseType: 'litigation', stage: 'drafting', priority: 'high', dueDate: daysFromNow(14), value: 450000, notes: 'Drafting statement of claim' },
-    { title: 'TechCo NDA Review', clientName: 'TechCo Riyadh', caseType: 'contract', stage: 'drafting', priority: 'normal', dueDate: daysFromNow(5), value: 0, notes: 'Mutual NDA for partnership talks' },
-    { title: 'Gulf Pharma M&A', clientName: 'Gulf Pharmaceutical', caseType: 'corporate', stage: 'client_review', priority: 'urgent', dueDate: daysFromNow(3), value: 1200000, notes: 'Awaiting client feedback on SPA' },
-    { title: 'BrightSaud Trademark', clientName: 'BrightSaud Retail', caseType: 'ip', stage: 'client_review', priority: 'normal', dueDate: daysFromNow(10), value: 8500, notes: 'Trademark application docs with client' },
-    { title: 'Family Inheritance Case #218', clientName: 'Al-Sulaiman Family', caseType: 'litigation', stage: 'filed', priority: 'high', dueDate: daysFromNow(30), value: 0, notes: 'Filed at Riyadh General Court' },
-    { title: 'MHRSD Labor Dispute', clientName: 'Saud Al-Mutairi', caseType: 'litigation', stage: 'filed', priority: 'normal', dueDate: daysFromNow(21), value: 0, notes: 'Awaiting first hearing date' },
-    { title: 'GulfTech Employment Policy', clientName: 'GulfTech', caseType: 'consultation', stage: 'closed', priority: 'low', value: 15000, notes: 'Handbook delivered and approved' },
+    { title: 'نزاع عقد الفيصلية', clientName: 'مجموعة الفيصلية', caseType: 'litigation', stage: 'drafting', priority: 'high', dueDate: daysFromNow(14), value: 450000, notes: 'صياغة صحيفة الدعوى' },
+    { title: 'مراجعة اتفاقية سرية — تكو', clientName: 'تكو الرياض', caseType: 'contract', stage: 'drafting', priority: 'normal', dueDate: daysFromNow(5), value: 0, notes: 'اتفاقية سرية متبادلة لشراكة' },
+    { title: 'استحواذ صيدليات الخليج', clientName: 'صيدليات الخليج', caseType: 'corporate', stage: 'client_review', priority: 'urgent', dueDate: daysFromNow(3), value: 1200000, notes: 'بانتظار ملاحظات العميل على اتفاقية الشراء' },
+    { title: 'علامة برايتسعود التجارية', clientName: 'برايتسعود التجارية', caseType: 'ip', stage: 'client_review', priority: 'normal', dueDate: daysFromNow(10), value: 8500, notes: 'مستندات طلب العلامة لدى العميل' },
+    { title: 'قضية ميراث آل سليمان #218', clientName: 'عائلة آل سليمان', caseType: 'litigation', stage: 'filed', priority: 'high', dueDate: daysFromNow(30), value: 0, notes: 'مرفوعة في المحكمة العامة بالرياض' },
+    { title: 'نزاع عمالي', clientName: 'سعود المطيري', caseType: 'litigation', stage: 'filed', priority: 'normal', dueDate: daysFromNow(21), value: 0, notes: 'بانتظار موعد الجلسة الأولى' },
+    { title: 'سياسة توظيف جلف تك', clientName: 'جلف تك', caseType: 'consultation', stage: 'closed', priority: 'low', value: 15000, notes: 'تم تسليم دليل الموظفين واعتماده' },
   ]
   const createdCases = []
   for (const c of cases) {
     createdCases.push(await db.legalCase.create({ data: c }))
   }
 
+  // Documents — Arabic
   const docs = [
-    { title: 'Mutual NDA — TechCo', docType: 'nda', status: 'sent', parties: 'Sanad Legal ↔ TechCo', signedDate: daysFromNow(-5), expiryDate: daysFromNow(355), notes: 'Sent for signature', caseId: createdCases[1].id },
-    { title: 'Employment Contract — Noura', docType: 'employment', status: 'active', parties: 'Sanad Legal ↔ Noura Al-Dossari', signedDate: daysFromNow(-200), expiryDate: daysFromNow(165), caseId: null },
-    { title: 'Non-Compete — Khalid', docType: 'non_compete', status: 'active', parties: 'Sanad Legal ↔ Khalid Al-Otaibi', signedDate: daysFromNow(-330), expiryDate: daysFromNow(35), notes: 'Driver role, 2yr restriction', caseId: null },
-    { title: 'MSA — Al-Faisaliah', docType: 'msa', status: 'draft', parties: 'Sanad Legal ↔ Al-Faisaliah Group', signedDate: null, expiryDate: null, caseId: createdCases[0].id },
-    { title: 'Subcontract — GulfTech', docType: 'subcontract', status: 'sent', parties: 'GulfTech ↔ Sanad Legal', signedDate: null, expiryDate: null, notes: 'Pending signature', caseId: null },
-    { title: 'Employee Handbook v2', docType: 'policy', status: 'active', parties: 'Sanad Legal internal', signedDate: daysFromNow(-90), expiryDate: null, caseId: createdCases[6].id },
-    { title: 'Old NDA — 2023', docType: 'nda', status: 'expired', parties: 'Sanad Legal ↔ Legacy Client', signedDate: daysFromNow(-400), expiryDate: daysFromNow(-35), caseId: null },
-    { title: 'Settlement Agreement — Al-Sulaiman', docType: 'msa', status: 'draft', parties: 'Al-Sulaiman heirs', signedDate: null, expiryDate: null, caseId: createdCases[4].id },
+    { title: 'اتفاقية سرية مشتركة — تكو', docType: 'nda', status: 'sent', parties: 'مكتب أحمد القحطاني ↔ تكو', signedDate: daysFromNow(-5), expiryDate: daysFromNow(355), notes: 'مُرسلة للتوقيع', caseId: createdCases[1].id },
+    { title: 'عقد عمل — نورة', docType: 'employment', status: 'active', parties: 'مكتب أحمد القحطاني ↔ نورة الدوسري', signedDate: daysFromNow(-200), expiryDate: daysFromNow(165), caseId: null },
+    { title: 'اتفاقية عدم منافسة — خالد', docType: 'non_compete', status: 'active', parties: 'مكتب أحمد القحطاني ↔ خالد العتيبي', signedDate: daysFromNow(-330), expiryDate: daysFromNow(35), notes: 'دور السائق، تقييد سنتان', caseId: null },
+    { title: 'اتفاقية خدمات — الفيصلية', docType: 'msa', status: 'draft', parties: 'مكتب أحمد القحطاني ↔ مجموعة الفيصلية', signedDate: null, expiryDate: null, caseId: createdCases[0].id },
+    { title: 'عقد مقاول فرعي — جلف تك', docType: 'subcontract', status: 'sent', parties: 'جلف تك ↔ مكتب أحمد القحطاني', signedDate: null, expiryDate: null, notes: 'بانتظار التوقيع', caseId: null },
+    { title: 'دليل الموظفين v2', docType: 'policy', status: 'active', parties: 'مكتب أحمد القحطاني داخلي', signedDate: daysFromNow(-90), expiryDate: null, caseId: createdCases[6].id },
+    { title: 'اتفاقية سرية قديمة — 2023', docType: 'nda', status: 'expired', parties: 'مكتب أحمد القحطاني ↔ عميل سابق', signedDate: daysFromNow(-400), expiryDate: daysFromNow(-35), caseId: null },
+    { title: 'اتفاقية تسوية — آل سليمان', docType: 'msa', status: 'draft', parties: 'ورثة آل سليمان', signedDate: null, expiryDate: null, caseId: createdCases[4].id },
   ]
   for (const d of docs) {
     await db.legalDocument.create({ data: d })
   }
 
+  // Tasks — Arabic, some auto-generated
   const tasks = [
-    { title: 'Follow up on NDA signature', description: 'TechCo NDA sent 5 days ago — chase signature', status: 'todo', priority: 'high', dueDate: daysFromNow(-1), relatedDoc: 'Mutual NDA — TechCo', autoGen: true },
-    { title: 'Schedule GOSI payment', description: 'Monthly GOSI contribution due in 7 days', status: 'todo', priority: 'high', dueDate: daysFromNow(5), autoGen: false },
-    { title: 'Draft SPA revisions', description: 'Incorporate client comments on Gulf Pharma M&A', status: 'in_progress', priority: 'urgent', dueDate: daysFromNow(3), caseId: createdCases[2].id },
-    { title: 'Prepare hearing bundle', description: 'Al-Sulaiman inheritance — gather title deeds', status: 'todo', priority: 'high', dueDate: daysFromNow(15), caseId: createdCases[4].id },
-    { title: 'Renew employee contract — Khalid', description: 'Contract expires in 35 days, draft renewal', status: 'todo', priority: 'normal', dueDate: daysFromNow(10), relatedDoc: 'Non-Compete — Khalid', autoGen: true },
-    { title: 'File VAT return Q2', description: 'Submit via ZATCA portal before deadline', status: 'todo', priority: 'high', dueDate: daysFromNow(28), autoGen: false },
-    { title: 'Send welcome packet to new client', description: 'GulfTech onboarding docs', status: 'done', priority: 'low', dueDate: daysFromNow(-3) },
-    { title: 'Review MHRSD labor law update', description: 'New decree on remote work — review impact', status: 'todo', priority: 'normal', dueDate: daysFromNow(7), autoGen: false },
-    { title: 'Confirm hearing date', description: 'Call court for Al-Sulaiman hearing schedule', status: 'todo', priority: 'high', dueDate: daysFromNow(2), caseId: createdCases[4].id },
-    { title: 'Update client on Gulf Pharma', description: 'Status email with revised timeline', status: 'todo', priority: 'urgent', dueDate: daysFromNow(1), caseId: createdCases[2].id },
+    { title: 'متابعة توقيع اتفاقية السرية', description: 'اتفاقية تكو مُرسلة منذ 5 أيام — تابع التوقيع', status: 'todo', priority: 'high', dueDate: daysFromNow(-1), relatedDoc: 'اتفاقية سرية مشتركة — تكو', autoGen: true },
+    { title: 'جدولة دفع التأمينات الاجتماعية', description: 'الاشتراك الشهري مستحق خلال 7 أيام', status: 'todo', priority: 'high', dueDate: daysFromNow(5), autoGen: false },
+    { title: 'صياغة مراجعات اتفاقية الاستحواذ', description: 'دمج ملاحظات العميل على استحواذ صيدليات الخليج', status: 'in_progress', priority: 'urgent', dueDate: daysFromNow(3), caseId: createdCases[2].id },
+    { title: 'تجهيز ملف الجلسة', description: 'ميراث آل سليمان — جمع صكوك الملكية', status: 'todo', priority: 'high', dueDate: daysFromNow(15), caseId: createdCases[4].id },
+    { title: 'تجديد عقد الموظف — خالد', description: 'العقد ينتهي خلال 35 يوماً، صُغ التجديد', status: 'todo', priority: 'normal', dueDate: daysFromNow(10), relatedDoc: 'اتفاقية عدم منافسة — خالد', autoGen: true },
+    { title: 'تقديم إقرار ضريبة القيمة المضافة', description: 'إرسال عبر بوابة هيئة الزكاة قبل الموعد النهائي', status: 'todo', priority: 'high', dueDate: daysFromNow(28), autoGen: false },
+    { title: 'إرسال حقيبة الترحيب للعميل الجديد', description: 'مستندات تأهيل جلف تك', status: 'done', priority: 'low', dueDate: daysFromNow(-3) },
+    { title: 'مراجعة تحديث قانون العمل', description: 'مرسوم جديد حول العمل عن بُعد — راجع الأثر', status: 'todo', priority: 'normal', dueDate: daysFromNow(7), autoGen: false },
+    { title: 'تأكيد موعد الجلسة', description: 'اتصل بالمحكمة لجدولة جلسة آل سليمان', status: 'todo', priority: 'high', dueDate: daysFromNow(2), caseId: createdCases[4].id },
+    { title: 'تحديث العميل بشأن صيدليات الخليج', description: 'بريد إلكتروني بالحالة والجدول الزمني المُعدّل', status: 'todo', priority: 'urgent', dueDate: daysFromNow(1), caseId: createdCases[2].id },
   ]
   for (const t of tasks) {
     await db.task.create({ data: t })
   }
 
+  // Time entries — Arabic descriptions
   const timeEntries = [
-    { caseId: createdCases[2].id, description: 'SPA revisions — Gulf Pharma', durationSec: 5400, billable: true, hourlyRate: 850, sessionType: 'billable', date: daysFromNow(0) },
-    { caseId: createdCases[0].id, description: 'Statement of claim drafting', durationSec: 7200, billable: true, hourlyRate: 850, sessionType: 'billable', date: daysFromNow(-1) },
-    { caseId: null, description: 'Deep work — NDA review', durationSec: 2700, billable: false, sessionType: 'focus', date: daysFromNow(0) },
-    { caseId: createdCases[4].id, description: 'Title deeds review', durationSec: 3600, billable: true, hourlyRate: 750, sessionType: 'billable', date: daysFromNow(-2) },
-    { caseId: createdCases[1].id, description: 'NDA markup', durationSec: 1800, billable: true, hourlyRate: 850, sessionType: 'billable', date: daysFromNow(-1) },
-    { caseId: null, description: 'Focus block — research MHRSD decree', durationSec: 3300, billable: false, sessionType: 'focus', date: daysFromNow(-3) },
-    { caseId: createdCases[2].id, description: 'Client call — Gulf Pharma', durationSec: 2400, billable: true, hourlyRate: 850, sessionType: 'meeting', date: daysFromNow(-2) },
+    { caseId: createdCases[2].id, description: 'مراجعات اتفاقية الاستحواذ — صيدليات الخليج', durationSec: 5400, billable: true, hourlyRate: 850, sessionType: 'billable', date: daysFromNow(0) },
+    { caseId: createdCases[0].id, description: 'صياغة صحيفة الدعوى', durationSec: 7200, billable: true, hourlyRate: 850, sessionType: 'billable', date: daysFromNow(-1) },
+    { caseId: null, description: 'عمل عميق — مراجعة اتفاقية سرية', durationSec: 2700, billable: false, sessionType: 'focus', date: daysFromNow(0) },
+    { caseId: createdCases[4].id, description: 'مراجعة صكوك الملكية', durationSec: 3600, billable: true, hourlyRate: 750, sessionType: 'billable', date: daysFromNow(-2) },
+    { caseId: createdCases[1].id, description: 'تعديلات اتفاقية السرية', durationSec: 1800, billable: true, hourlyRate: 850, sessionType: 'billable', date: daysFromNow(-1) },
+    { caseId: null, description: 'جلسة تركيز — بحث مرسوم الموارد البشرية', durationSec: 3300, billable: false, sessionType: 'focus', date: daysFromNow(-3) },
+    { caseId: createdCases[2].id, description: 'مكالمة عميل — صيدليات الخليج', durationSec: 2400, billable: true, hourlyRate: 850, sessionType: 'meeting', date: daysFromNow(-2) },
   ]
   for (const te of timeEntries) {
     await db.timeEntry.create({ data: te })
   }
 
+  // Daily brief — Arabic
   const briefs = [
-    { title: 'MoJ Launches E-Litigation Portal v3', summary: 'Ministry of Justice rolls out enhanced e-filing with AI-assisted statement drafting. Mandatory for all new civil cases from next month.', source: 'MoJ', category: 'regulation', url: 'https://www.moj.gov.sa', publishedAt: daysFromNow(0) },
-    { title: 'MHRSD Updates Remote Work Policy', summary: 'New decree clarifies employer obligations for hybrid work arrangements. Document remote work policy in employee handbook.', source: 'MHRSD', category: 'labor', url: 'https://www.hrsd.gov.sa', publishedAt: daysFromNow(-1) },
-    { title: 'ZATCA VAT Return Reminder — Q2', summary: 'Q2 VAT returns due within 30 days for standard filers. Late filing penalty: 5% of unpaid tax per month.', source: 'VAT', category: 'tax', publishedAt: daysFromNow(-1) },
-    { title: 'Saudi Commercial Law Amendment — Clause 18', summary: 'Updated disclosure requirements for SME shareholders effective Q3. Review shareholder agreements.', source: 'MoJ', category: 'corporate', publishedAt: daysFromNow(-2) },
-    { title: 'Tip: Iqama Renewal Grace Period Tightened', summary: 'Jawazat now enforces strict 3-day grace period after expiry. Schedule appointments 30+ days ahead to avoid penalties.', source: 'local_tip', category: 'labor', publishedAt: daysFromNow(-2) },
-    { title: 'Trademark Filing Fee Reduction', summary: 'SAIP reduces single-class trademark filing fee by 15% for SMEs registered with Monsha\'at.', source: 'MoJ', category: 'ip', publishedAt: daysFromNow(-3) },
+    { title: 'وزارة العدل تطلق بوابة التقاضي الإلكتروني v3', summary: 'أطلقت وزارة العدل بوابة تقاضي إلكترونية محسّنة مع صياغة مساعدة بالذكاء الاصطناعي. إلزامية لجميع القضايا المدنية الجديدة اعتباراً من الشهر القادم.', source: 'MoJ', category: 'regulation', url: 'https://www.moj.gov.sa', publishedAt: daysFromNow(0) },
+    { title: 'وزارة الموارد البشرية تحدّث سياسة العمل عن بُعد', summary: 'مرسوم جديد يوضح التزامات صاحب العمل في ترتيبات العمل الهجين. وثّق سياسة العمل عن بُعد في دليل الموظفين.', source: 'MHRSD', category: 'labor', url: 'https://www.hrsd.gov.sa', publishedAt: daysFromNow(-1) },
+    { title: 'تذكير: إقرار ضريبة القيمة المضافة — الربع الثاني', summary: 'إقرارات ضريبة القيمة المضافة للربع الثاني مستحقة خلال 30 يوماً للمُكلين القياسيين. غرامة التأخير: 5% من الضريبة غير المدفوعة شهرياً.', source: 'VAT', category: 'tax', publishedAt: daysFromNow(-1) },
+    { title: 'تعديل قانون التجارة السعودي — المادة 18', summary: 'متطلبات إفصاح محدّثة لمساهمي المنشآت الصغيرة اعتباراً من الربع الثالث. راجع اتفاقيات المساهمين.', source: 'MoJ', category: 'corporate', publishedAt: daysFromNow(-2) },
+    { title: 'نصيحة: تشديد فترة السماح لتجديد الإقامة', summary: 'تطبّق الجوازات الآن فترة سماح صارمة لمدة 3 أيام بعد انتهاء الإقامة. احجز المواعيد قبل 30 يوماً لتجنب الغرامات.', source: 'local_tip', category: 'labor', publishedAt: daysFromNow(-2) },
+    { title: 'تخفيض رسوم تسجيل العلامات التجارية', summary: 'خفّضت الهيئة السعودية للملكية الفكرية رسوم تسجيل العلامة التجارية لفئة واحدة بنسبة 15% للمنشآت الصغيرة المسجلة في منشآت.', source: 'MoJ', category: 'ip', publishedAt: daysFromNow(-3) },
   ]
   for (const b of briefs) {
     await db.dailyBrief.create({ data: b })
   }
 
-  console.log('Seed complete')
+  console.log('Seed complete (Arabic)')
 }
 
 main().then(() => db.$disconnect()).catch(async (e) => {
