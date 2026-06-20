@@ -16,6 +16,8 @@ import {
   Library,
   FileText,
   ArrowLeft,
+  Brain,
+  Sparkles,
 } from 'lucide-react'
 import { useLang } from '@/lib/sanad/i18n'
 import {
@@ -29,6 +31,7 @@ import { CoursesPanel } from './student/CoursesPanel'
 import { DeadlinesPanel } from './student/DeadlinesPanel'
 import { TermsPanel } from './student/TermsPanel'
 import { CasebookPanel } from './student/CasebookPanel'
+import { ReviewPanel } from './student/ReviewPanel'
 
 interface Props {
   data: StudentDashboardData
@@ -50,32 +53,36 @@ export function StudentView({ data, onChange }: Props) {
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-auto">
+        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 h-auto">
           <TabsTrigger value="overview" className="text-xs gap-1.5">
             <GraduationCap className="h-3.5 w-3.5" />
-            {t('student.morning')}
+            <span className="hidden sm:inline">{t('student.morning')}</span>
           </TabsTrigger>
           <TabsTrigger value="courses" className="text-xs gap-1.5">
             <BookOpen className="h-3.5 w-3.5" />
-            {t('student.courses')}
+            <span className="hidden sm:inline">{t('student.courses')}</span>
             <span className="text-[10px] bg-primary/15 text-primary rounded-full px-1.5">{stats.courses}</span>
           </TabsTrigger>
           <TabsTrigger value="deadlines" className="text-xs gap-1.5">
             <CalendarClock className="h-3.5 w-3.5" />
-            {t('student.deadlines')}
+            <span className="hidden sm:inline">{t('student.deadlines')}</span>
             {stats.overdueDeadlines > 0 && (
               <span className="text-[10px] bg-rose-500/15 text-rose-700 dark:text-rose-400 rounded-full px-1.5">{stats.overdueDeadlines}</span>
             )}
           </TabsTrigger>
           <TabsTrigger value="terms" className="text-xs gap-1.5">
             <Library className="h-3.5 w-3.5" />
-            {t('student.terms_bank')}
+            <span className="hidden sm:inline">{t('student.terms_bank')}</span>
             <span className="text-[10px] bg-primary/15 text-primary rounded-full px-1.5">{stats.terms}</span>
           </TabsTrigger>
           <TabsTrigger value="casebook" className="text-xs gap-1.5">
             <Scale className="h-3.5 w-3.5" />
-            {t('student.casebook')}
+            <span className="hidden sm:inline">{t('student.casebook')}</span>
             <span className="text-[10px] bg-primary/15 text-primary rounded-full px-1.5">{stats.cases}</span>
+          </TabsTrigger>
+          <TabsTrigger value="review" className="text-xs gap-1.5">
+            <Brain className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">{t('review.title')}</span>
           </TabsTrigger>
         </TabsList>
 
@@ -101,6 +108,10 @@ export function StudentView({ data, onChange }: Props) {
 
         <TabsContent value="casebook" className="mt-6">
           <CasebookPanel cases={data.cases} onChange={onChange} />
+        </TabsContent>
+
+        <TabsContent value="review" className="mt-6">
+          <ReviewPanel courses={data.courses} onSessionComplete={onChange} />
         </TabsContent>
       </Tabs>
     </div>
@@ -156,6 +167,27 @@ function OverviewPanel({ data, onNavigate }: { data: StudentDashboardData; onNav
         <KpiCard label={t('student.terms_bank')} value={stats.terms} sub={`${stats.masteredTerms} ${t('student.mastered')}`} icon={<Library className="h-4 w-4" />} onClick={() => onNavigate('terms')} />
         <KpiCard label={t('student.casebook')} value={stats.cases} icon={<Scale className="h-4 w-4" />} onClick={() => onNavigate('casebook')} />
       </div>
+
+      {/* Smart review CTA */}
+      <button
+        onClick={() => onNavigate('review')}
+        className="w-full text-start rounded-xl border-2 border-primary/30 bg-gradient-to-l from-primary/5 to-primary/10 hover:border-primary hover:shadow-md transition-all p-5 flex items-center gap-4"
+      >
+        <div className="h-12 w-12 rounded-lg bg-primary text-primary-foreground grid place-items-center shrink-0">
+          <Brain className="h-6 w-6" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <p className="text-base font-semibold">{t('review.title')}</p>
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-primary/15 text-primary border-primary/30">
+              <Sparkles className="h-2.5 w-2.5 me-1" />
+              {t('review.start')}
+            </Badge>
+          </div>
+          <p className="text-xs text-muted-foreground">{t('review.subtitle')}</p>
+        </div>
+        <Brain className="h-5 w-5 text-primary shrink-0" />
+      </button>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: upcoming deadlines */}
