@@ -99,6 +99,92 @@ export interface DashboardData {
   timeEntries: TimeEntry[]
 }
 
+// ===== Student types =====
+
+export interface Course {
+  id: string
+  title: string
+  code: string | null
+  instructor: string | null
+  semester: string | null
+  credits: number | null
+  color: string
+  notes: string | null
+  lectures?: Lecture[]
+  deadlines?: AcademicDeadline[]
+}
+
+export interface Lecture {
+  id: string
+  courseId: string
+  title: string
+  lectureDate: string
+  topic: string | null
+  notes: string
+  attachments: string | null
+  status: string
+  course?: Course | null
+}
+
+export interface AcademicDeadline {
+  id: string
+  courseId: string | null
+  title: string
+  type: string
+  dueDate: string
+  status: string
+  priority: string
+  weight: number | null
+  notes: string | null
+  course?: Course | null
+}
+
+export interface LegalTerm {
+  id: string
+  term: string
+  definition: string
+  category: string
+  origin: string | null
+  example: string | null
+  mastery: string
+}
+
+export interface CaseEntry {
+  id: string
+  caseName: string
+  citation: string | null
+  court: string | null
+  principle: string
+  subject: string
+  summary: string | null
+  significance: string | null
+  rating: number
+}
+
+export interface StudentDashboardData {
+  stats: {
+    courses: number
+    upcomingDeadlines: number
+    overdueDeadlines: number
+    dueThisWeek: number
+    dueThisMonth: number
+    recentLectures: number
+    draftLectures: number
+    terms: number
+    masteredTerms: number
+    learningTerms: number
+    familiarTerms: number
+    cases: number
+    totalWeight: number
+  }
+  courses: (Course & { lectures: Lecture[]; deadlines: AcademicDeadline[] })[]
+  lectures: (Lecture & { course: Course | null })[]
+  deadlines: { upcoming: AcademicDeadline[]; overdue: AcademicDeadline[]; dueThisWeek: AcademicDeadline[]; dueThisMonth: AcademicDeadline[]; all: (AcademicDeadline & { course: Course | null })[] }
+  terms: LegalTerm[]
+  cases: CaseEntry[]
+  briefs: DailyBrief[]
+}
+
 // ---- Formatting helpers ----
 
 export function daysUntil(dateStr: string | Date): number {

@@ -108,3 +108,83 @@ model DailyBrief {
   publishedAt DateTime @default(now())
   createdAt   DateTime @default(now())
 }
+
+// ===== Student mode tables =====
+
+// Courses / subjects a law student is enrolled in
+model Course {
+  id          String   @id @default(cuid())
+  title       String   // e.g. "النظرية العامة للالتزام"
+  code        String?  // course code, e.g. "LAW 301"
+  instructor  String?
+  semester    String?  // e.g. "الفصل الأول 1447هـ"
+  credits     Int?
+  color       String   @default("#0F5132") // for visual tagging
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lectures    Lecture[]
+  deadlines   AcademicDeadline[]
+}
+
+// Lecture notes — one entry per lecture session
+model Lecture {
+  id          String   @id @default(cuid())
+  courseId    String
+  title       String   // e.g. "محاضرة 5: أسباب انعدام الأهلية"
+  lectureDate DateTime
+  topic       String?  // sub-topic covered
+  notes       String   // markdown / rich text
+  attachments String?  // comma-separated file paths (optional)
+  status      String   @default("draft") // draft | reviewed | mastered
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+// Academic deadlines — assignments, exams, mooting, presentations
+model AcademicDeadline {
+  id          String   @id @default(cuid())
+  courseId    String?
+  title       String   // "تسليم بحث العقود"
+  type        String   // assignment | exam | mooting | presentation | registration
+  dueDate     DateTime
+  status      String   @default("todo") // todo | in_progress | submitted | done
+  priority    String   @default("normal") // low | normal | high | urgent
+  weight      Float?   // % of final grade
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  course      Course?  @relation(fields: [courseId], references: [id], onDelete: SetNull)
+}
+
+// Legal terms bank — vocabulary student collects
+model LegalTerm {
+  id          String   @id @default(cuid())
+  term        String   @unique
+  definition  String
+  category    String   @default("general") // general | civil | criminal | commercial | administrative | constitutional | procedural | family
+  origin      String?  // source law/system (e.g. "القانون المدني السعودي")
+  example     String?  // usage example
+  mastery     String   @default("learning") // learning | familiar | mastered
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Casebook — judicial principles, precedents, landmark cases
+model CaseEntry {
+  id            String   @id @default(cuid())
+  caseName      String   // "قضية الدوسري ضد شركة..."
+  citation      String?  // reference number / year
+  court         String?  // "محكمة الاستئناف بالرياض"
+  principle     String   // the legal principle established
+  subject       String   // category (civil | criminal | ...)
+  summary       String?  // brief facts + holding
+  significance  String?  // why this case matters (for study)
+  rating        Int      @default(3) // 1-5 importance
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
