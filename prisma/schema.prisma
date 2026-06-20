@@ -188,3 +188,19 @@ model CaseEntry {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
+
+// ===== Smart Review system =====
+// Tracks each review session: which mode, how many cards, score, duration
+model ReviewSession {
+  id           String   @id @default(cuid())
+  mode         String   // flashcards | quiz
+  sourceType   String   // all | terms | cases | lectures | course:{id} | subject:{value}
+  sourceLabel  String   // human-readable label, e.g. "النظرية العامة للالتزام"
+  cardCount    Int
+  correctCount Int      @default(0)
+  reviewedCount Int     @default(0)
+  durationSec  Int      @default(0)
+  score        Float?   // 0-100 percentage
+  date         DateTime @default(now())
+  createdAt    DateTime @default(now())
+}
