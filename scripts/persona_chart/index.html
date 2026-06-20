@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>سند — مدى الفائدة لكل شريحة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'IBM Plex Sans Arabic', 'Inter', sans-serif;
+    background: #ffffff;
+    padding: 40px;
+    color: #1a3a28;
+  }
+  .container { max-width: 1200px; margin: 0 auto; }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #0F5132;
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    font-size: 14px;
+    color: #6b7280;
+    margin-bottom: 32px;
+    font-style: italic;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 18px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    font-size: 12px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #4b5563;
+  }
+  .legend-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+  }
+
+  /* Matrix */
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 4px;
+    table-layout: fixed;
+  }
+  th, td {
+    padding: 0;
+    vertical-align: middle;
+  }
+
+  /* Header row (capabilities) */
+  th.cap {
+    background: transparent;
+    color: #374151;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 14px 8px;
+    text-align: center;
+    line-height: 1.4;
+    border-bottom: 2px solid #e5e7eb;
+  }
+
+  /* Persona column */
+  td.persona {
+    background: #f7f9f5;
+    color: #1a3a28;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 18px 16px;
+    text-align: right;
+    border-right: 3px solid #0F5132;
+    width: 18%;
+  }
+  .persona-sub {
+    font-size: 11px;
+    color: #6b7280;
+    font-weight: 400;
+    margin-top: 3px;
+    line-height: 1.3;
+  }
+
+  /* Score cells */
+  td.cell {
+    height: 88px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 13px;
+    border-radius: 6px;
+    transition: transform 0.2s;
+  }
+  .score-num {
+    font-size: 22px;
+    font-weight: 700;
+    display: block;
+    line-height: 1.1;
+    font-family: 'Inter', sans-serif;
+  }
+  .score-label {
+    font-size: 11px;
+    font-weight: 500;
+    margin-top: 4px;
+    display: block;
+  }
+
+  /* Score colors */
+  .s5 { background: #0F5132; color: #ffffff; }
+  .s4 { background: #2D8B57; color: #ffffff; }
+  .s3 { background: #7BC093; color: #0f3a23; }
+  .s2 { background: #D1E7D8; color: #2d6b48; }
+  .s1 { background: #EDF5EF; color: #6b7280; }
+  .s0 { background: #f3f4f6; color: #9ca3af; }
+
+  /* Summary card */
+  .summary {
+    margin-top: 36px;
+    background: linear-gradient(135deg, #f7f9f5 0%, #edf5ef 100%);
+    border-right: 4px solid #0F5132;
+    padding: 22px 26px;
+    border-radius: 8px;
+  }
+  .summary h3 {
+    font-size: 16px;
+    color: #0F5132;
+    margin-bottom: 10px;
+    font-weight: 700;
+  }
+  .summary p {
+    font-size: 13px;
+    line-height: 1.7;
+    color: #374151;
+  }
+  .summary strong { color: #0F5132; font-weight: 600; }
+
+  /* Verdict strip */
+  .verdicts {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 28px;
+  }
+  .verdict {
+    padding: 14px 16px;
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+  }
+  .verdict h4 {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .verdict p {
+    font-size: 11px;
+    color: #6b7280;
+    line-height: 1.5;
+  }
+  .verdict.good { border-top: 3px solid #0F5132; }
+  .verdict.good h4 { color: #0F5132; }
+  .verdict.mid { border-top: 3px solid #f59e0b; }
+  .verdict.mid h4 { color: #b45309; }
+  .verdict.poor { border-top: 3px solid #ef4444; }
+  .verdict.poor h4 { color: #b91c1c; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>سند — مدى الفائدة لكل شريحة مستخدمين</h1>
+  <p class="subtitle">كلما اشتد اللون الأخضر، زادت أهمية المنصة لهذه الشريحة في الاستخدام اليومي</p>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-swatch" style="background:#0F5132"></div>أساسي يومياً</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#2D8B57"></div>مفيد جداً</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#7BC093"></div>ثانوي</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#D1E7D8"></div>هامشي</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#EDF5EF"></div>نادراً</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#f3f4f6"></div>لا يستخدم</div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th></th>
+        <th class="cap">إدارة القضايا<br>والعملاء</th>
+        <th class="cap">تتبع الامتثال<br>والتجديدات</th>
+        <th class="cap">الفوترة<br>وساعات العمل</th>
+        <th class="cap">الموجز اليومي<br>للأنظمة</th>
+        <th class="cap">إدارة المستندات<br>والعقود</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="persona">
+          محامٍ خاص / مستقل
+          <div class="persona-sub">مكتب فردي أو صغير</div>
+        </td>
+        <td class="cell s5"><span class="score-num">5</span><span class="score-label">أساسي</span></td>
+        <td class="cell s5"><span class="score-num">5</span><span class="score-label">أساسي</span></td>
+        <td class="cell s5"><span class="score-num">5</span><span class="score-label">أساسي</span></td>
+        <td class="cell s5"><span class="score-num">5</span><span class="score-label">أساسي</span></td>
+        <td class="cell s5"><span class="score-num">5</span><span class="score-label">أساسي</span></td>
+      </tr>
+      <tr>
+        <td class="persona">
+          محلل قانوني / استشاري
+          <div class="persona-sub">في شركة أو دائرة حكومية</div>
+        </td>
+        <td class="cell s4"><span class="score-num">4</span><span class="score-label">مفيد</span></td>
+        <td class="cell s4"><span class="score-num">4</span><span class="score-label">مفيد</span></td>
+        <td class="cell s2"><span class="score-num">2</span><span class="score-label">هامشي</span></td>
+        <td class="cell s5"><span class="score-num">5</span><span class="score-label">أساسي</span></td>
+        <td class="cell s4"><span class="score-num">4</span><span class="score-label">مفيد</span></td>
+      </tr>
+      <tr>
+        <td class="persona">
+          طالب حقوق
+          <div class="persona-sub">سنة تحضيرية أو تميز</div>
+        </td>
+        <td class="cell s2"><span class="score-num">2</span><span class="score-label">هامشي</span></td>
+        <td class="cell s2"><span class="score-num">2</span><span class="score-label">هامشي</span></td>
+        <td class="cell s1"><span class="score-num">1</span><span class="score-label">نادراً</span></td>
+        <td class="cell s5"><span class="score-num">5</span><span class="score-label">أساسي</span></td>
+        <td class="cell s3"><span class="score-num">3</span><span class="score-label">ثانوي</span></td>
+      </tr>
+      <tr>
+        <td class="persona">
+          مواطن / شخص عام
+          <div class="persona-sub">صاحب منشأة صغيرة أو موظف</div>
+        </td>
+        <td class="cell s1"><span class="score-num">1</span><span class="score-label">نادراً</span></td>
+        <td class="cell s3"><span class="score-num">3</span><span class="score-label">ثانوي</span></td>
+        <td class="cell s0"><span class="score-num">0</span><span class="score-label">لا يستخدم</span></td>
+        <td class="cell s4"><span class="score-num">4</span><span class="score-label">مفيد</span></td>
+        <td class="cell s1"><span class="score-num">1</span><span class="score-label">نادراً</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="summary">
+    <h3>الخلاصة الاستراتيجية</h3>
+    <p>
+      <strong>سند ليس منصة عامة.</strong> النموذج الحالي مبني خصيصاً للمحامين المستقلين والمكاتب الصغيرة — وكل ميزة فيه تخدم هذه الشريحة بدرجة &quot;أساسي&quot;.
+      <br><br>
+      المحلل القانوني يستفيد من 4 من 5 ميزات لكن الفوترة لا تهمه (موظف). الطالب يجد قيمة كبيرة فقط في <strong>الموجز اليومي</strong> (متابعة الأنظمة للدراسة والامتياز). المواطن العادي يستفيد فقط من <strong>الموجز</strong> و<strong>الامتثال الشخصي</strong> (إقامته، رخصته، تجديد سيارته) — وكل ما عدا ذلك لا يخصه.
+    </p>
+  </div>
+
+  <div class="verdicts">
+    <div class="verdict good">
+      <h4>محامٍ خاص ✓</h4>
+      <p>العميل المثالي. كل ميزة تخدم احتياجاً يومياً حقيقياً. لو اخترت شريحة واحدة فقط — هذه هي.</p>
+    </div>
+    <div class="verdict good">
+      <h4>محلل قانوني ✓</h4>
+      <p>عميل ثانوي قوي. عرّض نسخة &quot;Enterprise&quot; بدون الفوترة، مع تركيز أقوى على تحليل الأنظمة.</p>
+    </div>
+    <div class="verdict mid">
+      <h4>طالب حقوق ~</h4>
+      <p>فقط الموجز اليومي يهمه. خيار: صفحة هبوط مجانية (&quot;Sanad Daily&quot;) تستهدف الطلاب كقمع تسويقي للمحامين المستقبليين.</p>
+    </div>
+    <div class="verdict poor">
+      <h4>شخص عام ✗</h4>
+      <p>لا تستهدفه. المنصة معقدة عليه. لو أردت خدمة المواطن — منتج منفصل تماماً (&quot;مواطن&quot;) بتركيز واحد: تذكيرات الإقامة والرخصة.</p>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
