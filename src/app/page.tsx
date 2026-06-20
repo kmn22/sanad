@@ -2,30 +2,21 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useTheme } from 'next-themes'
-import { Moon, Sun, Shield, RefreshCw } from 'lucide-react'
+import { Moon, Sun, RefreshCw, Languages } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Toaster as SonnerToaster } from '@/components/ui/sonner'
+import { useLang } from '@/lib/sanad/i18n'
 import { DashboardView } from '@/components/sanad/DashboardView'
 import { ComplianceView } from '@/components/sanad/ComplianceView'
 import { CasesView } from '@/components/sanad/CasesView'
 import { DeepWorkView } from '@/components/sanad/DeepWorkView'
 import { TasksView } from '@/components/sanad/TasksView'
 import { DocumentsView } from '@/components/sanad/DocumentsView'
-import type { DashboardData, ComplianceItem, LegalCase, LegalDocument, Task, TimeEntry } from '@/lib/sanad/types'
+import type { DashboardData } from '@/lib/sanad/types'
 
 type View = 'dashboard' | 'compliance' | 'cases' | 'deepwork' | 'tasks' | 'documents'
 
-const NAV: { key: View; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { key: 'dashboard', label: 'Dashboard', icon: Shield },
-  { key: 'compliance', label: 'Compliance', icon: Shield },
-  { key: 'cases', label: 'Cases', icon: Shield },
-  { key: 'deepwork', label: 'Deep Work', icon: Shield },
-  { key: 'tasks', label: 'Tasks', icon: Shield },
-  { key: 'documents', label: 'Documents', icon: Shield },
-]
-
-// Icons per nav (kept simple)
-const ICONS: Record<View, React.ComponentType<{ className?: string }>> = {
+const NAV_ICONS: Record<View, React.ComponentType<{ className?: string }>> = {
   dashboard: (props) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
       <rect x="3" y="3" width="7" height="9" rx="1" />
@@ -79,16 +70,10 @@ const ICONS: Record<View, React.ComponentType<{ className?: string }>> = {
   ),
 }
 
-const NAV_LABELS: Record<View, string> = {
-  dashboard: 'Dashboard',
-  compliance: 'Compliance',
-  cases: 'Case Board',
-  deepwork: 'Deep Work',
-  tasks: 'Tasks',
-  documents: 'Documents',
-}
+const NAV_KEYS: View[] = ['dashboard', 'compliance', 'cases', 'deepwork', 'tasks', 'documents']
 
 export default function Home() {
+  const { lang, t, toggle: toggleLang } = useLang()
   const [view, setView] = useState<View>('dashboard')
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -96,11 +81,8 @@ export default function Home() {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  useEffect(() => { setMounted(true) }, [])
 
-  // Register service worker on mount
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {})
@@ -120,17 +102,16 @@ export default function Home() {
     }
   }, [])
 
-  useEffect(() => {
-    refresh()
-  }, [refresh, refreshKey])
-
+  useEffect(() => { refresh() }, [refresh, refreshKey])
   const onChange = () => setRefreshKey((k) => k + 1)
 
   const now = new Date()
-  const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+  const timeLocale = lang === 'ar' ? 'ar-SA' : 'en-GB'
+  const timeStr = now.toLocaleTimeString(timeLocale, { hour: '2-digit', minute: '2-digit' })
+  const dateStr = now.toLocaleDateString(timeLocale, { weekday: 'short', day: 'numeric', month: 'short' })
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <SonnerToaster position="top-right" richColors closeButton />
 
       {/* Top bar */}
@@ -138,24 +119,33 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-3">
-              {/* Logo */}
               <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-primary text-primary-foreground grid place-items-center font-semibold text-sm">
+                <div className="h-8 w-8 rounded-lg bg-primary text-primary-foreground grid place-items-center font-semibold text-base">
                   س
                 </div>
                 <div className="leading-tight">
-                  <p className="text-sm font-semibold tracking-tight">Sanad</p>
-                  <p className="text-[10px] text-muted-foreground hidden sm:block">سند — Daily Operations</p>
+                  <p className="text-sm font-semibold tracking-tight">{t('brand.name')}</p>
+                  <p className="text-[10px] text-muted-foreground hidden sm:block">{t('brand.tagline')}</p>
                 </div>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               <span className="hidden sm:inline text-xs text-muted-foreground tabular-nums">
-                {timeStr} • {now.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
+                {timeStr} • {dateStr}
               </span>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setRefreshKey((k) => k + 1)} title="Refresh">
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setRefreshKey((k) => k + 1)} title={t('common.refresh')}>
                 <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1 px-2"
+                onClick={toggleLang}
+                title="Language / اللغة"
+              >
+                <Languages className="h-3.5 w-3.5" />
+                <span className="text-xs font-medium">{lang === 'ar' ? 'EN' : 'ع'}</span>
               </Button>
               {mounted && (
                 <Button
@@ -163,13 +153,13 @@ export default function Home() {
                   size="sm"
                   className="h-8 w-8 p-0"
                   onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                  title="Toggle theme"
+                  title={t('common.theme')}
                 >
                   {theme === 'dark' ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
                 </Button>
               )}
               <div className="h-7 w-7 rounded-full bg-primary/15 text-primary grid place-items-center text-xs font-medium">
-                A
+                أ
               </div>
             </div>
           </div>
@@ -179,8 +169,8 @@ export default function Home() {
       {/* Mobile nav (horizontal scroll) */}
       <nav className="lg:hidden border-b border-border bg-background sticky top-14 z-30">
         <div className="flex items-center gap-1 px-4 overflow-x-auto scroll-thin">
-          {(Object.keys(NAV_LABELS) as View[]).map((v) => {
-            const Icon = ICONS[v]
+          {NAV_KEYS.map((v) => {
+            const Icon = NAV_ICONS[v]
             return (
               <button
                 key={v}
@@ -190,7 +180,7 @@ export default function Home() {
                 }`}
               >
                 <Icon className="h-3.5 w-3.5" />
-                {NAV_LABELS[v]}
+                {t(`nav.${v}`)}
               </button>
             )
           })}
@@ -201,8 +191,8 @@ export default function Home() {
         {/* Sidebar nav (desktop) */}
         <aside className="hidden lg:block w-56 shrink-0">
           <nav className="sticky top-20 space-y-1">
-            {(Object.keys(NAV_LABELS) as View[]).map((v) => {
-              const Icon = ICONS[v]
+            {NAV_KEYS.map((v) => {
+              const Icon = NAV_ICONS[v]
               return (
                 <button
                   key={v}
@@ -214,14 +204,14 @@ export default function Home() {
                   }`}
                 >
                   <Icon className="h-4 w-4" />
-                  {NAV_LABELS[v]}
+                  {t(`nav.${v}`)}
                   {v === 'tasks' && data && data.stats.openTasks > 0 && (
-                    <span className="ml-auto text-[10px] bg-primary/15 text-primary rounded-full px-1.5 py-0.5 font-semibold">
+                    <span className="ms-auto text-[10px] bg-primary/15 text-primary rounded-full px-1.5 py-0.5 font-semibold">
                       {data.stats.openTasks}
                     </span>
                   )}
                   {v === 'compliance' && data && data.stats.expiringCompliance > 0 && (
-                    <span className="ml-auto text-[10px] bg-amber-500/15 text-amber-700 dark:text-amber-400 rounded-full px-1.5 py-0.5 font-semibold">
+                    <span className="ms-auto text-[10px] bg-amber-500/15 text-amber-700 dark:text-amber-400 rounded-full px-1.5 py-0.5 font-semibold">
                       {data.stats.expiringCompliance}
                     </span>
                   )}
@@ -231,9 +221,9 @@ export default function Home() {
 
             <div className="pt-4 mt-4 border-t border-border">
               <p className="text-[10px] text-muted-foreground px-3 leading-relaxed">
-                PWA-enabled. Install to desktop for daily access.
+                {t('common.pwa_note')}
                 <br /><br />
-                Timer &amp; UI state cached locally — minimal server load.
+                {t('common.cache_note')}
               </p>
             </div>
           </nav>
@@ -255,18 +245,14 @@ export default function Home() {
               {view === 'compliance' && <ComplianceView items={data.compliance.all} onChange={onChange} />}
               {view === 'cases' && <CasesView cases={data.cases.all} onChange={onChange} />}
               {view === 'deepwork' && (
-                <DeepWorkView
-                  cases={data.cases.all}
-                  timeEntries={data.timeEntries}
-                  onChange={onChange}
-                />
+                <DeepWorkView cases={data.cases.all} timeEntries={data.timeEntries} onChange={onChange} />
               )}
               {view === 'tasks' && <TasksView tasks={data.tasks.all} cases={data.cases.all} onChange={onChange} />}
               {view === 'documents' && <DocumentsView documents={data.documents.all} cases={data.cases.all} onChange={onChange} />}
             </>
           ) : (
             <div className="text-center py-12 text-sm text-muted-foreground">
-              Failed to load data. <Button variant="link" onClick={() => setRefreshKey(k => k + 1)}>Retry</Button>
+              {t('dash.failed_load')} <Button variant="link" onClick={() => setRefreshKey(k => k + 1)}>{t('dash.retry')}</Button>
             </div>
           )}
         </main>
@@ -276,10 +262,10 @@ export default function Home() {
       <footer className="mt-auto border-t border-border bg-background">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
-            <p>Sanad — Operational dashboard for Saudi legal &amp; SME professionals</p>
+            <p>{t('common.footer_left')}</p>
             <p className="flex items-center gap-2">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Home-server optimized · PWA enabled
+              {t('common.footer_right')}
             </p>
           </div>
         </div>

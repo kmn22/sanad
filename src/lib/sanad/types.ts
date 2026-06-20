@@ -110,28 +110,34 @@ export function daysUntil(dateStr: string | Date): number {
   return Math.round((target.getTime() - now.getTime()) / (24 * 60 * 60 * 1000))
 }
 
-export function formatDate(dateStr: string | Date | null): string {
+export function formatDate(dateStr: string | Date | null, lang: 'ar' | 'en' = 'ar'): string {
   if (!dateStr) return '—'
   const d = typeof dateStr === 'string' ? new Date(dateStr) : dateStr
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+  const locale = lang === 'ar' ? 'ar-SA' : 'en-GB'
+  return d.toLocaleDateString(locale, { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-export function formatDuration(sec: number): string {
+export function formatDuration(sec: number, lang: 'ar' | 'en' = 'ar'): string {
   const h = Math.floor(sec / 3600)
   const m = Math.floor((sec % 3600) / 60)
   const s = sec % 60
-  if (h > 0) return `${h}h ${m.toString().padStart(2, '0')}m`
-  if (m > 0) return `${m}m ${s.toString().padStart(2, '0')}s`
-  return `${s}s`
+  // Use Arabic-Indic digits when lang=ar for a more native feel
+  const fmt = (n: number) => lang === 'ar' ? n.toLocaleString('ar-EG') : n.toString()
+  if (h > 0) return `${fmt(h)}${lang === 'ar' ? 'س ' : 'h '}${fmt(m).padStart(lang === 'ar' ? 2 : 2, lang === 'ar' ? '٠' : '0')}${lang === 'ar' ? 'د' : 'm'}`
+  if (m > 0) return `${fmt(m)}${lang === 'ar' ? 'د ' : 'm '}${fmt(s).padStart(lang === 'ar' ? 2 : 2, lang === 'ar' ? '٠' : '0')}${lang === 'ar' ? 'ث' : 's'}`
+  return `${fmt(s)}${lang === 'ar' ? 'ث' : 's'}`
 }
 
-export function formatSAR(n: number): string {
-  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(n) + ' SAR'
+export function formatSAR(n: number, lang: 'ar' | 'en' = 'ar'): string {
+  const locale = lang === 'ar' ? 'ar-SA' : 'en-US'
+  const num = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(n)
+  return lang === 'ar' ? `${num} ر.س` : `${num} SAR`
 }
 
-export function formatHijri(date: Date): string {
+export function formatHijri(date: Date, lang: 'ar' | 'en' = 'ar'): string {
   try {
-    return new Intl.DateTimeFormat('en-SA-u-ca-islamic-umalqura', {
+    const locale = lang === 'ar' ? 'ar-SA-u-ca-islamic-umalqura' : 'en-SA-u-ca-islamic-umalqura'
+    return new Intl.DateTimeFormat(locale, {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
@@ -141,53 +147,44 @@ export function formatHijri(date: Date): string {
   }
 }
 
-// ---- Display maps ----
+// ---- Display maps (colors only — labels come from i18n via t('cat.ikama') etc.) ----
 
-export const COMPLIANCE_LABELS: Record<string, { label: string; color: string }> = {
-  ikama: { label: 'Iqama', color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200' },
-  cr: { label: 'Commercial Reg.', color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200' },
-  contract: { label: 'Contract', color: 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200' },
-  license: { label: 'License', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200' },
-  tax: { label: 'Tax', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-200' },
-  gosi: { label: 'GOSI', color: 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-200' },
+export const COMPLIANCE_COLORS: Record<string, string> = {
+  ikama: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200',
+  cr: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200',
+  contract: 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200',
+  license: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200',
+  tax: 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-200',
+  gosi: 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-200',
 }
 
-export const CASE_STAGE_LABELS: Record<string, { label: string; accent: string }> = {
-  drafting: { label: 'Drafting', accent: 'border-t-amber-400' },
-  client_review: { label: 'Client Review', accent: 'border-t-purple-400' },
-  filed: { label: 'Filed', accent: 'border-t-emerald-400' },
-  closed: { label: 'Closed', accent: 'border-t-muted-foreground' },
+export const CASE_STAGE_ACCENTS: Record<string, string> = {
+  drafting: 'border-t-amber-400',
+  client_review: 'border-t-purple-400',
+  filed: 'border-t-emerald-400',
+  closed: 'border-t-muted-foreground',
 }
 
-export const PRIORITY_LABELS: Record<string, { label: string; color: string; dot: string }> = {
-  low: { label: 'Low', color: 'bg-muted text-muted-foreground', dot: 'bg-muted-foreground' },
-  normal: { label: 'Normal', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200', dot: 'bg-emerald-500' },
-  high: { label: 'High', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200', dot: 'bg-amber-500' },
-  urgent: { label: 'Urgent', color: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200', dot: 'bg-rose-500' },
+export const PRIORITY_COLORS: Record<string, { color: string; dot: string }> = {
+  low: { color: 'bg-muted text-muted-foreground', dot: 'bg-muted-foreground' },
+  normal: { color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200', dot: 'bg-emerald-500' },
+  high: { color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200', dot: 'bg-amber-500' },
+  urgent: { color: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200', dot: 'bg-rose-500' },
 }
 
-export const DOC_STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  draft: { label: 'Draft', color: 'bg-muted text-muted-foreground' },
-  sent: { label: 'Sent for Signature', color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200' },
-  active: { label: 'Active', color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200' },
-  expiring: { label: 'Expiring', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-200' },
-  expired: { label: 'Expired', color: 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200' },
+export const DOC_STATUS_COLORS: Record<string, string> = {
+  draft: 'bg-muted text-muted-foreground',
+  sent: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200',
+  active: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200',
+  expiring: 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-200',
+  expired: 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200',
 }
 
-export const DOC_TYPE_LABELS: Record<string, string> = {
-  nda: 'NDA',
-  employment: 'Employment',
-  non_compete: 'Non-Compete',
-  msa: 'MSA / Settlement',
-  subcontract: 'Subcontract',
-  policy: 'Policy',
-}
-
-export const SOURCE_LABELS: Record<string, { label: string; color: string }> = {
-  MoJ: { label: 'Ministry of Justice', color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200' },
-  MHRSD: { label: 'MHRSD', color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200' },
-  VAT: { label: 'ZATCA', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-200' },
-  local_tip: { label: 'Local Tip', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200' },
+export const SOURCE_COLORS: Record<string, string> = {
+  MoJ: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200',
+  MHRSD: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200',
+  VAT: 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-200',
+  local_tip: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200',
 }
 
 export function getDaysUntilColor(days: number, notifyDays: number = 30): string {
