@@ -1,0 +1,110 @@
+// Sanad — operational legal/SME dashboard
+// Persistent data lives here. UI prefs, timer state, and daily todos
+// live in localStorage to keep the home server load minimal.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      String   @default("lawyer") // lawyer | sme_owner | hr | freelancer
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Compliance Tracker — Iqama, CR, employee contracts, licenses
+model ComplianceItem {
+  id          String   @id @default(cuid())
+  title       String
+  category    String   // iqama | cr | contract | license | tax | gosi
+  entityName  String   // employee name, company name, etc.
+  issueDate   DateTime
+  expiryDate  DateTime
+  status      String   @default("active") // active | expiring | expired | renewed
+  notes       String?
+  notifyDays  Int      @default(30)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Case Kanban — Drafting / Client Review / Filed / Closed
+model LegalCase {
+  id          String   @id @default(cuid())
+  title       String
+  clientName  String
+  caseType    String   // litigation | contract | consultation | ip | corporate
+  stage       String   @default("drafting") // drafting | client_review | filed | closed
+  priority    String   @default("normal") // low | normal | high | urgent
+  dueDate     DateTime?
+  value       Float?   // estimated value / billing amount
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  timeEntries TimeEntry[]
+}
+
+// Document Lifecycle
+model LegalDocument {
+  id           String   @id @default(cuid())
+  title        String
+  docType      String   // nda | employment | non_compete | msa | subcontract | policy
+  status       String   @default("draft") // draft | sent | active | expiring | expired
+  parties      String
+  signedDate   DateTime?
+  expiryDate   DateTime?
+  caseId       String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Tasks — manual and auto-generated from doc lifecycle events
+model Task {
+  id           String   @id @default(cuid())
+  title        String
+  description  String?
+  status       String   @default("todo") // todo | in_progress | done
+  priority     String   @default("normal") // low | normal | high
+  dueDate      DateTime?
+  relatedDoc   String?  // doc title if auto-generated
+  caseId       String?
+  autoGen      Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Billable hours + focus sessions
+model TimeEntry {
+  id           String   @id @default(cuid())
+  caseId       String?
+  description  String
+  durationSec  Int
+  billable     Boolean  @default(false)
+  hourlyRate   Float?
+  sessionType  String   @default("focus") // focus | billable | meeting
+  date         DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  case         LegalCase? @relation(fields: [caseId], references: [id], onDelete: SetNull)
+}
+
+// Daily Brief — micro feed of MoJ/MHRSD updates
+model DailyBrief {
+  id          String   @id @default(cuid())
+  title       String
+  summary     String
+  source      String   // MoJ | MHRSD | VAT | local_tip
+  category    String   // regulation | labor | tax | corporate | ip
+  url         String?
+  publishedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+}
