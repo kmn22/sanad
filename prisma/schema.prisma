@@ -15,9 +15,29 @@ model User {
   id        String   @id @default(cuid())
   email     String   @unique
   name      String?
-  role      String   @default("lawyer") // lawyer | sme_owner | hr | freelancer
+  role      String   @default("lawyer") // lawyer | sme_owner | hr | freelancer | student
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ===== Client management (CRM) =====
+model Client {
+  id          String   @id @default(cuid())
+  name        String
+  type        String   @default("individual") // individual | corporate
+  phone       String?
+  email       String?
+  nationalId  String?  // هوية وطنية أو سجل تجاري
+  address     String?
+  company     String?  // company name if corporate
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  cases         LegalCase[]
+  documents     LegalDocument[]
+  communications Communication[]
+  invoices      Invoice[]
 }
 
 // Compliance Tracker — Iqama, CR, employee contracts, licenses
@@ -39,32 +59,43 @@ model ComplianceItem {
 model LegalCase {
   id          String   @id @default(cuid())
   title       String
-  clientName  String
+  clientId    String?
+  clientName  String   // kept for backwards compat / display
   caseType    String   // litigation | contract | consultation | ip | corporate
   stage       String   @default("drafting") // drafting | client_review | filed | closed
   priority    String   @default("normal") // low | normal | high | urgent
   dueDate     DateTime?
+  hearingDate DateTime? // next court hearing
   value       Float?   // estimated value / billing amount
+  caseNumber  String?  // رقم القضية في المحكمة
+  court       String?  // المحكمة
+  opposingParty String? // الخصم
   notes       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  timeEntries TimeEntry[]
+  client        Client?          @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  timeEntries   TimeEntry[]
+  communications Communication[]
+  invoices      Invoice[]
 }
 
 // Document Lifecycle
 model LegalDocument {
   id           String   @id @default(cuid())
   title        String
-  docType      String   // nda | employment | non_compete | msa | subcontract | policy
+  docType      String   // nda | employment | non_compete | msa | subcontract | policy | pleading | contract_draft | court_filing
   status       String   @default("draft") // draft | sent | active | expiring | expired
   parties      String
   signedDate   DateTime?
   expiryDate   DateTime?
   caseId       String?
+  clientId     String?
   notes        String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  client      Client?     @relation(fields: [clientId], references: [id], onDelete: SetNull)
 }
 
 // Tasks — manual and auto-generated from doc lifecycle events
@@ -90,11 +121,14 @@ model TimeEntry {
   durationSec  Int
   billable     Boolean  @default(false)
   hourlyRate   Float?
-  sessionType  String   @default("focus") // focus | billable | meeting
+  invoiced     Boolean  @default(false) // true once attached to an invoice
+  invoiceId    String?  // link to invoice
+  sessionType  String   @default("focus") // focus | billable | meeting | break
   date         DateTime @default(now())
   createdAt    DateTime @default(now())
 
   case         LegalCase? @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  invoice      Invoice?   @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
 }
 
 // Daily Brief — micro feed of MoJ/MHRSD updates
@@ -109,17 +143,57 @@ model DailyBrief {
   createdAt   DateTime @default(now())
 }
 
+// ===== Invoicing =====
+model Invoice {
+  id          String   @id @default(cuid())
+  number      String   @unique // INV-2026-001
+  clientId    String?
+  caseId      String?
+  issueDate   DateTime @default(now())
+  dueDate     DateTime?
+  status      String   @default("draft") // draft | sent | paid | overdue | cancelled
+  subtotal    Float    @default(0)
+  vatRate     Float    @default(15) // Saudi VAT
+  vatAmount   Float    @default(0)
+  total       Float    @default(0)
+  paidAmount  Float    @default(0)
+  paidAt      DateTime?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  client      Client?      @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  case        LegalCase?   @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  timeEntries TimeEntry[]
+}
+
+// ===== Communications log =====
+model Communication {
+  id          String   @id @default(cuid())
+  clientId    String?
+  caseId      String?
+  type        String   // call | email | meeting | sms | note
+  direction   String   @default("outgoing") // incoming | outgoing
+  subject     String
+  body        String
+  durationMin Int?     // for calls/meetings
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  client      Client?      @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  case        LegalCase?   @relation(fields: [caseId], references: [id], onDelete: SetNull)
+}
+
 // ===== Student mode tables =====
 
-// Courses / subjects a law student is enrolled in
 model Course {
   id          String   @id @default(cuid())
-  title       String   // e.g. "النظرية العامة للالتزام"
-  code        String?  // course code, e.g. "LAW 301"
+  title       String
+  code        String?
   instructor  String?
-  semester    String?  // e.g. "الفصل الأول 1447هـ"
+  semester    String?
   credits     Int?
-  color       String   @default("#0F5132") // for visual tagging
+  color       String   @default("#0F5132")
   notes       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -128,32 +202,30 @@ model Course {
   deadlines   AcademicDeadline[]
 }
 
-// Lecture notes — one entry per lecture session
 model Lecture {
   id          String   @id @default(cuid())
   courseId    String
-  title       String   // e.g. "محاضرة 5: أسباب انعدام الأهلية"
+  title       String
   lectureDate DateTime
-  topic       String?  // sub-topic covered
-  notes       String   // markdown / rich text
-  attachments String?  // comma-separated file paths (optional)
-  status      String   @default("draft") // draft | reviewed | mastered
+  topic       String?
+  notes       String
+  attachments String?
+  status      String   @default("draft")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 }
 
-// Academic deadlines — assignments, exams, mooting, presentations
 model AcademicDeadline {
   id          String   @id @default(cuid())
   courseId    String?
-  title       String   // "تسليم بحث العقود"
-  type        String   // assignment | exam | mooting | presentation | registration
+  title       String
+  type        String
   dueDate     DateTime
-  status      String   @default("todo") // todo | in_progress | submitted | done
-  priority    String   @default("normal") // low | normal | high | urgent
-  weight      Float?   // % of final grade
+  status      String   @default("todo")
+  priority    String   @default("normal")
+  weight      Float?
   notes       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -161,46 +233,42 @@ model AcademicDeadline {
   course      Course?  @relation(fields: [courseId], references: [id], onDelete: SetNull)
 }
 
-// Legal terms bank — vocabulary student collects
 model LegalTerm {
   id          String   @id @default(cuid())
   term        String   @unique
   definition  String
-  category    String   @default("general") // general | civil | criminal | commercial | administrative | constitutional | procedural | family
-  origin      String?  // source law/system (e.g. "القانون المدني السعودي")
-  example     String?  // usage example
-  mastery     String   @default("learning") // learning | familiar | mastered
+  category    String   @default("general")
+  origin      String?
+  example     String?
+  mastery     String   @default("learning")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
-// Casebook — judicial principles, precedents, landmark cases
 model CaseEntry {
   id            String   @id @default(cuid())
-  caseName      String   // "قضية الدوسري ضد شركة..."
-  citation      String?  // reference number / year
-  court         String?  // "محكمة الاستئناف بالرياض"
-  principle     String   // the legal principle established
-  subject       String   // category (civil | criminal | ...)
-  summary       String?  // brief facts + holding
-  significance  String?  // why this case matters (for study)
-  rating        Int      @default(3) // 1-5 importance
+  caseName      String
+  citation      String?
+  court         String?
+  principle     String
+  subject       String
+  summary       String?
+  significance  String?
+  rating        Int      @default(3)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
 
-// ===== Smart Review system =====
-// Tracks each review session: which mode, how many cards, score, duration
 model ReviewSession {
   id           String   @id @default(cuid())
-  mode         String   // flashcards | quiz
-  sourceType   String   // all | terms | cases | lectures | course:{id} | subject:{value}
-  sourceLabel  String   // human-readable label, e.g. "النظرية العامة للالتزام"
+  mode         String
+  sourceType   String
+  sourceLabel  String
   cardCount    Int
   correctCount Int      @default(0)
   reviewedCount Int     @default(0)
   durationSec  Int      @default(0)
-  score        Float?   // 0-100 percentage
+  score        Float?
   date         DateTime @default(now())
   createdAt    DateTime @default(now())
 }

@@ -21,13 +21,19 @@ export interface ComplianceItem {
 export interface LegalCase {
   id: string
   title: string
+  clientId: string | null
   clientName: string
   caseType: string
   stage: string
   priority: string
   dueDate: string | null
+  hearingDate: string | null
   value: number | null
+  caseNumber: string | null
+  court: string | null
+  opposingParty: string | null
   notes: string | null
+  client?: { id: string; name: string } | null
 }
 
 export interface LegalDocument {
@@ -90,6 +96,14 @@ export interface DashboardData {
     billableTodaySec: number
     focusTodaySec: number
     billableTodaySAR: number
+    // New stats
+    totalClients: number
+    outstandingInvoices: number
+    outstandingSAR: number
+    paidThisMonthSAR: number
+    uninvoicedSec: number
+    uninvoicedSAR: number
+    communicationsToday: number
   }
   compliance: { expiringSoon: ComplianceItem[]; expired: ComplianceItem[]; all: ComplianceItem[] }
   cases: { active: LegalCase[]; urgent: LegalCase[]; all: LegalCase[] }
@@ -97,6 +111,63 @@ export interface DashboardData {
   tasks: { open: Task[]; overdue: Task[]; today: Task[]; all: Task[] }
   briefs: DailyBrief[]
   timeEntries: TimeEntry[]
+  // New collections
+  clients: Client[]
+  invoices: Invoice[]
+  communications: Communication[]
+}
+
+// ===== Client / Invoice / Communication types =====
+
+export interface Client {
+  id: string
+  name: string
+  type: string // individual | corporate
+  phone: string | null
+  email: string | null
+  nationalId: string | null
+  address: string | null
+  company: string | null
+  notes: string | null
+  createdAt: string
+  _count?: { cases: number; invoices: number; communications: number }
+  cases?: LegalCase[]
+  invoices?: Invoice[]
+  communications?: Communication[]
+}
+
+export interface Invoice {
+  id: string
+  number: string
+  clientId: string | null
+  caseId: string | null
+  issueDate: string
+  dueDate: string | null
+  status: string // draft | sent | paid | overdue | cancelled
+  subtotal: number
+  vatRate: number
+  vatAmount: number
+  total: number
+  paidAmount: number
+  paidAt: string | null
+  notes: string | null
+  client?: { id: string; name: string; company: string | null } | null
+  case?: { id: string; title: string } | null
+  _count?: { timeEntries: number }
+}
+
+export interface Communication {
+  id: string
+  clientId: string | null
+  caseId: string | null
+  type: string // call | email | meeting | sms | note
+  direction: string // incoming | outgoing
+  subject: string
+  body: string
+  durationMin: number | null
+  date: string
+  client?: { id: string; name: string } | null
+  case?: { id: string; title: string } | null
 }
 
 // ===== Student types =====

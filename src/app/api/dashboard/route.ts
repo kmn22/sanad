@@ -6,13 +6,16 @@ export async function GET() {
   const now = new Date()
   const in30 = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
 
-  const [complianceItems, cases, documents, tasks, briefs, timeEntries] = await Promise.all([
+  const [complianceItems, cases, documents, tasks, briefs, timeEntries, clients, invoices, communications] = await Promise.all([
     db.complianceItem.findMany({ orderBy: { expiryDate: 'asc' } }),
-    db.legalCase.findMany({ orderBy: { updatedAt: 'desc' } }),
+    db.legalCase.findMany({ orderBy: { updatedAt: 'desc' }, include: { client: { select: { id: true, name: true } } } }),
     db.legalDocument.findMany({ orderBy: { updatedAt: 'desc' } }),
     db.task.findMany({ orderBy: { dueDate: 'asc' } }),
     db.dailyBrief.findMany({ orderBy: { publishedAt: 'desc' }, take: 6 }),
     db.timeEntry.findMany({ orderBy: { date: 'desc' }, take: 30, include: { case: true } }),
+    db.client.findMany({ include: { _count: { select: { cases: true, invoices: true, communications: true } } }, orderBy: { createdAt: 'desc' } }),
+    db.invoice.findMany({ include: { client: { select: { name: true, company: true } }, case: { select: { title: true } } }, orderBy: { createdAt: 'desc' } }),
+    db.communication.findMany({ include: { client: { select: { name: true } }, case: { select: { title: true } } }, orderBy: { date: 'desc' }, take: 20 }),
   ])
 
   // Computed stats for the morning dashboard
@@ -48,6 +51,20 @@ export async function GET() {
     .filter((t) => t.billable)
     .reduce((sum, t) => sum + (t.durationSec / 3600) * (t.hourlyRate || 0), 0)
 
+  // Invoice stats
+  const outstandingInvoices = invoices.filter((i) => i.status === 'sent' || i.status === 'overdue')
+  const outstandingSAR = outstandingInvoices.reduce((s, i) => s + (i.total - (i.paidAmount || 0)), 0)
+  const paidThisMonthSAR = invoices
+    .filter((i) => i.status === 'paid' && i.paidAt && new Date(i.paidAt).getMonth() === now.getMonth())
+    .reduce((s, i) => s + (i.paidAmount || 0), 0)
+  const uninvoicedSec = timeEntries.filter((t) => t.billable && !t.invoiced).reduce((s, t) => s + t.durationSec, 0)
+  const uninvoicedSAR = timeEntries
+    .filter((t) => t.billable && !t.invoiced)
+    .reduce((s, t) => s + (t.durationSec / 3600) * (t.hourlyRate || 0), 0)
+
+  // Communications stats
+  const commToday = communications.filter((c) => new Date(c.date).toDateString() === today)
+
   return NextResponse.json({
     stats: {
       expiringCompliance: expiringSoon.length,
@@ -62,6 +79,14 @@ export async function GET() {
       billableTodaySec,
       focusTodaySec,
       billableTodaySAR,
+      // New stats
+      totalClients: clients.length,
+      outstandingInvoices: outstandingInvoices.length,
+      outstandingSAR,
+      paidThisMonthSAR,
+      uninvoicedSec,
+      uninvoicedSAR,
+      communicationsToday: commToday.length,
     },
     compliance: { expiringSoon, expired, all: complianceItems },
     cases: { active: activeCases, urgent: urgentCases, all: cases },
@@ -69,5 +94,10 @@ export async function GET() {
     tasks: { open: openTasks, overdue: overdueTasks, today: todayTasks, all: tasks },
     briefs,
     timeEntries,
+    // New collections
+    clients,
+    invoices,
+    communications,
   })
 }
+
