@@ -30,6 +30,7 @@ const translations: Record<Lang, Record<string, string>> = {
 
     // Nav
     'nav.dashboard': 'لوحة التحكم',
+    'nav.today': 'اليوم',
     'nav.compliance': 'الامتثال',
     'nav.cases': 'لوحة القضايا',
     'nav.deepwork': 'العمل العميق',
@@ -621,6 +622,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'greeting.evening': 'Good evening, Ahmed.',
 
     'nav.dashboard': 'Dashboard',
+    'nav.today': 'Today',
     'nav.compliance': 'Compliance',
     'nav.cases': 'Case Board',
     'nav.deepwork': 'Deep Work',
