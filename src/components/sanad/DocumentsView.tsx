@@ -157,7 +157,7 @@ export function DocumentsView({ documents, cases, onChange }: Props) {
                       'text-muted-foreground'
                     }`}>
                       {formatDate(d.expiryDate, lang)}
-                      {days! < 0 ? ` (${t('docs.d_overdue', { n: Math.abs(days!) })})` : days! <= 90 ? ` (${t('dash.d_left', { n: days })})` : ''}
+                      {days! < 0 ? ` (${t('docs.d_overdue', { n: Math.abs(days!) })})` : days! <= 90 ? ` (${t('dash.d_left', { n: days ?? 0 })})` : ''}
                     </span>
                   </div>
                 )}
