@@ -1,0 +1,828 @@
+     1→'use client'
+     2→
+     3→import { useMemo, useState } from 'react'
+     4→import { Card, CardContent } from '@/components/ui/card'
+     5→import { Badge } from '@/components/ui/badge'
+     6→import { Button } from '@/components/ui/button'
+     7→import { Input } from '@/components/ui/input'
+     8→import { Label } from '@/components/ui/label'
+     9→import { Textarea } from '@/components/ui/textarea'
+    10→import { Checkbox } from '@/components/ui/checkbox'
+    11→import { Separator } from '@/components/ui/separator'
+    12→import { ScrollArea } from '@/components/ui/scroll-area'
+    13→import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+    14→import {
+    15→  Table,
+    16→  TableHeader,
+    17→  TableBody,
+    18→  TableHead,
+    19→  TableRow,
+    20→  TableCell,
+    21→} from '@/components/ui/table'
+    22→import {
+    23→  Dialog,
+    24→  DialogContent,
+    25→  DialogHeader,
+    26→  DialogTitle,
+    27→  DialogTrigger,
+    28→  DialogFooter,
+    29→  DialogClose,
+    30→} from '@/components/ui/dialog'
+    31→import {
+    32→  AlertDialog,
+    33→  AlertDialogAction,
+    34→  AlertDialogCancel,
+    35→  AlertDialogContent,
+    36→  AlertDialogDescription,
+    37→  AlertDialogFooter,
+    38→  AlertDialogHeader,
+    39→  AlertDialogTitle,
+    40→  AlertDialogTrigger,
+    41→} from '@/components/ui/alert-dialog'
+    42→import {
+    43→  DropdownMenu,
+    44→  DropdownMenuContent,
+    45→  DropdownMenuItem,
+    46→  DropdownMenuSeparator,
+    47→  DropdownMenuTrigger,
+    48→} from '@/components/ui/dropdown-menu'
+    49→import {
+    50→  Plus,
+    51→  FileText,
+    52→  DollarSign,
+    53→  Clock,
+    54→  CheckCircle2,
+    55→  Trash2,
+    56→  MoreVertical,
+    57→  Calendar,
+    58→} from 'lucide-react'
+    59→import { toast } from 'sonner'
+    60→import { useLang } from '@/lib/sanad/i18n'
+    61→import {
+    62→  formatSAR,
+    63→  formatDate,
+    64→  formatDuration,
+    65→  daysUntil,
+    66→  type Invoice,
+    67→  type Client,
+    68→  type LegalCase,
+    69→  type TimeEntry,
+    70→} from '@/lib/sanad/types'
+    71→
+    72→interface Props {
+    73→  invoices: Invoice[]
+    74→  clients: Client[]
+    75→  cases: LegalCase[]
+    76→  timeEntries: TimeEntry[]
+    77→  stats: {
+    78→    outstandingInvoices: number
+    79→    outstandingSAR: number
+    80→    paidThisMonthSAR: number
+    81→    uninvoicedSec: number
+    82→    uninvoicedSAR: number
+    83→  }
+    84→  onChange: () => void
+    85→}
+    86→
+    87→const STATUS_FILTERS = ['all', 'draft', 'sent', 'paid', 'overdue'] as const
+    88→
+    89→const STATUS_COLORS: Record<string, string> = {
+    90→  draft: 'bg-muted text-muted-foreground',
+    91→  sent: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200',
+    92→  paid: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200',
+    93→  overdue: 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200',
+    94→  cancelled: 'bg-slate-100 text-slate-800 dark:bg-slate-900/40 dark:text-slate-200',
+    95→}
+    96→
+    97→const VAT_RATE = 0.15
+    98→
+    99→function entryAmount(e: TimeEntry): number {
+   100→  if (!e.hourlyRate) return 0
+   101→  return (e.hourlyRate * e.durationSec) / 3600
+   102→}
+   103→
+   104→function defaultDueDate(): string {
+   105→  const d = new Date()
+   106→  d.setDate(d.getDate() + 30)
+   107→  return d.toISOString().slice(0, 10)
+   108→}
+   109→
+   110→export function InvoicesView({ invoices, clients, cases, timeEntries, stats, onChange }: Props) {
+   111→  const { lang, t } = useLang()
+   112→  const [open, setOpen] = useState(false)
+   113→  const [filter, setFilter] = useState<string>('all')
+   114→
+   115→  const num = (n: number) => (lang === 'ar' ? n.toLocaleString('ar-EG') : n.toString())
+   116→
+   117→  const sorted = useMemo(
+   118→    () =>
+   119→      [...invoices].sort(
+   120→        (a, b) => new Date(b.issueDate).getTime() - new Date(a.issueDate).getTime()
+   121→      ),
+   122→    [invoices]
+   123→  )
+   124→
+   125→  const filtered = filter === 'all' ? sorted : sorted.filter((i) => i.status === filter)
+   126→
+   127→  const counts: Record<string, number> = { all: sorted.length }
+   128→  STATUS_FILTERS.forEach((s) => {
+   129→    if (s !== 'all') counts[s] = sorted.filter((i) => i.status === s).length
+   130→  })
+   131→
+   132→  const patchStatus = async (inv: Invoice, status: 'sent' | 'paid') => {
+   133→    try {
+   134→      const res = await fetch(`/api/invoices/${inv.id}`, {
+   135→        method: 'PATCH',
+   136→        headers: { 'Content-Type': 'application/json' },
+   137→        body: JSON.stringify({ status }),
+   138→      })
+   139→      if (!res.ok) throw new Error('patch failed')
+   140→      toast.success(status === 'paid' ? t('invoices.marked_paid') : t('invoices.marked_sent'))
+   141→      onChange()
+   142→    } catch {
+   143→      toast.error(t('invoices.delete'))
+   144→    }
+   145→  }
+   146→
+   147→  const handleDelete = async (inv: Invoice) => {
+   148→    try {
+   149→      const res = await fetch(`/api/invoices/${inv.id}`, { method: 'DELETE' })
+   150→      if (!res.ok) throw new Error('delete failed')
+   151→      toast.success(t('invoices.deleted'))
+   152→      onChange()
+   153→    } catch {
+   154→      toast.error(t('invoices.delete'))
+   155→    }
+   156→  }
+   157→
+   158→  return (
+   159→    <div className="space-y-6">
+   160→      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+   161→        <div>
+   162→          <h2 className="text-xl font-semibold tracking-tight">{t('invoices.title')}</h2>
+   163→          <p className="text-sm text-muted-foreground">{t('invoices.subtitle')}</p>
+   164→        </div>
+   165→        <CreateInvoiceDialog
+   166→          open={open}
+   167→          onOpenChange={setOpen}
+   168→          clients={clients}
+   169→          cases={cases}
+   170→          timeEntries={timeEntries}
+   171→          onSaved={() => {
+   172→            onChange()
+   173→            setOpen(false)
+   174→          }}
+   175→        />
+   176→      </div>
+   177→
+   178→      {/* Stats row */}
+   179→      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+   180→        <StatTile
+   181→          label={t('invoices.outstanding')}
+   182→          value={num(stats.outstandingInvoices)}
+   183→          sub={formatSAR(stats.outstandingSAR, lang)}
+   184→          tone="amber"
+   185→          icon={<DollarSign className="h-4 w-4" />}
+   186→        />
+   187→        <StatTile
+   188→          label={t('invoices.paid_month')}
+   189→          value={formatSAR(stats.paidThisMonthSAR, lang)}
+   190→          tone="emerald"
+   191→          icon={<CheckCircle2 className="h-4 w-4" />}
+   192→        />
+   193→        <StatTile
+   194→          label={t('invoices.uninvoiced')}
+   195→          value={formatSAR(stats.uninvoicedSAR, lang)}
+   196→          sub={formatDuration(stats.uninvoicedSec, lang)}
+   197→          tone="rose"
+   198→          icon={<Clock className="h-4 w-4" />}
+   199→        />
+   200→        <StatTile
+   201→          label={t('invoices.title')}
+   202→          value={num(sorted.length)}
+   203→          tone="slate"
+   204→          icon={<FileText className="h-4 w-4" />}
+   205→        />
+   206→      </div>
+   207→
+   208→      {/* Filter pills */}
+   209→      <div className="flex items-center gap-2 flex-wrap">
+   210→        {STATUS_FILTERS.map((s) => (
+   211→          <Button
+   212→            key={s}
+   213→            variant={filter === s ? 'default' : 'outline'}
+   214→            size="sm"
+   215→            onClick={() => setFilter(s)}
+   216→            className="h-7 text-xs"
+   217→          >
+   218→            {s === 'all'
+   219→              ? t('comp.all', { n: counts.all })
+   220→              : `${t(`istatus.${s}`)} (${num(counts[s])})`}
+   221→          </Button>
+   222→        ))}
+   223→      </div>
+   224→
+   225→      {/* Empty state */}
+   226→      {filtered.length === 0 ? (
+   227→        <Card>
+   228→          <CardContent className="py-12 text-center text-sm text-muted-foreground">
+   229→            <FileText className="h-8 w-8 mx-auto mb-2 opacity-40" />
+   230→            {t('invoices.empty')}
+   231→          </CardContent>
+   232→        </Card>
+   233→      ) : (
+   234→        <>
+   235→          {/* Desktop table */}
+   236→          <Card className="hidden md:block">
+   237→            <CardContent className="p-0">
+   238→              <Table>
+   239→                <TableHeader>
+   240→                  <TableRow>
+   241→                    <TableHead className="ps-4">{t('invoices.number')}</TableHead>
+   242→                    <TableHead>{t('invoices.client')}</TableHead>
+   243→                    <TableHead>{t('invoices.case')}</TableHead>
+   244→                    <TableHead>{t('invoices.issue_date')}</TableHead>
+   245→                    <TableHead>{t('invoices.due_date')}</TableHead>
+   246→                    <TableHead className="text-end">{t('invoices.total')}</TableHead>
+   247→                    <TableHead className="text-end">{t('invoices.balance')}</TableHead>
+   248→                    <TableHead className="pe-3 w-10"></TableHead>
+   249→                  </TableRow>
+   250→                </TableHeader>
+   251→                <TableBody>
+   252→                  {filtered.map((inv) => (
+   253→                    <InvoiceRow
+   254→                      key={inv.id}
+   255→                      inv={inv}
+   256→                      onPatch={patchStatus}
+   257→                      onDelete={handleDelete}
+   258→                    />
+   259→                  ))}
+   260→                </TableBody>
+   261→              </Table>
+   262→            </CardContent>
+   263→          </Card>
+   264→
+   265→          {/* Mobile card grid */}
+   266→          <div className="grid grid-cols-1 gap-3 md:hidden">
+   267→            {filtered.map((inv) => (
+   268→              <InvoiceCard
+   269→                key={inv.id}
+   270→                inv={inv}
+   271→                onPatch={patchStatus}
+   272→                onDelete={handleDelete}
+   273→              />
+   274→            ))}
+   275→          </div>
+   276→        </>
+   277→      )}
+   278→    </div>
+   279→  )
+   280→}
+   281→
+   282→function StatTile({
+   283→  label,
+   284→  value,
+   285→  sub,
+   286→  tone,
+   287→  icon,
+   288→}: {
+   289→  label: string
+   290→  value: string | number
+   291→  sub?: string
+   292→  tone: 'amber' | 'emerald' | 'rose' | 'slate'
+   293→  icon: React.ReactNode
+   294→}) {
+   295→  const toneClasses: Record<string, string> = {
+   296→    amber: 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-300',
+   297→    emerald:
+   298→      'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300',
+   299→    rose: 'bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300',
+   300→    slate:
+   301→      'bg-slate-50 dark:bg-slate-950/30 border-slate-200 dark:border-slate-900 text-slate-700 dark:text-slate-300',
+   302→  }
+   303→  return (
+   304→    <div className={`rounded-lg border p-3 ${toneClasses[tone]}`}>
+   305→      <div className="flex items-center justify-between mb-1">
+   306→        <span className="text-xs">{label}</span>
+   307→        {icon}
+   308→      </div>
+   309→      <p className="text-xl font-semibold tracking-tight">{value}</p>
+   310→      {sub && <p className="text-[11px] opacity-80 mt-0.5">{sub}</p>}
+   311→    </div>
+   312→  )
+   313→}
+   314→
+   315→function InvoiceRow({
+   316→  inv,
+   317→  onPatch,
+   318→  onDelete,
+   319→}: {
+   320→  inv: Invoice
+   321→  onPatch: (i: Invoice, s: 'sent' | 'paid') => void
+   322→  onDelete: (i: Invoice) => void
+   323→}) {
+   324→  const { lang, t } = useLang()
+   325→  const dueDays = inv.dueDate ? daysUntil(inv.dueDate) : null
+   326→  const balance = Math.max(0, inv.total - inv.paidAmount)
+   327→  const isPartial = inv.paidAmount > 0 && inv.paidAmount < inv.total
+   328→  const showCountdown =
+   329→    inv.dueDate && inv.status !== 'paid' && inv.status !== 'cancelled' && dueDays !== null
+   330→
+   331→  return (
+   332→    <TableRow className="group">
+   333→      <TableCell className="ps-4">
+   334→        <div className="flex items-center gap-2 flex-wrap">
+   335→          <span className="font-mono text-xs font-medium" dir="ltr">
+   336→            {inv.number}
+   337→          </span>
+   338→          <Badge
+   339→            variant="outline"
+   340→            className={`text-[10px] px-1.5 py-0 ${STATUS_COLORS[inv.status] ?? 'bg-muted'}`}
+   341→          >
+   342→            {t(`istatus.${inv.status}`)}
+   343→          </Badge>
+   344→        </div>
+   345→      </TableCell>
+   346→      <TableCell className="text-xs">
+   347→        <span className="truncate">{inv.client?.name ?? '—'}</span>
+   348→      </TableCell>
+   349→      <TableCell className="text-xs text-muted-foreground max-w-[180px]">
+   350→        <span className="truncate block">{inv.case?.title ?? '—'}</span>
+   351→      </TableCell>
+   352→      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+   353→        {formatDate(inv.issueDate, lang)}
+   354→      </TableCell>
+   355→      <TableCell className="text-xs whitespace-nowrap">
+   356→        {inv.dueDate ? (
+   357→          <div className="flex flex-col">
+   358→            <span className="text-muted-foreground">{formatDate(inv.dueDate, lang)}</span>
+   359→            {showCountdown && (
+   360→              <span
+   361→                className={`text-[10px] ${
+   362→                  dueDays! < 0
+   363→                    ? 'text-rose-600 dark:text-rose-400 font-medium'
+   364→                    : dueDays! <= 7
+   365→                      ? 'text-amber-600 dark:text-amber-400 font-medium'
+   366→                      : 'text-muted-foreground'
+   367→                }`}
+   368→              >
+   369→                {dueDays! < 0
+   370→                  ? t('invoices.overdue_by', { n: Math.abs(dueDays!) })
+   371→                  : t('invoices.due_in_days', { n: dueDays! })}
+   372→              </span>
+   373→            )}
+   374→          </div>
+   375→        ) : (
+   376→          <span className="text-muted-foreground">—</span>
+   377→        )}
+   378→      </TableCell>
+   379→      <TableCell className="text-end text-xs font-medium whitespace-nowrap">
+   380→        {formatSAR(inv.total, lang)}
+   381→      </TableCell>
+   382→      <TableCell className="text-end text-xs whitespace-nowrap">
+   383→        {isPartial ? (
+   384→          <span className="text-amber-600 dark:text-amber-400 font-medium">
+   385→            {formatSAR(balance, lang)}
+   386→          </span>
+   387→        ) : inv.status === 'paid' ? (
+   388→          <span className="text-emerald-600 dark:text-emerald-400">✓</span>
+   389→        ) : (
+   390→          <span className="text-muted-foreground">—</span>
+   391→        )}
+   392→      </TableCell>
+   393→      <TableCell className="pe-3">
+   394→        <InvoiceActions inv={inv} onPatch={onPatch} onDelete={onDelete} />
+   395→      </TableCell>
+   396→    </TableRow>
+   397→  )
+   398→}
+   399→
+   400→function InvoiceCard({
+   401→  inv,
+   402→  onPatch,
+   403→  onDelete,
+   404→}: {
+   405→  inv: Invoice
+   406→  onPatch: (i: Invoice, s: 'sent' | 'paid') => void
+   407→  onDelete: (i: Invoice) => void
+   408→}) {
+   409→  const { lang, t } = useLang()
+   410→  const dueDays = inv.dueDate ? daysUntil(inv.dueDate) : null
+   411→  const balance = Math.max(0, inv.total - inv.paidAmount)
+   412→  const isPartial = inv.paidAmount > 0 && inv.paidAmount < inv.total
+   413→  const showCountdown =
+   414→    inv.dueDate && inv.status !== 'paid' && inv.status !== 'cancelled' && dueDays !== null
+   415→
+   416→  return (
+   417→    <Card className="hover:border-primary/40 transition-colors">
+   418→      <CardContent className="p-3 space-y-2.5">
+   419→        <div className="flex items-start justify-between gap-2">
+   420→          <div className="min-w-0 flex-1">
+   421→            <div className="flex items-center gap-2 flex-wrap">
+   422→              <span className="font-mono text-xs font-medium" dir="ltr">
+   423→                {inv.number}
+   424→              </span>
+   425→              <Badge
+   426→                variant="outline"
+   427→                className={`text-[10px] px-1.5 py-0 ${STATUS_COLORS[inv.status] ?? 'bg-muted'}`}
+   428→              >
+   429→                {t(`istatus.${inv.status}`)}
+   430→              </Badge>
+   431→            </div>
+   432→            <p className="text-xs mt-1 truncate">{inv.client?.name ?? '—'}</p>
+   433→            {inv.case && (
+   434→              <p className="text-[11px] text-muted-foreground truncate">{inv.case.title}</p>
+   435→            )}
+   436→          </div>
+   437→          <InvoiceActions inv={inv} onPatch={onPatch} onDelete={onDelete} />
+   438→        </div>
+   439→
+   440→        <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+   441→          <div>
+   442→            <p className="text-[10px] text-muted-foreground">{t('invoices.issue_date')}</p>
+   443→            <p className="text-muted-foreground">{formatDate(inv.issueDate, lang)}</p>
+   444→          </div>
+   445→          <div>
+   446→            <p className="text-[10px] text-muted-foreground">{t('invoices.due_date')}</p>
+   447→            {inv.dueDate ? (
+   448→              <div>
+   449→                <p className="text-muted-foreground">{formatDate(inv.dueDate, lang)}</p>
+   450→                {showCountdown && (
+   451→                  <p
+   452→                    className={`text-[10px] ${
+   453→                      dueDays! < 0
+   454→                        ? 'text-rose-600 dark:text-rose-400 font-medium'
+   455→                        : dueDays! <= 7
+   456→                          ? 'text-amber-600 dark:text-amber-400 font-medium'
+   457→                          : 'text-muted-foreground'
+   458→                    }`}
+   459→                  >
+   460→                    {dueDays! < 0
+   461→                      ? t('invoices.overdue_by', { n: Math.abs(dueDays!) })
+   462→                      : t('invoices.due_in_days', { n: dueDays! })}
+   463→                  </p>
+   464→                )}
+   465→              </div>
+   466→            ) : (
+   467→              <p className="text-muted-foreground">—</p>
+   468→            )}
+   469→          </div>
+   470→        </div>
+   471→
+   472→        <Separator />
+   473→
+   474→        <div className="flex items-center justify-between text-xs">
+   475→          <span className="text-muted-foreground">{t('invoices.total')}</span>
+   476→          <span className="font-semibold">{formatSAR(inv.total, lang)}</span>
+   477→        </div>
+   478→        {isPartial && (
+   479→          <div className="flex items-center justify-between text-xs">
+   480→            <span className="text-muted-foreground">{t('invoices.balance')}</span>
+   481→            <span className="text-amber-600 dark:text-amber-400 font-medium">
+   482→              {formatSAR(balance, lang)}
+   483→            </span>
+   484→          </div>
+   485→        )}
+   486→        {inv.paidAt && inv.status === 'paid' && (
+   487→          <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
+   488→            {t('invoices.paid_on', { date: formatDate(inv.paidAt, lang) })}
+   489→          </p>
+   490→        )}
+   491→      </CardContent>
+   492→    </Card>
+   493→  )
+   494→}
+   495→
+   496→function InvoiceActions({
+   497→  inv,
+   498→  onPatch,
+   499→  onDelete,
+   500→}: {
+   501→  inv: Invoice
+   502→  onPatch: (i: Invoice, s: 'sent' | 'paid') => void
+   503→  onDelete: (i: Invoice) => void
+   504→}) {
+   505→  const { t } = useLang()
+   506→  const canMarkSent = inv.status === 'draft'
+   507→  const canMarkPaid = inv.status === 'sent' || inv.status === 'overdue'
+   508→
+   509→  return (
+   510→    <DropdownMenu>
+   511→      <DropdownMenuTrigger asChild>
+   512→        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 shrink-0">
+   513→          <MoreVertical className="h-3.5 w-3.5" />
+   514→        </Button>
+   515→      </DropdownMenuTrigger>
+   516→      <DropdownMenuContent align="end">
+   517→        {canMarkSent && (
+   518→          <DropdownMenuItem onClick={() => onPatch(inv, 'sent')}>
+   519→            <FileText className="h-3.5 w-3.5 mx-1" />
+   520→            {t('invoices.mark_sent')}
+   521→          </DropdownMenuItem>
+   522→        )}
+   523→        {canMarkPaid && (
+   524→          <DropdownMenuItem onClick={() => onPatch(inv, 'paid')}>
+   525→            <CheckCircle2 className="h-3.5 w-3.5 mx-1" />
+   526→            {t('invoices.mark_paid')}
+   527→          </DropdownMenuItem>
+   528→        )}
+   529→        {(canMarkSent || canMarkPaid) && <DropdownMenuSeparator />}
+   530→        <AlertDialog>
+   531→          <AlertDialogTrigger asChild>
+   532→            <DropdownMenuItem
+   533→              className="text-rose-600 dark:text-rose-400 focus:text-rose-700 focus:bg-rose-50 dark:focus:bg-rose-950/40"
+   534→              onSelect={(e) => e.preventDefault()}
+   535→            >
+   536→              <Trash2 className="h-3.5 w-3.5 mx-1" />
+   537→              {t('invoices.delete')}
+   538→            </DropdownMenuItem>
+   539→          </AlertDialogTrigger>
+   540→          <AlertDialogContent>
+   541→            <AlertDialogHeader>
+   542→              <AlertDialogTitle>{t('invoices.delete')}</AlertDialogTitle>
+   543→              <AlertDialogDescription>{t('invoices.delete_confirm')}</AlertDialogDescription>
+   544→            </AlertDialogHeader>
+   545→            <AlertDialogFooter>
+   546→              <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+   547→              <AlertDialogAction
+   548→                className="bg-rose-600 hover:bg-rose-700 text-white dark:bg-rose-700 dark:hover:bg-rose-600"
+   549→                onClick={() => onDelete(inv)}
+   550→              >
+   551→                {t('invoices.delete')}
+   552→              </AlertDialogAction>
+   553→            </AlertDialogFooter>
+   554→          </AlertDialogContent>
+   555→        </AlertDialog>
+   556→      </DropdownMenuContent>
+   557→    </DropdownMenu>
+   558→  )
+   559→}
+   560→
+   561→function CreateInvoiceDialog({
+   562→  open,
+   563→  onOpenChange,
+   564→  clients,
+   565→  cases,
+   566→  timeEntries,
+   567→  onSaved,
+   568→}: {
+   569→  open: boolean
+   570→  onOpenChange: (v: boolean) => void
+   571→  clients: Client[]
+   572→  cases: LegalCase[]
+   573→  timeEntries: TimeEntry[]
+   574→  onSaved: () => void
+   575→}) {
+   576→  const { lang, t } = useLang()
+   577→  const [selected, setSelected] = useState<Set<string>>(new Set())
+   578→  const [clientId, setClientId] = useState('')
+   579→  const [caseId, setCaseId] = useState('')
+   580→  const [dueDate, setDueDate] = useState<string>(defaultDueDate)
+   581→  const [notes, setNotes] = useState('')
+   582→  const [saving, setSaving] = useState(false)
+   583→
+   584→  const toggle = (id: string) => {
+   585→    setSelected((prev) => {
+   586→      const next = new Set(prev)
+   587→      if (next.has(id)) next.delete(id)
+   588→      else next.add(id)
+   589→      return next
+   590→    })
+   591→  }
+   592→
+   593→  const selectedEntries = timeEntries.filter((e) => selected.has(e.id))
+   594→  const subtotal = selectedEntries.reduce((sum, e) => sum + entryAmount(e), 0)
+   595→  const vat = subtotal * VAT_RATE
+   596→  const total = subtotal + vat
+   597→  const totalHours = selectedEntries.reduce((sum, e) => sum + e.durationSec, 0)
+   598→
+   599→  const num = (n: number) => (lang === 'ar' ? n.toLocaleString('ar-EG') : n.toString())
+   600→
+   601→  const reset = () => {
+   602→    setSelected(new Set())
+   603→    setClientId('')
+   604→    setCaseId('')
+   605→    setDueDate(defaultDueDate())
+   606→    setNotes('')
+   607→  }
+   608→
+   609→  const submit = async () => {
+   610→    if (selected.size === 0) {
+   611→      toast.error(t('invoices.select_time'))
+   612→      return
+   613→    }
+   614→    if (!clientId) {
+   615→      toast.error(t('invoices.select_client'))
+   616→      return
+   617→    }
+   618→    setSaving(true)
+   619→    try {
+   620→      const res = await fetch('/api/invoices', {
+   621→        method: 'POST',
+   622→        headers: { 'Content-Type': 'application/json' },
+   623→        body: JSON.stringify({
+   624→          timeEntryIds: Array.from(selected),
+   625→          clientId,
+   626→          caseId: caseId || undefined,
+   627→          dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
+   628→          notes: notes.trim() || undefined,
+   629→        }),
+   630→      })
+   631→      if (!res.ok) throw new Error('create failed')
+   632→      toast.success(t('invoices.created'))
+   633→      reset()
+   634→      onSaved()
+   635→    } catch {
+   636→      toast.error(t('invoices.created'))
+   637→    } finally {
+   638→      setSaving(false)
+   639→    }
+   640→  }
+   641→
+   642→  const handleOpenChange = (v: boolean) => {
+   643→    onOpenChange(v)
+   644→    if (!v) {
+   645→      // Reset on close so next open is fresh
+   646→      setTimeout(reset, 200)
+   647→    }
+   648→  }
+   649→
+   650→  return (
+   651→    <Dialog open={open} onOpenChange={handleOpenChange}>
+   652→      <DialogTrigger asChild>
+   653→        <Button size="sm">
+   654→          <Plus className="mx-1.5 h-4 w-4" /> {t('invoices.add')}
+   655→        </Button>
+   656→      </DialogTrigger>
+   657→      <DialogContent className="sm:max-w-2xl">
+   658→        <DialogHeader>
+   659→          <DialogTitle>{t('invoices.add')}</DialogTitle>
+   660→        </DialogHeader>
+   661→
+   662→        <div className="space-y-4">
+   663→          {/* Time entries list */}
+   664→          <div className="space-y-2">
+   665→            <Label className="text-xs">{t('invoices.select_time')}</Label>
+   666→
+   667→            {timeEntries.length === 0 ? (
+   668→              <div className="rounded-md border border-dashed p-6 text-center text-xs text-muted-foreground">
+   669→                <Clock className="h-6 w-6 mx-auto mb-1.5 opacity-40" />
+   670→                {t('invoices.no_time_entries')}
+   671→              </div>
+   672→            ) : (
+   673→              <ScrollArea className="h-64 rounded-md border">
+   674→                <ul className="divide-y divide-border">
+   675→                  {timeEntries.map((e) => {
+   676→                    const amount = entryAmount(e)
+   677→                    const checked = selected.has(e.id)
+   678→                    return (
+   679→                      <li
+   680→                        key={e.id}
+   681→                        className={`flex items-start gap-3 p-2.5 cursor-pointer transition-colors ${
+   682→                          checked ? 'bg-primary/5' : 'hover:bg-muted/40'
+   683→                        }`}
+   684→                        onClick={() => toggle(e.id)}
+   685→                      >
+   686→                        <Checkbox
+   687→                          checked={checked}
+   688→                          onCheckedChange={() => toggle(e.id)}
+   689→                          className="mt-0.5"
+   690→                          onClick={(e: React.MouseEvent) => e.stopPropagation()}
+   691→                        />
+   692→                        <div className="flex-1 min-w-0">
+   693→                          <p className="text-xs font-medium truncate">
+   694→                            {e.description || `(${e.sessionType})`}
+   695→                          </p>
+   696→                          <div className="flex items-center gap-2 mt-0.5 flex-wrap text-[10px] text-muted-foreground">
+   697→                            <span className="flex items-center gap-0.5 whitespace-nowrap">
+   698→                              <Calendar className="h-2.5 w-2.5" />
+   699→                              {formatDate(e.date, lang)}
+   700→                            </span>
+   701→                            <span className="flex items-center gap-0.5 whitespace-nowrap">
+   702→                              <Clock className="h-2.5 w-2.5" />
+   703→                              {formatDuration(e.durationSec, lang)}
+   704→                            </span>
+   705→                            {e.case && (
+   706→                              <span className="truncate max-w-[160px]">{e.case.title}</span>
+   707→                            )}
+   708→                          </div>
+   709→                        </div>
+   710→                        <div className="text-end shrink-0">
+   711→                          {e.hourlyRate ? (
+   712→                            <>
+   713→                              <p className="text-xs font-medium whitespace-nowrap">
+   714→                                {formatSAR(amount, lang)}
+   715→                              </p>
+   716→                              <p className="text-[10px] text-muted-foreground whitespace-nowrap">
+   717→                                {t('invoices.rate')}: {formatSAR(e.hourlyRate, lang)}
+   718→                              </p>
+   719→                            </>
+   720→                          ) : (
+   721→                            <p className="text-[10px] text-muted-foreground">—</p>
+   722→                          )}
+   723→                        </div>
+   724→                      </li>
+   725→                    )
+   726→                  })}
+   727→                </ul>
+   728→              </ScrollArea>
+   729→            )}
+   730→          </div>
+   731→
+   732→          {/* Selected totals */}
+   733→          {selected.size > 0 && (
+   734→            <div className="rounded-md border bg-muted/30 p-3 space-y-1.5">
+   735→              <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+   736→                <span>
+   737→                  {t('invoices.items')} ({num(selected.size)}) · {formatDuration(totalHours, lang)}
+   738→                </span>
+   739→              </div>
+   740→              <div className="flex items-center justify-between text-xs">
+   741→                <span className="text-muted-foreground">{t('invoices.subtotal')}</span>
+   742→                <span>{formatSAR(subtotal, lang)}</span>
+   743→              </div>
+   744→              <div className="flex items-center justify-between text-xs">
+   745→                <span className="text-muted-foreground">{t('invoices.vat')}</span>
+   746→                <span>{formatSAR(vat, lang)}</span>
+   747→              </div>
+   748→              <Separator />
+   749→              <div className="flex items-center justify-between text-sm font-semibold">
+   750→                <span>{t('invoices.total')}</span>
+   751→                <span>{formatSAR(total, lang)}</span>
+   752→              </div>
+   753→            </div>
+   754→          )}
+   755→
+   756→          {/* Client + case */}
+   757→          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+   758→            <div className="space-y-1.5">
+   759→              <Label htmlFor="inv-client">
+   760→                {t('invoices.select_client')} <span className="text-rose-500">*</span>
+   761→              </Label>
+   762→              <Select value={clientId} onValueChange={setClientId}>
+   763→                <SelectTrigger id="inv-client">
+   764→                  <SelectValue placeholder={t('invoices.select_client')} />
+   765→                </SelectTrigger>
+   766→                <SelectContent>
+   767→                  {clients.map((c) => (
+   768→                    <SelectItem key={c.id} value={c.id}>
+   769→                      {c.name}
+   770→                    </SelectItem>
+   771→                  ))}
+   772→                </SelectContent>
+   773→              </Select>
+   774→            </div>
+   775→            <div className="space-y-1.5">
+   776→              <Label htmlFor="inv-case">{t('invoices.select_case')}</Label>
+   777→              <Select value={caseId} onValueChange={setCaseId}>
+   778→                <SelectTrigger id="inv-case">
+   779→                  <SelectValue placeholder={t('tasks.none')} />
+   780→                </SelectTrigger>
+   781→                <SelectContent>
+   782→                  {cases.map((c) => (
+   783→                    <SelectItem key={c.id} value={c.id}>
+   784→                      {c.title}
+   785→                    </SelectItem>
+   786→                  ))}
+   787→                </SelectContent>
+   788→              </Select>
+   789→            </div>
+   790→          </div>
+   791→
+   792→          {/* Due date + notes */}
+   793→          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+   794→            <div className="space-y-1.5">
+   795→              <Label htmlFor="inv-due">{t('invoices.due_date')}</Label>
+   796→              <Input
+   797→                id="inv-due"
+   798→                type="date"
+   799→                value={dueDate}
+   800→                onChange={(e) => setDueDate(e.target.value)}
+   801→              />
+   802→            </div>
+   803→            <div className="space-y-1.5">
+   804→              <Label htmlFor="inv-notes">{t('clients.f_notes')}</Label>
+   805→              <Textarea
+   806→                id="inv-notes"
+   807→                value={notes}
+   808→                onChange={(e) => setNotes(e.target.value)}
+   809→                rows={2}
+   810→                placeholder="—"
+   811→              />
+   812→            </div>
+   813→          </div>
+   814→        </div>
+   815→
+   816→        <DialogFooter>
+   817→          <DialogClose asChild>
+   818→            <Button variant="outline">{t('common.cancel')}</Button>
+   819→          </DialogClose>
+   820→          <Button onClick={submit} disabled={saving || selected.size === 0 || !clientId}>
+   821→            {t('invoices.add')}
+   822→          </Button>
+   823→        </DialogFooter>
+   824→      </DialogContent>
+   825→    </Dialog>
+   826→  )
+   827→}
+   828→

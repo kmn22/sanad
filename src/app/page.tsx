@@ -12,10 +12,14 @@ import { CasesView } from '@/components/sanad/CasesView'
 import { DeepWorkView } from '@/components/sanad/DeepWorkView'
 import { TasksView } from '@/components/sanad/TasksView'
 import { DocumentsView } from '@/components/sanad/DocumentsView'
+import { ClientsView } from '@/components/sanad/ClientsView'
+import { InvoicesView } from '@/components/sanad/InvoicesView'
+import { CommunicationsView } from '@/components/sanad/CommunicationsView'
+import { CalendarView } from '@/components/sanad/CalendarView'
 import { StudentView } from '@/components/sanad/StudentView'
 import type { DashboardData, StudentDashboardData } from '@/lib/sanad/types'
 
-type View = 'dashboard' | 'compliance' | 'cases' | 'deepwork' | 'tasks' | 'documents'
+type View = 'dashboard' | 'compliance' | 'cases' | 'deepwork' | 'tasks' | 'documents' | 'clients' | 'invoices' | 'communications' | 'calendar'
 type Persona = 'lawyer' | 'student'
 
 const PERSONA_STORAGE_KEY = 'sanad.persona'
@@ -72,9 +76,39 @@ const NAV_ICONS: Record<View, React.ComponentType<{ className?: string }>> = {
       <path d="M9 17h4" />
     </svg>
   ),
+  clients: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  ),
+  invoices: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5z" />
+      <path d="M14 2v6h6" />
+      <path d="M12 18v-3" />
+      <path d="M8 18v-3" />
+      <path d="M16 18v-3" />
+    </svg>
+  ),
+  communications: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+  ),
+  calendar: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M8 2v4" />
+      <path d="M16 2v4" />
+      <rect width="18" height="18" x="3" y="4" rx="2" />
+      <path d="M3 10h18" />
+    </svg>
+  ),
 }
 
-const NAV_KEYS: View[] = ['dashboard', 'compliance', 'cases', 'deepwork', 'tasks', 'documents']
+const NAV_KEYS: View[] = ['dashboard', 'clients', 'cases', 'communications', 'documents', 'invoices', 'compliance', 'tasks', 'deepwork', 'calendar']
 
 export default function Home() {
   const { lang, t, toggle: toggleLang } = useLang()
@@ -285,10 +319,30 @@ export default function Home() {
             <>
               {view === 'dashboard' && <DashboardView data={data} onNavigate={(v) => setView(v as View)} />}
               {view === 'compliance' && <ComplianceView items={data.compliance.all} onChange={onChange} />}
-              {view === 'cases' && <CasesView cases={data.cases.all} onChange={onChange} />}
+              {view === 'cases' && <CasesView cases={data.cases.all} clients={data.clients} onChange={onChange} />}
               {view === 'deepwork' && <DeepWorkView cases={data.cases.all} timeEntries={data.timeEntries} onChange={onChange} />}
               {view === 'tasks' && <TasksView tasks={data.tasks.all} cases={data.cases.all} onChange={onChange} />}
               {view === 'documents' && <DocumentsView documents={data.documents.all} cases={data.cases.all} onChange={onChange} />}
+              {view === 'clients' && <ClientsView clients={data.clients} onChange={onChange} />}
+              {view === 'invoices' && (
+                <InvoicesView
+                  invoices={data.invoices}
+                  clients={data.clients}
+                  cases={data.cases.all}
+                  timeEntries={data.timeEntries.filter((te: any) => te.billable && !te.invoiced)}
+                  stats={data.stats}
+                  onChange={onChange}
+                />
+              )}
+              {view === 'communications' && (
+                <CommunicationsView
+                  communications={data.communications}
+                  clients={data.clients}
+                  cases={data.cases.all}
+                  onChange={onChange}
+                />
+              )}
+              {view === 'calendar' && <CalendarView onNavigate={(v) => setView(v as View)} />}
             </>
           ) : (
             <div className="text-center py-12 text-sm text-muted-foreground">
