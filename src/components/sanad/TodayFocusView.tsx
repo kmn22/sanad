@@ -17,7 +17,15 @@ export function TodayFocusView({ data, onNavigate, onStartFocus }: Props) {
 
   const overdueTasks = data?.tasks?.overdue || []
   const todayTasks = data?.tasks?.today || []
-  const criticalTasks = [...overdueTasks, ...todayTasks].slice(0, 5)
+  // Deduplicate — a task due earlier today can appear in both arrays
+  const seenIds = new Set<string>()
+  const criticalTasks = [...overdueTasks, ...todayTasks]
+    .filter((task) => {
+      if (seenIds.has(task.id)) return false
+      seenIds.add(task.id)
+      return true
+    })
+    .slice(0, 5)
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">

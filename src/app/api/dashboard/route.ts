@@ -30,7 +30,10 @@ export async function GET() {
   )
 
   const openTasks = tasks.filter((t) => t.status !== 'done')
-  const overdueTasks = openTasks.filter((t) => t.dueDate && t.dueDate < now)
+  // Overdue = due before today (not today). Today = due today. Mutually exclusive.
+  const overdueTasks = openTasks.filter(
+    (t) => t.dueDate && t.dueDate.toDateString() < now.toDateString()
+  )
   const todayTasks = openTasks.filter(
     (t) => t.dueDate && t.dueDate.toDateString() === now.toDateString()
   )
