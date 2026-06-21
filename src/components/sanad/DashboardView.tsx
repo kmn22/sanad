@@ -143,7 +143,16 @@ export function DashboardView({ data, onNavigate }: Props) {
                 </p>
               ) : (
                 <ul className="space-y-2">
-                  {[...data.tasks.overdue, ...data.tasks.today].slice(0, 6).map((task) => {
+                  {(() => {
+                    const seen = new Set<string>()
+                    return [...data.tasks.overdue, ...data.tasks.today]
+                      .filter((task) => {
+                        if (seen.has(task.id)) return false
+                        seen.add(task.id)
+                        return true
+                      })
+                      .slice(0, 6)
+                  })().map((task) => {
                     const days = task.dueDate ? daysUntil(task.dueDate) : 0
                     const overdue = days < 0
                     return (
