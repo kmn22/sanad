@@ -14,14 +14,14 @@ import { TasksView } from '@/components/sanad/TasksView'
 import { DocumentsView } from '@/components/sanad/DocumentsView'
 import { ClientsView } from '@/components/sanad/ClientsView'
 import { InvoicesView } from '@/components/sanad/InvoicesView'
-import { CommunicationsView } from '@/components/sanad/CommunicationsView'
+import { ScannerView } from '@/components/sanad/ScannerView'
 import { CalendarView } from '@/components/sanad/CalendarView'
 import { StudentView } from '@/components/sanad/StudentView'
 import { TodayFocusView } from '@/components/sanad/TodayFocusView'
 import { CommandPalette } from '@/components/sanad/CommandPalette'
 import type { DashboardData, StudentDashboardData } from '@/lib/sanad/types'
 
-type View = 'today' | 'dashboard' | 'compliance' | 'cases' | 'deepwork' | 'tasks' | 'documents' | 'clients' | 'invoices' | 'communications' | 'calendar'
+type View = 'today' | 'dashboard' | 'compliance' | 'cases' | 'deepwork' | 'tasks' | 'documents' | 'clients' | 'invoices' | 'scanner' | 'calendar'
 type Persona = 'lawyer' | 'student'
 
 const PERSONA_STORAGE_KEY = 'sanad.persona'
@@ -101,9 +101,13 @@ const NAV_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
       <path d="M16 18v-3" />
     </svg>
   ),
-  communications: (props) => (
+  scanner: (props) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+      <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+      <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+      <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+      <rect x="7" y="8" width="10" height="8" rx="1" />
     </svg>
   ),
   calendar: (props) => (
@@ -116,7 +120,7 @@ const NAV_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   ),
 }
 
-const NAV_KEYS: string[] = ['today', 'dashboard', 'clients', 'cases', 'communications', 'documents', 'invoices', 'compliance', 'tasks', 'deepwork', 'calendar']
+const NAV_KEYS: string[] = ['today', 'dashboard', 'clients', 'cases', 'documents', 'scanner', 'invoices', 'compliance', 'tasks', 'deepwork', 'calendar']
 
 export default function Home() {
   const { lang, t, toggle: toggleLang } = useLang()
@@ -302,7 +306,7 @@ export default function Home() {
               {view === 'documents' && <DocumentsView documents={data.documents.all} cases={data.cases.all} onChange={onChange} />}
               {view === 'clients' && <ClientsView clients={data.clients} onChange={onChange} />}
               {view === 'invoices' && <InvoicesView invoices={data.invoices} clients={data.clients} cases={data.cases.all} timeEntries={data.timeEntries.filter((te: any) => te.billable && !te.invoiced)} stats={data.stats} onChange={onChange} />}
-              {view === 'communications' && <CommunicationsView communications={data.communications} clients={data.clients} cases={data.cases.all} onChange={onChange} />}
+              {view === 'scanner' && <ScannerView />}
               {view === 'calendar' && <CalendarView onNavigate={(v) => setView(v)} />}
             </>
           ) : (
