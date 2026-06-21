@@ -26,7 +26,7 @@ async function main() {
     { title: 'القانون التجاري', code: 'LAW 320', instructor: 'د. فهد القحطاني', semester: 'الفصل الأول 1447هـ', credits: 3, color: '#0891b2', notes: 'تركيز على نظام الشركات الجديد' },
     { title: 'أصول الفقه الإسلامي', code: 'LAW 340', instructor: 'د. محمد العبيد', semester: 'الفصل الأول 1447هـ', credits: 2, color: '#9333ea', notes: '' },
   ]
-  const createdCourses = []
+  const createdCourses: any[] = []
   for (const c of courses) {
     createdCourses.push(await db.course.create({ data: c }))
   }

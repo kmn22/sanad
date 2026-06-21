@@ -141,7 +141,7 @@ export function TasksView({ tasks, cases, onChange }: Props) {
                             <Calendar className="h-2.5 w-2.5" />
                             {formatDate(task.dueDate, lang)}
                             {overdue && ` (${t('dash.d_overdue', { n: Math.abs(days!) })})`}
-                            {!overdue && days! <= 3 && ` (${t('dash.d_left', { n: days })})`}
+                            {!overdue && days! <= 3 && ` (${t('dash.d_left', { n: days ?? 0 })})`}
                           </span>
                         )}
                       </div>

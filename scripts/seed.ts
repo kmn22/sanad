@@ -51,7 +51,7 @@ async function main() {
     { title: 'نزاع عمالي', clientName: 'سعود المطيري', caseType: 'litigation', stage: 'filed', priority: 'normal', dueDate: daysFromNow(21), value: 0, notes: 'بانتظار موعد الجلسة الأولى' },
     { title: 'سياسة توظيف جلف تك', clientName: 'جلف تك', caseType: 'consultation', stage: 'closed', priority: 'low', value: 15000, notes: 'تم تسليم دليل الموظفين واعتماده' },
   ]
-  const createdCases = []
+  const createdCases: any[] = []
   for (const c of cases) {
     createdCases.push(await db.legalCase.create({ data: c }))
   }

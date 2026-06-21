@@ -21,7 +21,7 @@ async function main() {
     { name: 'سعود المطيري', type: 'individual', phone: '055-987-6543', email: 'saud.mutairi@email.com', nationalId: '1098765432', address: 'الرياض، حي السلي', notes: 'نزاع عمالي مع صاحب عمل سابق' },
     { name: 'جلف تك', type: 'corporate', phone: '011-345-6789', email: 'hr@gulftech.sa', nationalId: '1010678901', address: 'الرياض، حي الواحة', company: 'جلف تك للبرمجيات', notes: 'سياسات توظيف + عقود فرعية' },
   ]
-  const createdClients = []
+  const createdClients: any[] = []
   for (const c of clients) {
     createdClients.push(await db.client.create({ data: c }))
   }

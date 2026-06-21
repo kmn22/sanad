@@ -314,7 +314,7 @@ function CaseCard({
             {overdue ? (
               <span className="text-[10px] text-rose-600 dark:text-rose-400 font-medium">{t('dash.d_overdue', { n: Math.abs(days!) })}</span>
             ) : days! <= 7 ? (
-              <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">{t('dash.d_left', { n: days })}</span>
+              <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">{t('dash.d_left', { n: days ?? 0 })}</span>
             ) : null}
           </div>
         )}
