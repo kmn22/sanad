@@ -12,8 +12,10 @@
 
 set -euo pipefail
 
-PROJECT_DIR="/home/z/my-project"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$PROJECT_DIR"
+
+PORT="${PORT:-3001}"
 
 # Colors
 RED='\033[0;31m'
@@ -112,9 +114,9 @@ case "${1:-deploy}" in
     # Step 5: Health check
     log "Step 5/5: Health check..."
     sleep 4
-    if curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/ | grep -q "200"; then
+    if curl -s -o /dev/null -w "%{http_code}" http://localhost:$PORT/ | grep -q "200"; then
       log "=== Deploy successful! ==="
-      log "Sanad is live at: http://localhost:3000"
+      log "Sanad is live at: http://localhost:$PORT"
       log "Logs: ./deploy.sh logs"
       log "Status: ./deploy.sh status"
     else
