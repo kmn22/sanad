@@ -4,11 +4,13 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 
 export type Lang = 'ar' | 'en'
 
+// We will infer TranslationKey below from the translations object
+
 interface LangCtx {
   lang: Lang
   setLang: (l: Lang) => void
   toggle: () => void
-  t: (key: string, vars?: Record<string, string | number>) => string
+  t: (key: any, vars?: Record<string, string | number>) => string // Will be updated to TranslationKey
 }
 
 const Ctx = createContext<LangCtx | null>(null)
@@ -16,7 +18,7 @@ const Ctx = createContext<LangCtx | null>(null)
 const STORAGE_KEY = 'sanad.lang'
 
 // ---- Translation catalogs ----
-const translations: Record<Lang, Record<string, string>> = {
+const translations = {
   ar: {
     // Brand
     'brand.name': 'سند',
@@ -251,6 +253,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'common.create': 'إنشاء',
     'common.add': 'إضافة',
     'common.none': '—',
+    'common.backup_data': 'نسخ احتياطي (JSON)',
     'common.pwa_note': 'مثبت كتطبيق PWA. ثبّته على سطح المكتب للوصول اليومي.',
     'common.cache_note': 'المؤقت والواجهة محفوظة محلياً — عبء خادم ضئيل.',
     'common.footer_left': 'سند — لوحة العمليات اليومية للمحامين والمنشآت الصغيرة في السعودية',
@@ -394,6 +397,14 @@ const translations: Record<Lang, Record<string, string>> = {
     // ===== Smart Review =====
     'review.title': 'المراجعة الذكية',
     'review.subtitle': 'بطاقات مراجعة واختبارات ذاتية من مصطلحاتك وقضاياك ومحاضراتك.',
+    'review.generator.title': 'توليد بطاقات مراجعة بالذكاء الاصطناعي',
+    'review.generator.desc': 'الصق ملاحظاتك الدراسية أو نصوص المحاضرات وسيقوم الذكاء الاصطناعي باستخراج أهم المصطلحات القانونية وإضافتها تلقائياً لبنك المصطلحات.',
+    'review.generator.notes': 'الملاحظات الدراسية',
+    'review.generator.notes_ph': 'مثال: في نظام المعاملات المدنية، تعتبر القوة القاهرة كل حادث لا يمكن توقعه ويجعل تنفيذ الالتزام مستحيلاً...',
+    'review.generator.category': 'تصنيف البطاقات',
+    'review.generator.button': 'توليد البطاقات بالذكاء الاصطناعي (Gemini)',
+    'review.generator.generating': 'جارٍ توليد البطاقات واستخراج المصطلحات...',
+    'review.generator.toggle': 'توليد بطاقات ذكية من ملاحظاتك',
     'review.start': 'ابدأ جلسة مراجعة',
     'review.mode_flashcards': 'بطاقات',
     'review.mode_quiz': 'اختبار',
@@ -603,6 +614,17 @@ const translations: Record<Lang, Record<string, string>> = {
     'case.no_comms': 'لا توجد اتصالات مسجلة.',
     'case.no_invoices': 'لا توجد فواتير.',
 
+    'case.ai_insights': 'تحليل الذكاء الاصطناعي',
+    'ai.analyze_case': 'تحليل القضية باستخدام الذكاء الاصطناعي',
+    'ai.analyzing': 'جاري التحليل واستخراج التوصيات...',
+    'ai.summary': 'الملخص القانوني',
+    'ai.risks': 'تحليل المخاطر',
+    'ai.recommendations': 'توصيات وخطوات تالية',
+    'ai.severity_high': 'عالي الخطورة',
+    'ai.severity_medium': 'متوسط الخطورة',
+    'ai.severity_low': 'منخفض الخطورة',
+    'ai.generate_draft': 'صياغة المستند بالذكاء الاصطناعي',
+    'ai.prompt_placeholder': 'مثال: مسودة عقد عمل لمدير تسويق براتب 10 آلاف ريال يخضع لنظام العمل السعودي...',
     // ===== Document Scanner =====
     'scanner.title': 'ماسح المستندات',
     'scanner.subtitle': 'صوّر المستندات بالكاميرا، استخرج النص بـ OCR، وصدّرها كصورة أو ملف Word.',
@@ -639,6 +661,9 @@ const translations: Record<Lang, Record<string, string>> = {
     'scanner.processing': 'جارٍ المعالجة',
     'scanner.tip': 'لأفضل نتائج: صوّر في إضاءة جيدة، اجعل المستند مسطحاً، واملأ الإطار.',
     'scanner.download_all': 'تحميل الكل',
+    'scanner.ai_audit': 'تدقيق قانوني بالذكاء الاصطناعي',
+    'scanner.ai_audit_running': 'جارٍ التحليل بالذكاء الاصطناعي...',
+    'invoices.view': 'عرض الفاتورة',
 
     // ===== Common edit/delete =====
     'common.edit': 'تعديل',
@@ -866,6 +891,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'common.create': 'Create',
     'common.add': 'Add',
     'common.none': '—',
+    'common.backup_data': 'Backup data (JSON)',
     'common.pwa_note': 'PWA-enabled. Install to desktop for daily access.',
     'common.cache_note': 'Timer & UI state cached locally — minimal server load.',
     'common.footer_left': 'Sanad — Operational dashboard for Saudi legal & SME professionals',
@@ -1000,6 +1026,14 @@ const translations: Record<Lang, Record<string, string>> = {
     // ===== Smart Review =====
     'review.title': 'Smart Review',
     'review.subtitle': 'Flashcards and self-quizzes from your terms, cases, and lectures.',
+    'review.generator.title': 'AI Flashcard Generator',
+    'review.generator.desc': 'Paste your study notes or lecture text, and Gemini will extract key legal terms and automatically add them to your Terms Bank.',
+    'review.generator.notes': 'Study Notes',
+    'review.generator.notes_ph': 'e.g. Under the Civil Transactions Law, force majeure is defined as any unforeseeable event making obligation performance impossible...',
+    'review.generator.category': 'Card Category',
+    'review.generator.button': 'Generate Flashcards with AI (Gemini)',
+    'review.generator.generating': 'Generating cards and extracting terms...',
+    'review.generator.toggle': 'Generate AI cards from notes',
     'review.start': 'Start review session',
     'review.mode_flashcards': 'Flashcards',
     'review.mode_quiz': 'Quiz',
@@ -1203,6 +1237,17 @@ const translations: Record<Lang, Record<string, string>> = {
     'case.no_comms': 'No communications logged.',
     'case.no_invoices': 'No invoices.',
 
+    'case.ai_insights': 'AI Insights',
+    'ai.analyze_case': 'Analyze Case using AI',
+    'ai.analyzing': 'Analyzing and extracting recommendations...',
+    'ai.summary': 'Legal Summary',
+    'ai.risks': 'Risk Analysis',
+    'ai.recommendations': 'Recommendations & Next Steps',
+    'ai.severity_high': 'High Risk',
+    'ai.severity_medium': 'Medium Risk',
+    'ai.severity_low': 'Low Risk',
+    'ai.generate_draft': 'Generate Draft with AI',
+    'ai.prompt_placeholder': 'e.g. Draft an employment contract for a marketing manager with 10k SAR salary under Saudi Labor Law...',
     // ===== Document Scanner =====
     'scanner.title': 'Document Scanner',
     'scanner.subtitle': 'Capture documents with camera, extract text via OCR, export as image or Word.',
@@ -1239,6 +1284,9 @@ const translations: Record<Lang, Record<string, string>> = {
     'scanner.processing': 'Processing',
     'scanner.tip': 'For best results: shoot in good lighting, keep document flat, fill the frame.',
     'scanner.download_all': 'Download all',
+    'scanner.ai_audit': 'Smart Legal Audit with AI',
+    'scanner.ai_audit_running': 'Analyzing with AI...',
+    'invoices.view': 'View Invoice',
 
     'common.edit': 'Edit',
     'common.delete': 'Delete',
@@ -1248,6 +1296,8 @@ const translations: Record<Lang, Record<string, string>> = {
     'common.failed': 'Operation failed',
   },
 }
+
+export type TranslationKey = keyof typeof translations.ar
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   // Lazy initializer reads localStorage once on first client render — no effect needed
@@ -1271,14 +1321,15 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   const toggle = () => setLang(lang === 'ar' ? 'en' : 'ar')
 
-  const t = (key: string, vars?: Record<string, string | number>) => {
+  const t = (key: TranslationKey | (string & {}), vars?: Record<string, string | number>) => {
+    // @ts-ignore
     let str = translations[lang][key] ?? translations.en[key] ?? key
     if (vars) {
       Object.entries(vars).forEach(([k, v]) => {
         str = str.replace(`{${k}}`, String(v))
       })
     }
-    return str
+    return str as string
   }
 
   return (
