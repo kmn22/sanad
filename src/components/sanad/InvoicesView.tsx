@@ -28,17 +28,8 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
+import { ViewHeader, EmptyState, FilterPills, DeleteConfirmDialog } from '@/components/sanad/shared'
+import { apiRequest, apiDelete } from '@/lib/api-client'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -131,49 +122,45 @@ export function InvoicesView({ invoices, clients, cases, timeEntries, stats, onC
 
   const patchStatus = async (inv: Invoice, status: 'sent' | 'paid') => {
     try {
-      const res = await fetch(`/api/invoices/${inv.id}`, {
+      await apiRequest({
+        url: `/api/invoices/${inv.id}`,
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
+        body: { status },
+        successMessage: status === 'paid' ? t('invoices.marked_paid') : t('invoices.marked_sent'),
       })
-      if (!res.ok) throw new Error('patch failed')
-      toast.success(status === 'paid' ? t('invoices.marked_paid') : t('invoices.marked_sent'))
       onChange()
     } catch {
       toast.error(t('invoices.delete'))
     }
   }
 
-  const handleDelete = async (inv: Invoice) => {
-    try {
-      const res = await fetch(`/api/invoices/${inv.id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('delete failed')
-      toast.success(t('invoices.deleted'))
-      onChange()
-    } catch {
-      toast.error(t('invoices.delete'))
-    }
+  const handleDelete = (inv: Invoice) => {
+    apiDelete(`/api/invoices/${inv.id}`, {
+      successMessage: t('invoices.deleted'),
+      errorMessage: t('invoices.delete'),
+      onChange,
+    })
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight">{t('invoices.title')}</h2>
-          <p className="text-sm text-muted-foreground">{t('invoices.subtitle')}</p>
-        </div>
-        <CreateInvoiceDialog
-          open={open}
-          onOpenChange={setOpen}
-          clients={clients}
-          cases={cases}
-          timeEntries={timeEntries}
-          onSaved={() => {
-            onChange()
-            setOpen(false)
-          }}
-        />
-      </div>
+      <ViewHeader
+        title={t('invoices.title')}
+        subtitle={t('invoices.subtitle')}
+        action={
+          <CreateInvoiceDialog
+            open={open}
+            onOpenChange={setOpen}
+            clients={clients}
+            cases={cases}
+            timeEntries={timeEntries}
+            onSaved={() => {
+              onChange()
+              setOpen(false)
+            }}
+          />
+        }
+      />
 
       {/* Stats row */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -206,30 +193,20 @@ export function InvoicesView({ invoices, clients, cases, timeEntries, stats, onC
       </div>
 
       {/* Filter pills */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {STATUS_FILTERS.map((s) => (
-          <Button
-            key={s}
-            variant={filter === s ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setFilter(s)}
-            className="h-7 text-xs"
-          >
-            {s === 'all'
-              ? t('comp.all', { n: counts.all })
-              : `${t(`istatus.${s}`)} (${num(counts[s])})`}
-          </Button>
-        ))}
-      </div>
+      <FilterPills
+        filters={STATUS_FILTERS.map((s) => ({
+          key: s,
+          label: s === 'all'
+            ? t('comp.all', { n: counts.all })
+            : `${t(`istatus.${s}`)} (${num(counts[s])})`,
+        }))}
+        active={filter}
+        onChange={setFilter}
+      />
 
       {/* Empty state */}
       {filtered.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-sm text-muted-foreground">
-            <FileText className="h-8 w-8 mx-auto mb-2 opacity-40" />
-            {t('invoices.empty')}
-          </CardContent>
-        </Card>
+        <EmptyState icon={FileText} message={t('invoices.empty')} />
       ) : (
         <>
           {/* Desktop table */}
@@ -527,8 +504,8 @@ function InvoiceActions({
           </DropdownMenuItem>
         )}
         {(canMarkSent || canMarkPaid) && <DropdownMenuSeparator />}
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
+        <DeleteConfirmDialog
+          trigger={
             <DropdownMenuItem
               className="text-rose-600 dark:text-rose-400 focus:text-rose-700 focus:bg-rose-50 dark:focus:bg-rose-950/40"
               onSelect={(e) => e.preventDefault()}
@@ -536,23 +513,13 @@ function InvoiceActions({
               <Trash2 className="h-3.5 w-3.5 mx-1" />
               {t('invoices.delete')}
             </DropdownMenuItem>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{t('invoices.delete')}</AlertDialogTitle>
-              <AlertDialogDescription>{t('invoices.delete_confirm')}</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-rose-600 hover:bg-rose-700 text-white dark:bg-rose-700 dark:hover:bg-rose-600"
-                onClick={() => onDelete(inv)}
-              >
-                {t('invoices.delete')}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+          }
+          title={t('invoices.delete')}
+          description={t('invoices.delete_confirm')}
+          cancelLabel={t('common.cancel')}
+          confirmLabel={t('invoices.delete')}
+          onConfirm={() => onDelete(inv)}
+        />
       </DropdownMenuContent>
     </DropdownMenu>
   )

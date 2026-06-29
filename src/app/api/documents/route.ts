@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { createListHandler } from '@/lib/api-helpers'
 
-export async function GET() {
-  const docs = await db.legalDocument.findMany({ orderBy: { updatedAt: 'desc' } })
-  return NextResponse.json(docs)
-}
+export const GET = createListHandler('legalDocument', {
+  orderBy: { updatedAt: 'desc' },
+})
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
   const doc = await db.legalDocument.create({ data: body })
-  // Auto-generate follow-up task when a doc is created
   if (doc.docType === 'nda' && doc.status === 'sent') {
     const due = new Date()
     due.setDate(due.getDate() + 3)

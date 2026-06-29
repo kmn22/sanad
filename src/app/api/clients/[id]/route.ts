@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { createPatchHandler, createDeleteHandler } from '@/lib/api-helpers'
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -15,15 +16,6 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   return NextResponse.json(client)
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const body = await req.json()
-  const updated = await db.client.update({ where: { id }, data: body })
-  return NextResponse.json(updated)
-}
+export const PATCH = createPatchHandler('client')
 
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  await db.client.delete({ where: { id } })
-  return NextResponse.json({ ok: true })
-}
+export const DELETE = createDeleteHandler('client')
