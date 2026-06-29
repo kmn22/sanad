@@ -1,54 +1,56 @@
-const CACHE_NAME = 'sanad-pwa-cache-v2';
+const CACHE_NAME = 'sanad-pwa-cache-v3';
 const urlsToCache = [
   '/',
   '/manifest.json',
   '/logo.svg',
+  '/icon-192.png',
+  '/icon-512.png',
 ];
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        return cache.addAll(urlsToCache);
-      })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache))
   );
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
+    caches.keys().then((cacheNames) =>
+      Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
+          if (cacheName !== CACHE_NAME) return caches.delete(cacheName);
         })
-      );
-    })
+      )
+    )
   );
   self.clients.claim();
 });
 
-// Network-first strategy
+// Network-first for navigations + static; bypass API + auth routes entirely.
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
-  
+  const req = event.request;
+  if (req.method !== 'GET') return;
+
+  const url = new URL(req.url);
+  // Never cache API / auth / Next data; let the network handle them.
+  if (
+    url.pathname.startsWith('/api/') ||
+    url.pathname.startsWith('/_next/data/') ||
+    url.pathname.startsWith('/_next/image')
+  ) {
+    return;
+  }
+
   event.respondWith(
-    fetch(event.request)
+    fetch(req)
       .then((response) => {
-        // Clone and cache the successful response
         if (response && response.status === 200 && response.type === 'basic') {
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
         }
         return response;
       })
-      .catch(() => {
-        // Fallback to cache if network fails
-        return caches.match(event.request);
-      })
+      .catch(() => caches.match(req).then((m) => m || caches.match('/')))
   );
 });

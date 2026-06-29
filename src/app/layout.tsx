@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/lib/sanad/i18n";
 import { ReactQueryProvider } from "@/components/providers/ReactQueryProvider";
 import { SessionProvider } from "@/components/providers/SessionProvider";
+import { PWAInstallBanner } from "@/components/sanad/PWAInstallBanner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -75,6 +76,7 @@ export default function RootLayout({
             >
               <LanguageProvider>
                 {children}
+                <PWAInstallBanner />
               </LanguageProvider>
               <Toaster />
             </ThemeProvider>
