@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
   const clientId = searchParams.get('clientId')
   const caseId = searchParams.get('caseId')
 
-  const where: any = {}
+  const where: Record<string, string> = {}
   if (clientId) where.clientId = clientId
   if (caseId) where.caseId = caseId
 

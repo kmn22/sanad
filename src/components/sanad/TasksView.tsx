@@ -21,6 +21,8 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Plus, ListTodo, Sparkles, Calendar } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLang } from '@/lib/sanad/i18n'
+import { ViewHeader, EmptyState, FilterPills } from '@/components/sanad/shared'
+import { apiPatch, apiPost } from '@/lib/api-client'
 import {
   PRIORITY_COLORS,
   daysUntil,
@@ -67,39 +69,32 @@ export function TasksView({ tasks, cases, onChange }: Props) {
     auto: sorted.filter(t => t.status !== 'done' && t.autoGen).length,
   }
 
-  const toggleDone = async (task: Task) => {
+  const toggleDone = (task: Task) => {
     const newStatus = task.status === 'done' ? 'todo' : 'done'
-    await fetch(`/api/tasks/${task.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus }),
+    apiPatch(`/api/tasks/${task.id}`, { status: newStatus }, {
+      successMessage: newStatus === 'done' ? t('tasks.completed') : t('tasks.reopened'),
+      onChange,
     })
-    toast.success(newStatus === 'done' ? t('tasks.completed') : t('tasks.reopened'))
-    onChange()
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight">{t('tasks.title')}</h2>
-          <p className="text-sm text-muted-foreground">{t('tasks.subtitle')}</p>
-        </div>
-        <AddTaskDialog open={open} onOpenChange={setOpen} cases={cases} onSaved={() => { onChange(); setOpen(false) }} />
-      </div>
+      <ViewHeader
+        title={t('tasks.title')}
+        subtitle={t('tasks.subtitle')}
+        action={<AddTaskDialog open={open} onOpenChange={setOpen} cases={cases} onSaved={() => { onChange(); setOpen(false) }} />}
+      />
 
-      <div className="flex items-center gap-2 flex-wrap">
-        {([
-          ['all', t('tasks.all', { n: counts.all })],
-          ['today', t('tasks.today', { n: counts.today })],
-          ['overdue', t('tasks.overdue', { n: counts.overdue })],
-          ['auto', t('tasks.auto', { n: counts.auto })],
-        ] as const).map(([key, label]) => (
-          <Button key={key} variant={filter === key ? 'default' : 'outline'} size="sm" onClick={() => setFilter(key)} className="h-7 text-xs">
-            {label}
-          </Button>
-        ))}
-      </div>
+      <FilterPills
+        filters={[
+          { key: 'all', label: t('tasks.all', { n: counts.all }) },
+          { key: 'today', label: t('tasks.today', { n: counts.today }) },
+          { key: 'overdue', label: t('tasks.overdue', { n: counts.overdue }) },
+          { key: 'auto', label: t('tasks.auto', { n: counts.auto }) },
+        ]}
+        active={filter}
+        onChange={(k) => setFilter(k as 'all' | 'today' | 'overdue' | 'auto')}
+      />
 
       <Card>
         <CardContent className="p-0">
@@ -150,9 +145,8 @@ export function TasksView({ tasks, cases, onChange }: Props) {
                 )
               })}
               {filtered.length === 0 && (
-                <li className="p-12 text-center text-sm text-muted-foreground">
-                  <ListTodo className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                  {t('tasks.empty')}
+                <li className="p-12">
+                  <EmptyState icon={ListTodo} message={t('tasks.empty')} />
                 </li>
               )}
             </ul>
@@ -182,18 +176,13 @@ function AddTaskDialog({
       toast.error(t('tasks.title'))
       return
     }
-    await fetch('/api/tasks', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...form,
-        dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
-        caseId: form.caseId || null,
-        status: 'todo',
-        autoGen: false,
-      }),
-    })
-    toast.success(t('tasks.added'))
+    await apiPost('/api/tasks', {
+      ...form,
+      dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
+      caseId: form.caseId || null,
+      status: 'todo',
+      autoGen: false,
+    }, { successMessage: t('tasks.added') })
     setForm({ title: '', description: '', priority: 'normal', dueDate: '', caseId: '' })
     onSaved()
   }

@@ -26,6 +26,8 @@ import {
 import { FileText, Plus, MoreVertical, FileSignature, Calendar, ArrowRight } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLang } from '@/lib/sanad/i18n'
+import { ViewHeader, EmptyState, FilterPills } from '@/components/sanad/shared'
+import { apiPatch, apiPost } from '@/lib/api-client'
 import {
   DOC_STATUS_COLORS,
   daysUntil,
@@ -58,39 +60,29 @@ export function DocumentsView({ documents, cases, onChange }: Props) {
   const counts: Record<string, number> = { all: documents.length }
   STATUSES.forEach((s) => { counts[s] = documents.filter((d) => d.status === s).length })
 
-  const updateStatus = async (doc: LegalDocument, status: string) => {
-    await fetch(`/api/documents/${doc.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
+  const updateStatus = (doc: LegalDocument, status: string) => {
+    apiPatch(`/api/documents/${doc.id}`, { status }, {
+      successMessage: `${doc.title} → ${t(`dstatus.${status}`)}`,
+      onChange,
     })
-    toast.success(`${doc.title} → ${t(`dstatus.${status}`)}`)
-    onChange()
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight">{t('docs.title')}</h2>
-          <p className="text-sm text-muted-foreground">{t('docs.subtitle')}</p>
-        </div>
-        <AddDocDialog open={open} onOpenChange={setOpen} cases={cases} onSaved={() => { onChange(); setOpen(false) }} />
-      </div>
+      <ViewHeader
+        title={t('docs.title')}
+        subtitle={t('docs.subtitle')}
+        action={<AddDocDialog open={open} onOpenChange={setOpen} cases={cases} onSaved={() => { onChange(); setOpen(false) }} />}
+      />
 
-      <div className="flex items-center gap-2 flex-wrap">
-        {(['all', ...STATUSES] as const).map((s) => (
-          <Button
-            key={s}
-            variant={filter === s ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setFilter(s)}
-            className="h-7 text-xs"
-          >
-            {s === 'all' ? t('comp.all', { n: counts.all }) : `${t(`dstatus.${s}`)} (${counts[s]})`}
-          </Button>
-        ))}
-      </div>
+      <FilterPills
+        filters={['all', ...STATUSES].map((s) => ({
+          key: s,
+          label: s === 'all' ? t('comp.all', { n: counts.all }) : `${t(`dstatus.${s}`)} (${counts[s]})`,
+        }))}
+        active={filter}
+        onChange={setFilter}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filtered.map((d) => {
@@ -186,12 +178,7 @@ export function DocumentsView({ documents, cases, onChange }: Props) {
       </div>
 
       {filtered.length === 0 && (
-        <Card>
-          <CardContent className="py-12 text-center text-sm text-muted-foreground">
-            <FileText className="h-8 w-8 mx-auto mb-2 opacity-40" />
-            {t('docs.empty')}
-          </CardContent>
-        </Card>
+        <EmptyState icon={FileText} message={t('docs.empty')} />
       )}
     </div>
   )
@@ -225,17 +212,12 @@ function AddDocDialog({
       toast.error(t('docs.req_fields'))
       return
     }
-    await fetch('/api/documents', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...form,
-        signedDate: form.signedDate ? new Date(form.signedDate).toISOString() : null,
-        expiryDate: form.expiryDate ? new Date(form.expiryDate).toISOString() : null,
-        caseId: form.caseId || null,
-      }),
-    })
-    toast.success(t('docs.added'))
+    await apiPost('/api/documents', {
+      ...form,
+      signedDate: form.signedDate ? new Date(form.signedDate).toISOString() : null,
+      expiryDate: form.expiryDate ? new Date(form.expiryDate).toISOString() : null,
+      caseId: form.caseId || null,
+    }, { successMessage: t('docs.added') })
     setForm({ title: '', docType: 'nda', status: 'draft', parties: '', signedDate: '', expiryDate: '', caseId: '', notes: '' })
     onSaved()
   }

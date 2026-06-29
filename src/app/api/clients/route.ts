@@ -1,19 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { createListHandler, createCreateHandler } from '@/lib/api-helpers'
 
-export async function GET() {
-  const clients = await db.client.findMany({
-    include: {
-      cases: { select: { id: true, title: true, stage: true } },
-      _count: { select: { cases: true, documents: true, communications: true, invoices: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-  })
-  return NextResponse.json(clients)
-}
+export const GET = createListHandler('client', {
+  include: {
+    cases: { select: { id: true, title: true, stage: true } },
+    _count: { select: { cases: true, documents: true, communications: true, invoices: true } },
+  },
+  orderBy: { createdAt: 'desc' },
+})
 
-export async function POST(req: NextRequest) {
-  const body = await req.json()
-  const client = await db.client.create({ data: body })
-  return NextResponse.json(client)
-}
+export const POST = createCreateHandler('client')

@@ -16,17 +16,9 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
+import { ViewHeader, EmptyState, DeleteConfirmDialog } from '@/components/sanad/shared'
+import { apiDelete, apiRequest } from '@/lib/api-client'
+import { toast } from 'sonner'
 import {
   Plus,
   Search,
@@ -42,7 +34,6 @@ import {
   MessageSquare,
   Users,
 } from 'lucide-react'
-import { toast } from 'sonner'
 import { useLang } from '@/lib/sanad/i18n'
 import type { Client } from '@/lib/sanad/types'
 
@@ -89,28 +80,25 @@ export function ClientsView({ clients, onChange }: Props) {
     onChange()
   }
 
-  const handleDelete = async (client: Client) => {
-    try {
-      const res = await fetch(`/api/clients/${client.id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('delete failed')
-      toast.success(t('clients.deleted'))
-      onChange()
-    } catch {
-      toast.error(t('clients.delete'))
-    }
+  const handleDelete = (client: Client) => {
+    apiDelete(`/api/clients/${client.id}`, {
+      successMessage: t('clients.deleted'),
+      errorMessage: t('clients.delete'),
+      onChange,
+    })
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight">{t('clients.title')}</h2>
-          <p className="text-sm text-muted-foreground">{t('clients.subtitle')}</p>
-        </div>
-        <Button size="sm" onClick={openAdd}>
-          <Plus className="mx-1.5 h-4 w-4" /> {t('clients.add')}
-        </Button>
-      </div>
+      <ViewHeader
+        title={t('clients.title')}
+        subtitle={t('clients.subtitle')}
+        action={
+          <Button size="sm" onClick={openAdd}>
+            <Plus className="mx-1.5 h-4 w-4" /> {t('clients.add')}
+          </Button>
+        }
+      />
 
       <div className="relative">
         <Search className="absolute top-1/2 -translate-y-1/2 start-3 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -123,12 +111,10 @@ export function ClientsView({ clients, onChange }: Props) {
       </div>
 
       {filtered.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-sm text-muted-foreground">
-            <Users className="h-8 w-8 mx-auto mb-2 opacity-40" />
-            {clients.length === 0 ? t('clients.empty') : t('clients.no_results')}
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={Users}
+          message={clients.length === 0 ? t('clients.empty') : t('clients.no_results')}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((c) => (
@@ -202,8 +188,8 @@ function ClientCard({
             >
               <Edit className="h-3.5 w-3.5" />
             </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
+            <DeleteConfirmDialog
+              trigger={
                 <Button
                   variant="ghost"
                   size="sm"
@@ -212,25 +198,13 @@ function ClientCard({
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>{t('common.delete')}</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    {t('clients.delete_confirm')}
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-                  <AlertDialogAction
-                    className="bg-rose-600 hover:bg-rose-700 text-white dark:bg-rose-700 dark:hover:bg-rose-600"
-                    onClick={() => onDelete(client)}
-                  >
-                    {t('common.delete')}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+              }
+              title={t('common.delete')}
+              description={t('clients.delete_confirm')}
+              cancelLabel={t('common.cancel')}
+              confirmLabel={t('common.delete')}
+              onConfirm={() => onDelete(client)}
+            />
           </div>
         </div>
 
@@ -350,19 +324,12 @@ function ClientFormDialog({
         company: form.company.trim() || null,
         notes: form.notes.trim() || null,
       }
-      const res = isEdit
-        ? await fetch(`/api/clients/${client!.id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-          })
-        : await fetch('/api/clients', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-          })
-      if (!res.ok) throw new Error('save failed')
-      toast.success(isEdit ? t('clients.updated') : t('clients.added'))
+      await apiRequest({
+        url: isEdit ? `/api/clients/${client!.id}` : '/api/clients',
+        method: isEdit ? 'PATCH' : 'POST',
+        body: payload,
+        successMessage: isEdit ? t('clients.updated') : t('clients.added'),
+      })
       onSaved()
     } catch {
       toast.error(isEdit ? t('clients.updated') : t('clients.added'))

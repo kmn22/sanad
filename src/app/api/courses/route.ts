@@ -1,13 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { createListHandler, createCreateHandler } from '@/lib/api-helpers'
 
-export async function GET() {
-  const courses = await db.course.findMany({ include: { lectures: true, deadlines: true }, orderBy: { createdAt: 'asc' } })
-  return NextResponse.json(courses)
-}
+export const GET = createListHandler('course', {
+  include: { lectures: true, deadlines: true },
+  orderBy: { createdAt: 'asc' },
+})
 
-export async function POST(req: NextRequest) {
-  const body = await req.json()
-  const c = await db.course.create({ data: body })
-  return NextResponse.json(c)
-}
+export const POST = createCreateHandler('course')

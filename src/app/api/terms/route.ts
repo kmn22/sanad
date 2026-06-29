@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { createCreateHandler } from '@/lib/api-helpers'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -9,8 +10,4 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(terms)
 }
 
-export async function POST(req: NextRequest) {
-  const body = await req.json()
-  const t = await db.legalTerm.create({ data: body })
-  return NextResponse.json(t)
-}
+export const POST = createCreateHandler('legalTerm')

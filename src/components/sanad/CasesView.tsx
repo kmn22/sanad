@@ -34,17 +34,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
+import { ViewHeader, DeleteConfirmDialog } from '@/components/sanad/shared'
+import { apiPatch, apiDelete, apiRequest } from '@/lib/api-client'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Plus, GripVertical, Users, MoreVertical, Edit, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -80,7 +71,7 @@ export function CasesView({ cases, clients = [], onChange }: Props) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
 
   const onDragStart = (e: DragStartEvent) => setActiveId(e.active.id as string)
-  const onDragEnd = async (e: DragEndEvent) => {
+  const onDragEnd = (e: DragEndEvent) => {
     setActiveId(null)
     const { active, over } = e
     if (!over) return
@@ -88,27 +79,19 @@ export function CasesView({ cases, clients = [], onChange }: Props) {
     const caseItem = cases.find((c) => c.id === active.id)
     if (!caseItem || caseItem.stage === newStage) return
 
-    try {
-      await fetch(`/api/cases/${caseItem.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stage: newStage }),
-      })
-      toast.success(t('cases.moved', { stage: t(`stage.${newStage}`) }))
-      onChange()
-    } catch {
-      toast.error('Failed to move case')
-    }
+    apiPatch(`/api/cases/${caseItem.id}`, { stage: newStage }, {
+      successMessage: t('cases.moved', { stage: t(`stage.${newStage}`) }),
+      errorMessage: 'Failed to move case',
+      onChange,
+    })
   }
 
-  const deleteCase = async (id: string) => {
-    try {
-      await fetch(`/api/cases/${id}`, { method: 'DELETE' })
-      toast.success(t('common.deleted'))
-      onChange()
-    } catch {
-      toast.error(t('common.failed'))
-    }
+  const deleteCase = (id: string) => {
+    apiDelete(`/api/cases/${id}`, {
+      successMessage: t('common.deleted'),
+      errorMessage: t('common.failed'),
+      onChange,
+    })
   }
 
   const byStage = (stage: string) => cases.filter((c) => c.stage === stage)
@@ -116,13 +99,11 @@ export function CasesView({ cases, clients = [], onChange }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight">{t('cases.title')}</h2>
-          <p className="text-sm text-muted-foreground">{t('cases.subtitle', { n: activeCount })}</p>
-        </div>
-        <AddCaseDialog open={open} onOpenChange={setOpen} clients={clients} onSaved={() => { onChange(); setOpen(false) }} />
-      </div>
+      <ViewHeader
+        title={t('cases.title')}
+        subtitle={t('cases.subtitle', { n: activeCount })}
+        action={<AddCaseDialog open={open} onOpenChange={setOpen} clients={clients} onSaved={() => { onChange(); setOpen(false) }} />}
+      />
 
       <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -271,26 +252,19 @@ function CaseCard({
                     <Edit className="h-3 w-3 me-2" />
                     {t('common.edit')}
                   </DropdownMenuItem>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
+                  <DeleteConfirmDialog
+                    trigger={
                       <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-rose-600">
                         <Trash2 className="h-3 w-3 me-2" />
                         {t('common.delete')}
                       </DropdownMenuItem>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>{t('common.delete_confirm')}</AlertDialogTitle>
-                        <AlertDialogDescription>{c.title}</AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>{t('comp.cancel')}</AlertDialogCancel>
-                        <AlertDialogAction onClick={onDelete} className="bg-rose-600 hover:bg-rose-700">
-                          {t('common.delete')}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                    }
+                    title={t('common.delete_confirm')}
+                    description={c.title}
+                    cancelLabel={t('comp.cancel')}
+                    confirmLabel={t('common.delete')}
+                    onConfirm={onDelete}
+                  />
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -372,21 +346,12 @@ function AddCaseDialog({
       value: form.value ? parseFloat(form.value) : null,
     }
 
-    if (isEdit && editingCase) {
-      await fetch(`/api/cases/${editingCase.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-      toast.success(t('common.updated'))
-    } else {
-      await fetch('/api/cases', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-      toast.success(t('cases.added'))
-    }
+    await apiRequest({
+      url: isEdit && editingCase ? `/api/cases/${editingCase.id}` : '/api/cases',
+      method: isEdit ? 'PATCH' : 'POST',
+      body: payload,
+      successMessage: isEdit ? t('common.updated') : t('cases.added'),
+    })
     onSaved()
   }
 

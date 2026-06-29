@@ -1,13 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { createListHandler, createCreateHandler } from '@/lib/api-helpers'
 
-export async function GET() {
-  const cases = await db.legalCase.findMany({ orderBy: { updatedAt: 'desc' }, include: { timeEntries: true } })
-  return NextResponse.json(cases)
-}
+export const GET = createListHandler('legalCase', {
+  orderBy: { updatedAt: 'desc' },
+  include: { timeEntries: true },
+})
 
-export async function POST(req: NextRequest) {
-  const body = await req.json()
-  const c = await db.legalCase.create({ data: body })
-  return NextResponse.json(c)
-}
+export const POST = createCreateHandler('legalCase')
