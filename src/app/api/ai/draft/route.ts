@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ollamaChat } from '@/lib/ai/ollama';
+import { aiDraftSchema } from '@/lib/validations';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { prompt } = body;
-
-    if (!prompt || !prompt.trim()) {
-      return NextResponse.json({ error: 'Prompt content is required' }, { status: 400 });
+    const parsed = aiDraftSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten().fieldErrors }, { status: 400 });
     }
+    const { prompt } = parsed.data;
 
     let draftContent = '';
 
@@ -25,9 +26,9 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ success: true, draft: draftContent });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("AI Draft Route failed:", error);
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 

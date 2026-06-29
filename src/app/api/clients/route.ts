@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { clientSchema } from '@/lib/validations'
 
 export async function GET() {
   const clients = await db.client.findMany({
@@ -14,6 +15,10 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const client = await db.client.create({ data: body })
+  const parsed = clientSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten().fieldErrors }, { status: 400 })
+  }
+  const client = await db.client.create({ data: parsed.data })
   return NextResponse.json(client)
 }

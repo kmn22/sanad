@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ollamaChat } from '@/lib/ai/ollama';
+import { aiAnalyzeSchema } from '@/lib/validations';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { text, type = 'document' } = body;
-
-    if (!text || !text.trim()) {
-      return NextResponse.json({ error: 'Text content is required' }, { status: 400 });
+    const parsed = aiAnalyzeSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten().fieldErrors }, { status: 400 });
     }
+    const { text, type } = parsed.data;
 
     let analysisResult;
 
@@ -55,9 +56,9 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ success: true, analysis: analysisResult });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("AI Analysis Route failed:", error);
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 

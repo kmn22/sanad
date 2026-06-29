@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { invoiceCreateSchema } from '@/lib/validations'
 
 export async function GET() {
   const invoices = await db.invoice.findMany({
@@ -15,7 +16,11 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { timeEntryIds, clientId, caseId, dueDate, notes } = body
+  const parsed = invoiceCreateSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten().fieldErrors }, { status: 400 })
+  }
+  const { timeEntryIds, clientId, caseId, dueDate, notes } = parsed.data
 
   // Fetch time entries
   const timeEntries = await db.timeEntry.findMany({
