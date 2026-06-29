@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { documentSchema } from '@/lib/validations'
 
 export async function GET() {
   const docs = await db.legalDocument.findMany({ orderBy: { updatedAt: 'desc' } })
@@ -8,7 +9,11 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const doc = await db.legalDocument.create({ data: body })
+  const parsed = documentSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten().fieldErrors }, { status: 400 })
+  }
+  const doc = await db.legalDocument.create({ data: parsed.data })
   // Auto-generate follow-up task when a doc is created
   if (doc.docType === 'nda' && doc.status === 'sent') {
     const due = new Date()
