@@ -89,21 +89,23 @@ export function CasesView({ cases, clients = [], onChange }: Props) {
     if (!caseItem || caseItem.stage === newStage) return
 
     try {
-      await fetch(`/api/cases/${caseItem.id}`, {
+      const res = await fetch(`/api/cases/${caseItem.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ stage: newStage }),
       })
+      if (!res.ok) throw new Error('Failed to move case')
       toast.success(t('cases.moved', { stage: t(`stage.${newStage}`) }))
       onChange()
     } catch {
-      toast.error('Failed to move case')
+      toast.error(t('common.failed'))
     }
   }
 
   const deleteCase = async (id: string) => {
     try {
-      await fetch(`/api/cases/${id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/cases/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete case')
       toast.success(t('common.deleted'))
       onChange()
     } catch {
@@ -372,22 +374,28 @@ function AddCaseDialog({
       value: form.value ? parseFloat(form.value) : null,
     }
 
-    if (isEdit && editingCase) {
-      await fetch(`/api/cases/${editingCase.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-      toast.success(t('common.updated'))
-    } else {
-      await fetch('/api/cases', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-      toast.success(t('cases.added'))
+    try {
+      if (isEdit && editingCase) {
+        const res = await fetch(`/api/cases/${editingCase.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        if (!res.ok) throw new Error('Failed to update case')
+        toast.success(t('common.updated'))
+      } else {
+        const res = await fetch('/api/cases', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        if (!res.ok) throw new Error('Failed to create case')
+        toast.success(t('cases.added'))
+      }
+      onSaved()
+    } catch {
+      toast.error(t('common.failed'))
     }
-    onSaved()
   }
 
   return (

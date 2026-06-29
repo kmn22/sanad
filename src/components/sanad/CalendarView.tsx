@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -99,10 +100,12 @@ export function CalendarView({ onNavigate }: Props) {
     ;(async () => {
       try {
         const res = await fetch('/api/calendar')
+        if (!res.ok) throw new Error('Failed to fetch calendar')
         const json = await res.json()
         if (!cancelled) setEvents((json.events as CalendarEvent[]) ?? [])
       } catch (e) {
-        console.error(e)
+        console.error('Failed to load calendar:', e)
+        if (!cancelled) toast.error(t('common.failed'))
       } finally {
         if (!cancelled) setLoading(false)
       }
