@@ -60,8 +60,8 @@ export function TermsPanel({ terms, onChange }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{t('terms.subtitle')}</p>
+      <div className="flex items-center gap-4">
+        <p className="text-sm font-semibold text-muted-foreground">{t('student.terms_subtitle')}</p>
         <AddTermDialog open={open} onOpenChange={setOpen} onSaved={() => { onChange(); setOpen(false) }} />
       </div>
 

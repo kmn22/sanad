@@ -118,7 +118,7 @@ export function DeepWorkView({ cases, timeEntries, onChange }: Props) {
     toast.info(t('dw.stopped'))
   }
 
-  const completeSession = async () => {
+  async function completeSession() {
     await saveSession(state.total)
     setState({ ...DEFAULT_STATE })
     const modeLabel = state.mode === 'focus' ? t('dw.mode_focus') : state.mode === 'billable' ? t('dw.mode_billable') : t('dw.mode_break')

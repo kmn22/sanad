@@ -1,0 +1,1 @@
+{"nodes": [{"id": "src_components_sanad_casesview_tsx", "label": "CasesView Component", "type": "component", "file_type": "code", "source_file": "src/components/sanad/CasesView.tsx", "summary": "React component implementing the Kanban-style cases board visible behind the drawer"}], "edges": [], "hyperedges": []}

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ollamaChat } from '@/lib/ai/ollama';
+import { ollamaChat, ollamaChatStream, SAUDI_PROMPTS } from '@/lib/ai/ollama';
 
 export async function POST(req: NextRequest) {
+  const stream = req.nextUrl.searchParams.get('stream') === '1';
+
   try {
     const body = await req.json();
     const { prompt } = body;
@@ -10,23 +12,51 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Prompt content is required' }, { status: 400 });
     }
 
-    let draftContent = '';
+    const messages = [
+      { role: 'system' as const, content: SAUDI_PROMPTS.draft },
+      { role: 'user' as const, content: prompt },
+    ];
 
-    try {
-      draftContent = await ollamaChat([
-        { role: 'system', content: 'أنت محامٍ محترف ومستشار قانوني سعودي. قم بصياغة العقود والمستندات القانونية باحترافية عالية مع الالتزام بالأنظمة السعودية (مثل نظام العمل، نظام المعاملات المدنية، أو نظام الشركات). قم بإرجاع نص المستند مباشرة بتنسيق Markdown متوافق، بدون أي مقدمات أو شروحات إضافية.' },
-        { role: 'user', content: prompt }
-      ]);
-    } catch (sdkError: any) {
-      console.warn("Ollama failed or unreachable. Falling back to default generated draft.", sdkError.message);
-      
-      // Fallback: Default draft text
-      draftContent = simulateDraft(prompt);
+    if (stream) {
+      const encoder = new TextEncoder();
+      const readable = new ReadableStream({
+        async start(controller) {
+          const send = (event: string, data: string) => {
+            controller.enqueue(encoder.encode(`event: ${event}\ndata: ${data.replace(/\n/g, '\\n')}\n\n`));
+          };
+          try {
+            for await (const chunk of ollamaChatStream(messages)) {
+              send('token', chunk);
+            }
+            send('done', '');
+          } catch (e: any) {
+            console.warn('Ollama stream failed, sending fallback as one chunk:', e?.message);
+            send('token', simulateDraft(prompt));
+            send('done', '');
+          } finally {
+            controller.close();
+          }
+        },
+      });
+      return new Response(readable, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache, no-transform',
+          Connection: 'keep-alive',
+        },
+      });
     }
 
+    let draftContent = '';
+    try {
+      draftContent = await ollamaChat(messages);
+    } catch (sdkError: any) {
+      console.warn('Ollama failed or unreachable. Falling back to default generated draft.', sdkError.message);
+      draftContent = simulateDraft(prompt);
+    }
     return NextResponse.json({ success: true, draft: draftContent });
   } catch (error: any) {
-    console.error("AI Draft Route failed:", error);
+    console.error('AI Draft Route failed:', error);
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
   }
 }

@@ -33,6 +33,7 @@ export interface LegalCase {
   court: string | null
   opposingParty: string | null
   notes: string | null
+  portalToken?: string | null
   client?: { id: string; name: string } | null
 }
 
@@ -104,7 +105,10 @@ export interface DashboardData {
     uninvoicedSec: number
     uninvoicedSAR: number
     communicationsToday: number
+    winRate: number
+    revenueForecast: number
   }
+  monthlyRevenue: { month: string; revenue: number }[]
   compliance: { expiringSoon: ComplianceItem[]; expired: ComplianceItem[]; all: ComplianceItem[] }
   cases: { active: LegalCase[]; urgent: LegalCase[]; all: LegalCase[] }
   documents: { active: LegalDocument[]; expiring: LegalDocument[]; all: LegalDocument[] }

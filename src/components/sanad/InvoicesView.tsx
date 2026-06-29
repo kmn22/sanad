@@ -55,9 +55,12 @@ import {
   Trash2,
   MoreVertical,
   Calendar,
+  Eye,
+  Printer,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLang } from '@/lib/sanad/i18n'
+import { generateZatcaQr } from '@/lib/zatca'
 import {
   formatSAR,
   formatDate,
@@ -111,6 +114,8 @@ export function InvoicesView({ invoices, clients, cases, timeEntries, stats, onC
   const { lang, t } = useLang()
   const [open, setOpen] = useState(false)
   const [filter, setFilter] = useState<string>('all')
+  const [activeInvoice, setActiveInvoice] = useState<Invoice | null>(null)
+  const [previewOpen, setPreviewOpen] = useState(false)
 
   const num = (n: number) => (lang === 'ar' ? n.toLocaleString('ar-EG') : n.toString())
 
@@ -255,6 +260,10 @@ export function InvoicesView({ invoices, clients, cases, timeEntries, stats, onC
                       inv={inv}
                       onPatch={patchStatus}
                       onDelete={handleDelete}
+                      onView={(i) => {
+                        setActiveInvoice(i)
+                        setPreviewOpen(true)
+                      }}
                     />
                   ))}
                 </TableBody>
@@ -270,11 +279,21 @@ export function InvoicesView({ invoices, clients, cases, timeEntries, stats, onC
                 inv={inv}
                 onPatch={patchStatus}
                 onDelete={handleDelete}
+                onView={(i) => {
+                  setActiveInvoice(i)
+                  setPreviewOpen(true)
+                }}
               />
             ))}
           </div>
         </>
       )}
+
+      <InvoicePreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        inv={activeInvoice}
+      />
     </div>
   )
 }
@@ -316,10 +335,12 @@ function InvoiceRow({
   inv,
   onPatch,
   onDelete,
+  onView,
 }: {
   inv: Invoice
   onPatch: (i: Invoice, s: 'sent' | 'paid') => void
   onDelete: (i: Invoice) => void
+  onView: (i: Invoice) => void
 }) {
   const { lang, t } = useLang()
   const dueDays = inv.dueDate ? daysUntil(inv.dueDate) : null
@@ -332,7 +353,11 @@ function InvoiceRow({
     <TableRow className="group">
       <TableCell className="ps-4">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-mono text-xs font-medium" dir="ltr">
+          <span
+            className="font-mono text-xs font-semibold cursor-pointer hover:underline text-primary"
+            dir="ltr"
+            onClick={() => onView(inv)}
+          >
             {inv.number}
           </span>
           <Badge
@@ -391,7 +416,7 @@ function InvoiceRow({
         )}
       </TableCell>
       <TableCell className="pe-3">
-        <InvoiceActions inv={inv} onPatch={onPatch} onDelete={onDelete} />
+        <InvoiceActions inv={inv} onPatch={onPatch} onDelete={onDelete} onView={onView} />
       </TableCell>
     </TableRow>
   )
@@ -401,10 +426,12 @@ function InvoiceCard({
   inv,
   onPatch,
   onDelete,
+  onView,
 }: {
   inv: Invoice
   onPatch: (i: Invoice, s: 'sent' | 'paid') => void
   onDelete: (i: Invoice) => void
+  onView: (i: Invoice) => void
 }) {
   const { lang, t } = useLang()
   const dueDays = inv.dueDate ? daysUntil(inv.dueDate) : null
@@ -419,7 +446,11 @@ function InvoiceCard({
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-mono text-xs font-medium" dir="ltr">
+              <span
+                className="font-mono text-xs font-semibold cursor-pointer hover:underline text-primary"
+                dir="ltr"
+                onClick={() => onView(inv)}
+              >
                 {inv.number}
               </span>
               <Badge
@@ -434,7 +465,7 @@ function InvoiceCard({
               <p className="text-[11px] text-muted-foreground truncate">{inv.case.title}</p>
             )}
           </div>
-          <InvoiceActions inv={inv} onPatch={onPatch} onDelete={onDelete} />
+          <InvoiceActions inv={inv} onPatch={onPatch} onDelete={onDelete} onView={onView} />
         </div>
 
         <div className="grid grid-cols-2 gap-2 text-xs pt-1">
@@ -497,10 +528,12 @@ function InvoiceActions({
   inv,
   onPatch,
   onDelete,
+  onView,
 }: {
   inv: Invoice
   onPatch: (i: Invoice, s: 'sent' | 'paid') => void
   onDelete: (i: Invoice) => void
+  onView: (i: Invoice) => void
 }) {
   const { t } = useLang()
   const canMarkSent = inv.status === 'draft'
@@ -514,6 +547,11 @@ function InvoiceActions({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => onView(inv)}>
+          <Eye className="h-3.5 w-3.5 mx-1" />
+          {t('invoices.view')}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         {canMarkSent && (
           <DropdownMenuItem onClick={() => onPatch(inv, 'sent')}>
             <FileText className="h-3.5 w-3.5 mx-1" />
@@ -825,3 +863,209 @@ function CreateInvoiceDialog({
     </Dialog>
   )
 }
+
+function InvoicePreviewDialog({
+  open,
+  onOpenChange,
+  inv,
+}: {
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  inv: Invoice | null
+}) {
+  const { lang, t } = useLang()
+
+  const qrBase64 = useMemo(() => {
+    if (!inv) return ''
+    return generateZatcaQr(
+      "مكتب سند للمحاماة والاستشارات القانونية",
+      "310122456700003",
+      inv.issueDate ? new Date(inv.issueDate).toISOString() : new Date().toISOString(),
+      inv.total,
+      inv.vatAmount
+    )
+  }, [inv])
+
+  if (!inv) return null
+
+  const handlePrint = () => {
+    window.print()
+  }
+
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(qrBase64)}`
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-3xl overflow-y-auto max-h-[90vh]">
+        <DialogHeader className="flex flex-row items-center justify-between border-b pb-4">
+          <DialogTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-primary" />
+            <span>
+              {lang === 'ar' ? 'تفاصيل الفاتورة' : 'Invoice Details'} — {inv.number}
+            </span>
+          </DialogTitle>
+          <Button variant="outline" size="sm" onClick={handlePrint} className="h-8 gap-1.5 ms-auto me-8 print:hidden">
+            <Printer className="h-4 w-4" />
+            <span>{lang === 'ar' ? 'طباعة' : 'Print'}</span>
+          </Button>
+        </DialogHeader>
+
+        {/* Invoice Printable Sheet */}
+        <div className="p-6 bg-card border rounded-lg space-y-6 text-sm font-sans relative antialiased print:border-0 print:p-0">
+          
+          {/* Header section */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:justify-between items-start border-b pb-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <div className="h-8 w-8 rounded-lg bg-primary text-primary-foreground grid place-items-center font-bold text-lg">س</div>
+                <h3 className="text-lg font-bold text-primary">مكتب سند للمحاماة</h3>
+              </div>
+              <p className="text-xs text-muted-foreground">Sanad Legal & Consultation Practice</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                الرقم الضريبي / VAT:{' '}
+                <span className="font-mono">310122456700003</span>
+              </p>
+              <p className="text-xs text-muted-foreground">الرياض، المملكة العربية السعودية</p>
+            </div>
+            <div className="text-start sm:rtl:text-end sm:ltr:text-start">
+              <h2 className="text-lg font-bold tracking-tight text-primary">
+                {lang === 'ar' ? 'فاتورة ضريبية مبسطة' : 'Simplified Tax Invoice'}
+              </h2>
+              <div className="mt-2 space-y-1 text-xs">
+                <p>
+                  <span className="text-muted-foreground">{lang === 'ar' ? 'رقم الفاتورة:' : 'Invoice No:'}</span>{' '}
+                  <span className="font-mono font-medium">{inv.number}</span>
+                </p>
+                <p>
+                  <span className="text-muted-foreground">{lang === 'ar' ? 'تاريخ الإصدار:' : 'Issue Date:'}</span>{' '}
+                  <span>{formatDate(inv.issueDate, lang)}</span>
+                </p>
+                {inv.dueDate && (
+                  <p>
+                    <span className="text-muted-foreground">{lang === 'ar' ? 'تاريخ الاستحقاق:' : 'Due Date:'}</span>{' '}
+                    <span>{formatDate(inv.dueDate, lang)}</span>
+                  </p>
+                )}
+                <p>
+                  <span className="text-muted-foreground">{lang === 'ar' ? 'حالة السداد:' : 'Payment Status:'}</span>{' '}
+                  <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${STATUS_COLORS[inv.status]}`}>
+                    {t(`istatus.${inv.status}`)}
+                  </Badge>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Client Details */}
+          <div className="bg-muted/30 p-4 rounded-md border grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-muted-foreground mb-1 font-semibold">
+                {lang === 'ar' ? 'مفوتر إلى:' : 'Bill To:'}
+              </p>
+              <p className="font-medium text-sm text-foreground">{inv.client?.name || '—'}</p>
+              {inv.client?.company && <p className="text-xs text-muted-foreground mt-0.5">{inv.client.company}</p>}
+            </div>
+            <div className="text-start sm:rtl:text-end sm:ltr:text-start">
+              {inv.case && (
+                <>
+                  <p className="text-xs text-muted-foreground mb-0.5 font-semibold">
+                    {lang === 'ar' ? 'الموضوع / القضية:' : 'Subject / Case:'}
+                  </p>
+                  <p className="text-xs text-foreground truncate">{inv.case.title}</p>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Items Table */}
+          <div className="border rounded-md overflow-hidden">
+            <Table>
+              <TableHeader className="bg-muted/50">
+                <TableRow>
+                  <TableHead className="ps-4">{lang === 'ar' ? 'الوصف' : 'Description'}</TableHead>
+                  <TableHead className="text-center w-24">{lang === 'ar' ? 'الكمية' : 'Qty'}</TableHead>
+                  <TableHead className="text-end w-32">{lang === 'ar' ? 'السعر' : 'Unit Price'}</TableHead>
+                  <TableHead className="text-end pe-4 w-32">{lang === 'ar' ? 'المجموع' : 'Total'}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow>
+                  <TableCell className="ps-4 font-medium py-4">
+                    {lang === 'ar'
+                      ? 'أتعاب الخدمات الاستشارية والتمثيل القانوني'
+                      : 'Consultation Fees and Professional Legal Representation Services'}
+                    {inv.case && (
+                      <span className="block text-xs font-normal text-muted-foreground mt-1">
+                        ({inv.case.title})
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-center py-4">1</TableCell>
+                  <TableCell className="text-end py-4">{formatSAR(inv.subtotal, lang)}</TableCell>
+                  <TableCell className="text-end pe-4 py-4 font-semibold">
+                    {formatSAR(inv.subtotal, lang)}
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Totals & QR Code Section */}
+          <div className="flex flex-col-reverse sm:flex-row justify-between gap-6 pt-2">
+            
+            {/* ZATCA Compliant QR Code */}
+            <div className="flex flex-col items-center sm:items-start justify-center border p-3 rounded-lg bg-white dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800 w-fit">
+              <img src={qrUrl} alt="ZATCA QR Code" className="h-32 w-32 object-contain" />
+              <p className="text-[9px] text-muted-foreground mt-1 text-center sm:text-start">
+                {lang === 'ar'
+                  ? 'رمز استجابة سريع متوافق مع هيئة الزكاة والضريبة والجمارك'
+                  : 'ZATCA Compliant QR Code'}
+              </p>
+            </div>
+
+            {/* Financial Summary */}
+            <div className="w-full sm:w-72 space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">{lang === 'ar' ? 'المجموع الفرعي:' : 'Subtotal:'}</span>
+                <span className="font-medium">{formatSAR(inv.subtotal, lang)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  {lang === 'ar' ? 'ضريبة القيمة المضافة (15%):' : 'VAT (15%):'}
+                </span>
+                <span className="font-medium">{formatSAR(inv.vatAmount, lang)}</span>
+              </div>
+              <Separator />
+              <div className="flex justify-between text-sm font-bold text-primary">
+                <span>{lang === 'ar' ? 'المجموع الإجمالي:' : 'Grand Total:'}</span>
+                <span>{formatSAR(inv.total, lang)}</span>
+              </div>
+              {inv.paidAmount > 0 && (
+                <div className="flex justify-between text-xs font-semibold text-emerald-600">
+                  <span>{lang === 'ar' ? 'المبلغ المدفوع:' : 'Amount Paid:'}</span>
+                  <span>{formatSAR(inv.paidAmount, lang)}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Terms Footer */}
+          {inv.notes && (
+            <div className="border-t pt-4">
+              <p className="text-xs text-muted-foreground font-semibold mb-1">{lang === 'ar' ? 'ملاحظات:' : 'Notes:'}</p>
+              <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">{inv.notes}</p>
+            </div>
+          )}
+
+          <div className="text-center text-[10px] text-muted-foreground border-t pt-4">
+            {lang === 'ar'
+              ? 'شكراً لتعاملكم معنا. تم إنشاء هذه الفاتورة إلكترونياً.'
+              : 'Thank you for your business. This invoice was generated electronically.'}
+          </div>
+
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+

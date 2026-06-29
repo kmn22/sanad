@@ -46,7 +46,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Plus, GripVertical, Users, MoreVertical, Edit, Trash2 } from 'lucide-react'
+import { Plus, Search, Filter, MoreVertical, LayoutGrid, List, FileText, Download, Upload, CheckCircle2, Circle, Clock, AlertCircle, Edit, Trash2, CalendarRange, Kanban, Link, GripVertical, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLang } from '@/lib/sanad/i18n'
 import {
@@ -76,6 +76,7 @@ export function CasesView({ cases, clients = [], onChange }: Props) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null)
   const [editingCase, setEditingCase] = useState<LegalCase | null>(null)
+  const [view, setView] = useState<'kanban' | 'timeline'>('kanban')
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
 
@@ -121,28 +122,110 @@ export function CasesView({ cases, clients = [], onChange }: Props) {
           <h2 className="text-xl font-semibold tracking-tight">{t('cases.title')}</h2>
           <p className="text-sm text-muted-foreground">{t('cases.subtitle', { n: activeCount })}</p>
         </div>
-        <AddCaseDialog open={open} onOpenChange={setOpen} clients={clients} onSaved={() => { onChange(); setOpen(false) }} />
+        <div className="flex items-center gap-2">
+          <div className="bg-muted p-1 rounded-md flex items-center">
+            <Button 
+              variant={view === 'kanban' ? 'secondary' : 'ghost'} 
+              size="sm" 
+              className="h-7 px-2" 
+              onClick={() => setView('kanban')}
+            >
+              <Kanban className="size-4" />
+            </Button>
+            <Button 
+              variant={view === 'timeline' ? 'secondary' : 'ghost'} 
+              size="sm" 
+              className="h-7 px-2" 
+              onClick={() => setView('timeline')}
+            >
+              <CalendarRange className="size-4" />
+            </Button>
+          </div>
+          <AddCaseDialog open={open} onOpenChange={setOpen} clients={clients} onSaved={() => { onChange(); setOpen(false) }} />
+        </div>
       </div>
 
-      <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          {STAGES.map((stage) => (
-            <KanbanColumn
-              key={stage}
-              stage={stage}
-              cases={byStage(stage)}
-              onCaseClick={(id) => setSelectedCaseId(id)}
-              onCaseEdit={(c) => setEditingCase(c)}
-              onCaseDelete={(id) => deleteCase(id)}
-            />
-          ))}
-        </div>
-        <DragOverlay>
-          {activeId ? (
-            <CaseCard c={cases.find((c) => c.id === activeId)!} dragging />
-          ) : null}
-        </DragOverlay>
-      </DndContext>
+      {view === 'kanban' ? (
+        <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            {STAGES.map((stage) => (
+              <KanbanColumn
+                key={stage}
+                stage={stage}
+                cases={byStage(stage)}
+                onCaseClick={(id) => setSelectedCaseId(id)}
+                onCaseEdit={(c) => setEditingCase(c)}
+                onCaseDelete={(id) => deleteCase(id)}
+              />
+            ))}
+          </div>
+          <DragOverlay>
+            {activeId ? (
+              <CaseCard c={cases.find((c) => c.id === activeId)!} dragging />
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <div className="min-w-[800px] overflow-x-auto">
+              <div className="grid grid-cols-12 gap-0 border-b border-border bg-muted/50 p-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <div className="col-span-4 pl-2">{t('cases.title')}</div>
+                <div className="col-span-8 relative flex items-center text-[10px]">
+                  <div className="absolute left-0">اليوم</div>
+                  <div className="absolute left-1/4">+ 15 يوم</div>
+                  <div className="absolute left-2/4">+ 30 يوم</div>
+                  <div className="absolute left-3/4">+ 45 يوم</div>
+                  <div className="absolute right-0">+ 60 يوم</div>
+                </div>
+              </div>
+              <div className="p-4 space-y-4">
+                {cases.filter(c => c.stage !== 'closed').map(c => {
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  
+                  // Start is assumed to be today or creation date (we use today for simplicity in this view)
+                  const end = c.dueDate ? new Date(c.dueDate) : c.hearingDate ? new Date(c.hearingDate) : null;
+                  
+                  // Calculate days from today
+                  const totalDays = end ? Math.ceil((end.getTime() - today.getTime()) / (1000 * 3600 * 24)) : 14; // default 14 days if no date
+                  
+                  // Map 60 days to 100% width
+                  const widthPercent = Math.min(100, Math.max(5, (totalDays / 60) * 100));
+                  const isOverdue = totalDays < 0;
+
+                  return (
+                    <div key={c.id} className="grid grid-cols-12 gap-4 items-center group">
+                      <div className="col-span-4 pl-2">
+                        <p className="text-sm font-medium truncate cursor-pointer hover:underline" onClick={() => setSelectedCaseId(c.id)}>{c.title}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">{t(`stage.${c.stage}`)}</Badge>
+                          <span className="text-[10px] text-muted-foreground">{c.clientName}</span>
+                        </div>
+                      </div>
+                      <div className="col-span-8 relative h-8 flex items-center border-l border-border pl-2">
+                        {/* Background grid lines */}
+                        <div className="absolute inset-y-0 left-0 w-px bg-border/50" />
+                        <div className="absolute inset-y-0 left-1/4 w-px bg-border/50" />
+                        <div className="absolute inset-y-0 left-2/4 w-px bg-border/50" />
+                        <div className="absolute inset-y-0 left-3/4 w-px bg-border/50" />
+                        
+                        {/* Gantt Bar */}
+                        <div 
+                          className={`h-5 rounded-full relative shadow-sm transition-all group-hover:brightness-110 flex items-center px-2 text-[10px] text-white overflow-hidden whitespace-nowrap ${isOverdue ? 'bg-rose-500' : 'bg-primary'}`}
+                          style={{ width: `${widthPercent}%`, minWidth: '40px' }}
+                        >
+                          {end ? formatDate(end.toISOString(), lang) : t('tasks.none')}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Case detail drawer */}
       <CaseDetailDrawer
@@ -247,6 +330,22 @@ function CaseCard({
   const { lang, t } = useLang()
   const days = c.dueDate ? daysUntil(c.dueDate) : null
   const overdue = days !== null && days < 0
+
+  const copyPortalLink = async () => {
+    let token = c.portalToken
+    if (!token) {
+      token = Math.random().toString(36).substring(2, 15)
+      await fetch(`/api/cases/${c.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ portalToken: token })
+      })
+    }
+    const url = `${window.location.origin}/portal/${token}`
+    navigator.clipboard.writeText(url)
+    toast.success('تم نسخ رابط بوابة العميل بنجاح')
+  }
+
   return (
     <Card
       className={`group cursor-grab active:cursor-grabbing hover:border-primary/40 transition-all relative ${dragging ? 'shadow-lg rotate-1' : ''}`}
@@ -270,6 +369,10 @@ function CaseCard({
                   <DropdownMenuItem onClick={onEdit}>
                     <Edit className="h-3 w-3 me-2" />
                     {t('common.edit')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={copyPortalLink}>
+                    <Link className="h-3 w-3 me-2" />
+                    {lang === 'ar' ? 'نسخ رابط العميل' : 'Copy Portal Link'}
                   </DropdownMenuItem>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>

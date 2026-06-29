@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -52,8 +53,8 @@ export function StudentView({ data, onChange }: Props) {
         <p className="text-sm text-muted-foreground">{t('student.subtitle')}</p>
       </div>
 
-      <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 h-auto">
+      <Tabs value={tab} onValueChange={setTab} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 h-auto" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
           <TabsTrigger value="overview" className="text-xs gap-1.5">
             <GraduationCap className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">{t('student.morning')}</span>
@@ -122,9 +123,22 @@ function OverviewPanel({ data, onNavigate }: { data: StudentDashboardData; onNav
   const { lang, t } = useLang()
   const { stats } = data
 
+  const [isMounted, setIsMounted] = useState(false)
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
   // Term mastery progress
   const totalTerms = stats.terms || 1
   const masteryPct = Math.round((stats.masteredTerms / totalTerms) * 100)
+
+  const termProgressData = useMemo(() => {
+    return [
+      { name: t('student.mastered'), value: stats.masteredTerms || 0, color: 'oklch(0.42 0.09 160)' },
+      { name: t('student.familiar'), value: stats.familiarTerms || 0, color: 'oklch(0.78 0.15 85)' },
+      { name: t('student.learning'), value: stats.learningTerms || 0, color: 'oklch(0.65 0.02 150)' },
+    ]
+  }, [stats, t])
 
   return (
     <div className="space-y-6">
@@ -140,7 +154,7 @@ function OverviewPanel({ data, onNavigate }: { data: StudentDashboardData; onNav
                 <AlertTriangle className="h-4 w-4 text-rose-600 dark:text-rose-400" />
                 <span className="text-sm font-medium text-rose-700 dark:text-rose-300">{t('student.overdue')}</span>
               </div>
-              <p className="text-2xl font-semibold text-rose-700 dark:text-rose-300">{stats.overdueDeadlines}</p>
+              <p className="text-2xl font-semibold text-rose-700 dark:text-rose-300 text-right" dir="rtl">{stats.overdueDeadlines}</p>
               <p className="text-xs text-rose-600/80 dark:text-rose-400/80 mt-1">{t('dash.needs_attention')}</p>
             </button>
           )}
@@ -153,7 +167,7 @@ function OverviewPanel({ data, onNavigate }: { data: StudentDashboardData; onNav
                 <CalendarClock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                 <span className="text-sm font-medium text-amber-700 dark:text-amber-300">{t('student.due_week')}</span>
               </div>
-              <p className="text-2xl font-semibold text-amber-700 dark:text-amber-300">{stats.dueThisWeek}</p>
+              <p className="text-2xl font-semibold text-amber-700 dark:text-amber-300 text-right" dir="rtl">{stats.dueThisWeek}</p>
               <p className="text-xs text-amber-600/80 dark:text-amber-400/80 mt-1">{t('student.upcoming')}</p>
             </button>
           )}
@@ -161,7 +175,7 @@ function OverviewPanel({ data, onNavigate }: { data: StudentDashboardData; onNav
       )}
 
       {/* KPI row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         <KpiCard label={t('student.courses')} value={stats.courses} icon={<BookOpen className="h-4 w-4" />} onClick={() => onNavigate('courses')} />
         <KpiCard label={t('student.upcoming')} value={stats.upcomingDeadlines} sub={`${stats.dueThisMonth} ${t('student.due_month')}`} icon={<CalendarClock className="h-4 w-4" />} onClick={() => onNavigate('deadlines')} />
         <KpiCard label={t('student.terms_bank')} value={stats.terms} sub={`${stats.masteredTerms} ${t('student.mastered')}`} icon={<Library className="h-4 w-4" />} onClick={() => onNavigate('terms')} />
@@ -189,12 +203,12 @@ function OverviewPanel({ data, onNavigate }: { data: StudentDashboardData; onNav
         <Brain className="h-5 w-5 text-primary shrink-0" />
       </button>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         {/* Left: upcoming deadlines */}
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
                 <CardTitle className="text-base font-semibold flex items-center gap-2">
                   <CalendarClock className="h-4 w-4 text-primary" />
                   {t('student.upcoming')}
@@ -260,11 +274,11 @@ function OverviewPanel({ data, onNavigate }: { data: StudentDashboardData; onNav
                       'bg-muted text-muted-foreground'
                     return (
                       <li key={l.id} className="rounded-md border border-border p-2.5 hover:bg-muted/40 transition-colors">
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <p className="text-xs font-medium flex-1">{l.title}</p>
+                        <div className="flex items-center gap-2 mb-1">
                           <Badge variant="outline" className={`text-[10px] px-1.5 py-0 shrink-0 ${statusColor}`}>
                             {t(`lstatus.${l.status}`)}
                           </Badge>
+                          <p className="text-xs font-medium truncate">{l.title}</p>
                         </div>
                         {course && (
                           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
@@ -294,17 +308,55 @@ function OverviewPanel({ data, onNavigate }: { data: StudentDashboardData; onNav
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="text-center py-2">
-                <p className="text-3xl font-semibold text-primary">{masteryPct}%</p>
-                <p className="text-xs text-muted-foreground mt-1">{t('student.mastered')}</p>
-              </div>
-              <Progress value={masteryPct} className="h-2" />
-              <div className="grid grid-cols-3 gap-2 pt-2">
-                <MasteryBox label={t('student.mastered')} count={stats.masteredTerms} color="bg-emerald-500" />
-                <MasteryBox label={t('student.familiar')} count={stats.familiarTerms} color="bg-amber-500" />
-                <MasteryBox label={t('student.learning')} count={stats.learningTerms} color="bg-slate-400" />
-              </div>
-              <Button variant="outline" size="sm" className="w-full" onClick={() => onNavigate('terms')}>
+              {isMounted ? (
+                <>
+                  <div className="relative h-44 w-full flex items-center justify-center">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={termProgressData.filter((d) => d.value > 0)}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={50}
+                          outerRadius={70}
+                          paddingAngle={3}
+                          dataKey="value"
+                        >
+                          {termProgressData.filter((d) => d.value > 0).map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            background: 'var(--card)',
+                            borderColor: 'var(--border)',
+                            borderRadius: '8px',
+                            fontSize: '12px',
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                      <span className="text-2xl font-bold text-primary">{masteryPct}%</span>
+                      <span className="text-[10px] text-muted-foreground mt-0.5">{t('student.mastered')}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5 text-xs">
+                    {termProgressData.map((d, i) => (
+                      <div key={i} className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: d.color }} />
+                          <span className="text-muted-foreground">{d.name}</span>
+                        </div>
+                        <span className="font-mono font-medium">{(d.value).toLocaleString('ar-EG')}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="h-44 bg-muted animate-pulse rounded-md" />
+              )}
+              <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => onNavigate('terms')}>
                 <Library className="mx-1.5 h-3.5 w-3.5" />
                 {t('student.terms_bank')}
               </Button>
@@ -349,12 +401,12 @@ function KpiCard({ label, value, sub, icon, onClick }: { label: string; value: n
     <button onClick={onClick} className="text-start">
       <Card className="hover:border-primary/40 hover:shadow-sm transition-all h-full">
         <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-muted-foreground">{label}</span>
+          <div className="flex items-center gap-2 mb-2">
             <span className="text-muted-foreground">{icon}</span>
+            <span className="text-xs text-muted-foreground">{label}</span>
           </div>
-          <p className="text-xl font-semibold tracking-tight">{value.toLocaleString('ar-EG')}</p>
-          {sub && <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>}
+          <p className="text-xl font-semibold tracking-tight text-right" dir="rtl">{value.toLocaleString('ar-EG')}</p>
+          {sub && <p className="text-[11px] text-muted-foreground mt-0.5 text-right">{sub}</p>}
         </CardContent>
       </Card>
     </button>

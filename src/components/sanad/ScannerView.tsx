@@ -12,7 +12,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Camera, CameraOff, RotateCw, Trash2, Download,
   FileText, Image as ImageIcon, Loader2, Upload, X, CheckCircle2,
-  AlertCircle, Lightbulb, Save, Eye, Aperture,
+  AlertCircle, Lightbulb, Save, Eye, Aperture, Sparkles, ShieldAlert,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLang } from '@/lib/sanad/i18n'
@@ -33,7 +33,7 @@ interface CapturedPage {
 type OcrLang = 'ara' | 'eng' | 'ara+eng'
 
 export function ScannerView() {
-  const { t } = useLang()
+  const { lang, t } = useLang()
   const [pages, setPages] = useState<CapturedPage[]>([])
   const [cameraActive, setCameraActive] = useState(false)
   const [cameraError, setCameraError] = useState<string | null>(null)
@@ -43,6 +43,40 @@ export function ScannerView() {
   const [extractedText, setExtractedText] = useState('')
   const [showTextEditor, setShowTextEditor] = useState(false)
   const [docTitle, setDocTitle] = useState('')
+
+  const [aiRunning, setAiRunning] = useState(false)
+  const [aiResult, setAiResult] = useState<{
+    summary: string
+    entities: Array<{ name: string; role: string }>
+    risks: Array<{ severity: 'high' | 'medium' | 'low'; description: string }>
+    recommendations: Array<string>
+  } | null>(null)
+
+  const runAiAnalysis = async () => {
+    if (!extractedText) return
+    setAiRunning(true)
+    setAiResult(null)
+    try {
+      const res = await fetch('/api/ai/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: extractedText, type: 'document' }),
+      })
+      if (!res.ok) throw new Error('API failed')
+      const json = await res.json()
+      if (json.success && json.analysis) {
+        setAiResult(json.analysis)
+        toast.success(lang === 'ar' ? 'اكتمل التحليل الذكي بنجاح' : 'AI Analysis completed successfully')
+      } else {
+        throw new Error(json.error || 'Failed to analyze')
+      }
+    } catch (e: any) {
+      console.error("AI analysis failed:", e)
+      toast.error(lang === 'ar' ? 'فشل التحليل الذكي للمستند' : 'Smart analysis failed')
+    } finally {
+      setAiRunning(false)
+    }
+  }
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -273,6 +307,7 @@ export function ScannerView() {
     if (!confirm(t('common.delete_confirm'))) return
     setPages([])
     setExtractedText('')
+    setAiResult(null)
     setShowTextEditor(false)
     setDocTitle('')
   }
@@ -315,13 +350,25 @@ export function ScannerView() {
           {/* Video preview */}
           <div className="relative bg-black rounded-lg overflow-hidden aspect-video max-w-2xl mx-auto">
             {cameraActive ? (
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full h-full object-cover"
-              />
+              <>
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-full object-cover"
+                />
+                {/* Simulated Document Edge Detection UI */}
+                <div className="absolute inset-4 sm:inset-12 border-2 border-emerald-500/70 shadow-[0_0_0_9999px_rgba(0,0,0,0.4)] pointer-events-none rounded transition-all duration-1000 ease-in-out flex flex-col items-center justify-center">
+                  <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-emerald-400 rounded-tl"></div>
+                  <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-emerald-400 rounded-tr"></div>
+                  <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-emerald-400 rounded-bl"></div>
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-emerald-400 rounded-br"></div>
+                  <div className="text-emerald-400 font-mono text-[10px] tracking-widest bg-black/40 px-2 py-1 rounded animate-pulse mt-4">
+                    {lang === 'ar' ? 'جاري تحديد أبعاد المستند...' : 'DETECTING DOCUMENT EDGES...'}
+                  </div>
+                </div>
+              </>
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-white/70 gap-3">
                 <Camera className="h-12 w-12 opacity-50" />
@@ -334,7 +381,7 @@ export function ScannerView() {
             {cameraActive && (
               <button
                 onClick={capture}
-                className="absolute bottom-4 left-1/2 -translate-x-1/2 h-14 w-14 rounded-full bg-white border-4 border-primary shadow-lg hover:scale-105 transition-transform"
+                className="absolute bottom-4 start-1/2 -translate-x-1/2 h-14 w-14 rounded-full bg-white border-4 border-primary shadow-lg hover:scale-105 transition-transform"
                 title={t('scanner.capture')}
               />
             )}
@@ -506,9 +553,25 @@ export function ScannerView() {
                   className="text-sm font-mono"
                   placeholder={t('scanner.ocr_running')}
                 />
-                <p className="text-[10px] text-muted-foreground">
-                  {extractedText.length.toLocaleString('ar-EG')} حرف
-                </p>
+                <div className="flex justify-between items-center flex-wrap gap-2">
+                  <p className="text-[10px] text-muted-foreground">
+                    {extractedText.length.toLocaleString('ar-EG')} حرف
+                  </p>
+                  <Button
+                    onClick={runAiAnalysis}
+                    disabled={aiRunning || !extractedText}
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs gap-1 border-primary/25 text-primary hover:bg-primary/5"
+                  >
+                    {aiRunning ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3 w-3 text-primary animate-pulse" />
+                    )}
+                    {lang === 'ar' ? 'تدقيق قانوني بالذكاء الاصطناعي' : 'Smart Legal Audit with AI'}
+                  </Button>
+                </div>
               </div>
             )}
 
@@ -535,6 +598,93 @@ export function ScannerView() {
                 </Button>
               </div>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* AI Analysis Result Card */}
+      {aiResult && (
+        <Card className="border-2 border-primary/25 bg-gradient-to-br from-primary/5 to-background shadow-md">
+          <CardHeader className="pb-3 border-b border-border">
+            <CardTitle className="text-base font-bold flex items-center gap-2 text-primary">
+              <Sparkles className="h-4 w-4 text-primary fill-primary/10" />
+              {lang === 'ar' ? 'تقرير التدقيق والتحليل القانوني الذكي (Gemini Legal)' : 'Smart Legal Audit & Analysis Report (Gemini)'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-5 space-y-5 text-sm leading-relaxed">
+            {/* Summary */}
+            <div className="space-y-1.5">
+              <h4 className="font-semibold text-foreground flex items-center gap-1.5 text-xs text-muted-foreground uppercase tracking-wider">
+                {lang === 'ar' ? 'الملخص التنفيذي للمستند' : 'Executive Summary'}
+              </h4>
+              <p className="text-foreground bg-muted/20 p-3 rounded-md border text-xs leading-relaxed">
+                {aiResult.summary}
+              </p>
+            </div>
+
+            {/* Entities */}
+            {aiResult.entities && aiResult.entities.length > 0 && (
+              <div className="space-y-1.5">
+                <h4 className="font-semibold text-foreground flex items-center gap-1.5 text-xs text-muted-foreground uppercase tracking-wider">
+                  {lang === 'ar' ? 'الأطراف والشخصيات المستخرجة' : 'Detected Parties & Entities'}
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {aiResult.entities.map((ent, i) => (
+                    <Badge key={i} variant="secondary" className="px-2 py-0.5 text-xs border bg-background flex gap-1">
+                      <span className="font-semibold text-foreground">{ent.name}</span>
+                      <span className="text-muted-foreground">({ent.role})</span>
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Risks */}
+            {aiResult.risks && aiResult.risks.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-semibold text-foreground flex items-center gap-1.5 text-xs text-muted-foreground uppercase tracking-wider">
+                  {lang === 'ar' ? 'المخاطر والتنبيهات النظامية' : 'Compliance & Legal Risks'}
+                </h4>
+                <div className="space-y-2">
+                  {aiResult.risks.map((risk, i) => {
+                    const isHigh = risk.severity === 'high';
+                    const isMed = risk.severity === 'medium';
+                    const bg = isHigh ? 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/60' : isMed ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/60' : 'bg-muted/30 border-border';
+                    const badge = isHigh ? 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-300/30' : isMed ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-300/30' : 'bg-muted text-muted-foreground';
+                    return (
+                      <div key={i} className={`p-3 rounded-md border flex items-start gap-2.5 ${bg}`}>
+                        <ShieldAlert className={`h-4 w-4 shrink-0 mt-0.5 ${isHigh ? 'text-rose-600' : isMed ? 'text-amber-600' : 'text-muted-foreground'}`} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="outline" className={`text-[9px] px-1 py-0 font-bold ${badge}`}>
+                              {lang === 'ar' ? (isHigh ? 'خطورة عالية' : isMed ? 'خطورة متوسطة' : 'ملاحظة') : risk.severity.toUpperCase()}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-foreground leading-normal">{risk.description}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Recommendations */}
+            {aiResult.recommendations && aiResult.recommendations.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-semibold text-foreground flex items-center gap-1.5 text-xs text-muted-foreground uppercase tracking-wider">
+                  {lang === 'ar' ? 'التوصيات والإجراءات الاستشارية' : 'Advisory Recommendations'}
+                </h4>
+                <ul className="space-y-1.5 list-none ps-0">
+                  {aiResult.recommendations.map((rec, i) => (
+                    <li key={i} className="text-xs flex items-start gap-1.5">
+                      <span className="text-primary font-bold shrink-0 mt-0.5">•</span>
+                      <span className="text-foreground leading-relaxed">{rec}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
