@@ -3,7 +3,7 @@
   "version": "0.2.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3000 2>&1 | tee dev.log",
+    "dev": "next dev 2>&1 | tee dev.log",
     "build": "next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
     "start": "NODE_ENV=production bun .next/standalone/server.js 2>&1 | tee server.log",
     "start:pm2": "NODE_ENV=production pm2 start .next/standalone/server.js --name sanad --update-env",
@@ -13,8 +13,8 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset",
-    "seed": "bun run scripts/seed.ts && bun run scripts/seed_clients.ts && bun run scripts/seed_student.ts",
-    "seed:lawyer": "bun run scripts/seed.ts && bun run scripts/seed_clients.ts",
+    "seed": "bun run scripts/seed.ts && bun run scripts/seed_student.ts",
+    "seed:lawyer": "bun run scripts/seed.ts",
     "seed:student": "bun run scripts/seed_student.ts",
     "postinstall": "prisma generate"
   },
