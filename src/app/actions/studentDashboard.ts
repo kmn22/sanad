@@ -3,6 +3,7 @@
 import { db } from '@/lib/db'
 
 export async function getStudentDashboard() {
+  try {
   const now = new Date()
   const in7 = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
   const in30 = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
@@ -53,5 +54,9 @@ export async function getStudentDashboard() {
     terms,
     cases,
     briefs,
+  }
+  } catch (error) {
+    console.error('getStudentDashboard failed:', error)
+    throw error
   }
 }

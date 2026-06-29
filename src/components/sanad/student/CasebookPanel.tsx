@@ -78,12 +78,17 @@ function CaseCard({ caseEntry, onChange }: { caseEntry: CaseEntry; onChange: () 
 
   const cycleRating = async () => {
     const next = caseEntry.rating >= 5 ? 1 : caseEntry.rating + 1
-    await fetch(`/api/casebook/${caseEntry.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rating: next }),
-    })
-    onChange()
+    try {
+      const res = await fetch(`/api/casebook/${caseEntry.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating: next }),
+      })
+      if (!res.ok) throw new Error('Failed to update rating')
+      onChange()
+    } catch {
+      toast.error(t('common.failed'))
+    }
   }
 
   return (
@@ -169,20 +174,25 @@ function AddCaseDialog({ open, onOpenChange, onSaved }: { open: boolean; onOpenC
       toast.error(t('casebook.f_name'))
       return
     }
-    await fetch('/api/casebook', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...form,
-        citation: form.citation || null,
-        court: form.court || null,
-        summary: form.summary || null,
-        significance: form.significance || null,
-      }),
-    })
-    toast.success(t('casebook.added'))
-    setForm({ caseName: '', citation: '', court: '', principle: '', subject: 'civil', summary: '', significance: '', rating: 3 })
-    onSaved()
+    try {
+      const res = await fetch('/api/casebook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...form,
+          citation: form.citation || null,
+          court: form.court || null,
+          summary: form.summary || null,
+          significance: form.significance || null,
+        }),
+      })
+      if (!res.ok) throw new Error('Failed to create casebook entry')
+      toast.success(t('casebook.added'))
+      setForm({ caseName: '', citation: '', court: '', principle: '', subject: 'civil', summary: '', significance: '', rating: 3 })
+      onSaved()
+    } catch {
+      toast.error(t('common.failed'))
+    }
   }
 
   return (

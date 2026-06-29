@@ -69,13 +69,18 @@ export function TasksView({ tasks, cases, onChange }: Props) {
 
   const toggleDone = async (task: Task) => {
     const newStatus = task.status === 'done' ? 'todo' : 'done'
-    await fetch(`/api/tasks/${task.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus }),
-    })
-    toast.success(newStatus === 'done' ? t('tasks.completed') : t('tasks.reopened'))
-    onChange()
+    try {
+      const res = await fetch(`/api/tasks/${task.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      })
+      if (!res.ok) throw new Error('Failed to update task')
+      toast.success(newStatus === 'done' ? t('tasks.completed') : t('tasks.reopened'))
+      onChange()
+    } catch {
+      toast.error(t('common.failed'))
+    }
   }
 
   return (
@@ -182,20 +187,25 @@ function AddTaskDialog({
       toast.error(t('tasks.title'))
       return
     }
-    await fetch('/api/tasks', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...form,
-        dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
-        caseId: form.caseId || null,
-        status: 'todo',
-        autoGen: false,
-      }),
-    })
-    toast.success(t('tasks.added'))
-    setForm({ title: '', description: '', priority: 'normal', dueDate: '', caseId: '' })
-    onSaved()
+    try {
+      const res = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...form,
+          dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
+          caseId: form.caseId || null,
+          status: 'todo',
+          autoGen: false,
+        }),
+      })
+      if (!res.ok) throw new Error('Failed to create task')
+      toast.success(t('tasks.added'))
+      setForm({ title: '', description: '', priority: 'normal', dueDate: '', caseId: '' })
+      onSaved()
+    } catch {
+      toast.error(t('common.failed'))
+    }
   }
 
   return (

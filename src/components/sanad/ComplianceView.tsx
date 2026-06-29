@@ -134,17 +134,22 @@ function ComplianceCard({ item, onChange }: { item: ComplianceItem; onChange: ()
   const renew = async () => {
     const newExpiry = new Date(item.expiryDate)
     newExpiry.setFullYear(newExpiry.getFullYear() + 1)
-    await fetch(`/api/compliance/${item.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        issueDate: new Date().toISOString(),
-        expiryDate: newExpiry.toISOString(),
-        status: 'active',
-      }),
-    })
-    toast.success(t('comp.renewed'))
-    onChange()
+    try {
+      const res = await fetch(`/api/compliance/${item.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          issueDate: new Date().toISOString(),
+          expiryDate: newExpiry.toISOString(),
+          status: 'active',
+        }),
+      })
+      if (!res.ok) throw new Error('Failed to renew')
+      toast.success(t('comp.renewed'))
+      onChange()
+    } catch {
+      toast.error(t('common.failed'))
+    }
   }
 
   return (
@@ -213,19 +218,24 @@ function AddComplianceDialog({
       toast.error(t('comp.req_fields'))
       return
     }
-    await fetch('/api/compliance', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...form,
-        issueDate: form.issueDate ? new Date(form.issueDate).toISOString() : new Date().toISOString(),
-        expiryDate: new Date(form.expiryDate).toISOString(),
-        status: 'active',
-      }),
-    })
-    toast.success(t('comp.renewed'))
-    setForm({ title: '', category: 'ikama', entityName: '', issueDate: '', expiryDate: '', notes: '', notifyDays: 30 })
-    onSaved()
+    try {
+      const res = await fetch('/api/compliance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...form,
+          issueDate: form.issueDate ? new Date(form.issueDate).toISOString() : new Date().toISOString(),
+          expiryDate: new Date(form.expiryDate).toISOString(),
+          status: 'active',
+        }),
+      })
+      if (!res.ok) throw new Error('Failed to create compliance item')
+      toast.success(t('comp.renewed'))
+      setForm({ title: '', category: 'ikama', entityName: '', issueDate: '', expiryDate: '', notes: '', notifyDays: 30 })
+      onSaved()
+    } catch {
+      toast.error(t('common.failed'))
+    }
   }
 
   return (

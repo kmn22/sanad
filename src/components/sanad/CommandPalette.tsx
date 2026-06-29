@@ -89,6 +89,7 @@ export function CommandPalette({ open, onOpenChange, onNavigate, onCreate }: Pro
     searchTimer.current = setTimeout(async () => {
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`)
+        if (!res.ok) throw new Error('Search failed')
         const json = await res.json()
         setResults(json.results || [])
         setSelectedIndex(0)

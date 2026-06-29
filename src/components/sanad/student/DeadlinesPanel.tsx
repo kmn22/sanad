@@ -59,13 +59,18 @@ export function DeadlinesPanel({ deadlines, courses, onChange }: Props) {
 
   const toggleDone = async (d: AcademicDeadline) => {
     const newStatus = d.status === 'done' ? 'todo' : 'done'
-    await fetch(`/api/deadlines/${d.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus }),
-    })
-    toast.success(newStatus === 'done' ? t('deadlines.mark_done') : t('deadlines.mark_todo'))
-    onChange()
+    try {
+      const res = await fetch(`/api/deadlines/${d.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      })
+      if (!res.ok) throw new Error('Failed to update deadline')
+      toast.success(newStatus === 'done' ? t('deadlines.mark_done') : t('deadlines.mark_todo'))
+      onChange()
+    } catch {
+      toast.error(t('common.failed'))
+    }
   }
 
   return (
@@ -153,20 +158,25 @@ function AddDeadlineDialog({ open, onOpenChange, courses, onSaved }: { open: boo
       toast.error(t('deadlines.f_title'))
       return
     }
-    await fetch('/api/deadlines', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...form,
-        courseId: form.courseId || null,
-        dueDate: new Date(form.dueDate).toISOString(),
-        weight: form.weight ? parseFloat(form.weight) : null,
-        status: 'todo',
-      }),
-    })
-    toast.success(t('deadlines.create'))
-    setForm({ title: '', type: 'assignment', courseId: '', dueDate: '', weight: '', priority: 'normal', notes: '' })
-    onSaved()
+    try {
+      const res = await fetch('/api/deadlines', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...form,
+          courseId: form.courseId || null,
+          dueDate: new Date(form.dueDate).toISOString(),
+          weight: form.weight ? parseFloat(form.weight) : null,
+          status: 'todo',
+        }),
+      })
+      if (!res.ok) throw new Error('Failed to create deadline')
+      toast.success(t('deadlines.create'))
+      setForm({ title: '', type: 'assignment', courseId: '', dueDate: '', weight: '', priority: 'normal', notes: '' })
+      onSaved()
+    } catch {
+      toast.error(t('common.failed'))
+    }
   }
 
   return (

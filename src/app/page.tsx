@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { toast } from 'sonner'
 import { useTheme } from 'next-themes'
 import { Moon, Sun, RefreshCw, Languages, GraduationCap, Briefcase, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -143,7 +144,9 @@ export default function Home() {
 
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {})
+      navigator.serviceWorker.register('/sw.js').catch((err) => {
+        console.error('Service worker registration failed:', err)
+      })
     }
   }, [])
 
@@ -170,15 +173,18 @@ export default function Home() {
     try {
       if (persona === 'lawyer') {
         const res = await fetch('/api/dashboard')
+        if (!res.ok) throw new Error('Failed to load dashboard')
         const json = await res.json()
         setData(json)
       } else {
         const res = await fetch('/api/student/dashboard')
+        if (!res.ok) throw new Error('Failed to load student dashboard')
         const json = await res.json()
         setStudentData(json)
       }
     } catch (e) {
       console.error('Failed to load dashboard', e)
+      toast.error('فشل تحميل البيانات')
     } finally {
       setLoading(false)
     }

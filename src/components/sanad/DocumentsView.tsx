@@ -59,13 +59,18 @@ export function DocumentsView({ documents, cases, onChange }: Props) {
   STATUSES.forEach((s) => { counts[s] = documents.filter((d) => d.status === s).length })
 
   const updateStatus = async (doc: LegalDocument, status: string) => {
-    await fetch(`/api/documents/${doc.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
-    })
-    toast.success(`${doc.title} → ${t(`dstatus.${status}`)}`)
-    onChange()
+    try {
+      const res = await fetch(`/api/documents/${doc.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      })
+      if (!res.ok) throw new Error('Failed to update status')
+      toast.success(`${doc.title} → ${t(`dstatus.${status}`)}`)
+      onChange()
+    } catch {
+      toast.error(t('common.failed'))
+    }
   }
 
   return (
@@ -225,19 +230,24 @@ function AddDocDialog({
       toast.error(t('docs.req_fields'))
       return
     }
-    await fetch('/api/documents', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...form,
-        signedDate: form.signedDate ? new Date(form.signedDate).toISOString() : null,
-        expiryDate: form.expiryDate ? new Date(form.expiryDate).toISOString() : null,
-        caseId: form.caseId || null,
-      }),
-    })
-    toast.success(t('docs.added'))
-    setForm({ title: '', docType: 'nda', status: 'draft', parties: '', signedDate: '', expiryDate: '', caseId: '', notes: '' })
-    onSaved()
+    try {
+      const res = await fetch('/api/documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...form,
+          signedDate: form.signedDate ? new Date(form.signedDate).toISOString() : null,
+          expiryDate: form.expiryDate ? new Date(form.expiryDate).toISOString() : null,
+          caseId: form.caseId || null,
+        }),
+      })
+      if (!res.ok) throw new Error('Failed to create document')
+      toast.success(t('docs.added'))
+      setForm({ title: '', docType: 'nda', status: 'draft', parties: '', signedDate: '', expiryDate: '', caseId: '', notes: '' })
+      onSaved()
+    } catch {
+      toast.error(t('common.failed'))
+    }
   }
 
   return (

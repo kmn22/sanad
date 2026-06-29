@@ -137,11 +137,12 @@ export function DeepWorkView({ cases, timeEntries, onChange }: Props) {
       date: new Date().toISOString(),
     }
     try {
-      await fetch('/api/time-entries', {
+      const res = await fetch('/api/time-entries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
+      if (!res.ok) throw new Error('Failed to save time entry')
       onChange()
     } catch {
       toast.error(t('dw.failed_save'))
