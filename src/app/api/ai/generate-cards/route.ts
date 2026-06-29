@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ollamaChat } from '@/lib/ai/ollama';
 import { db } from '@/lib/db';
+import { aiGenerateCardsSchema } from '@/lib/validations';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { notes, category = 'general' } = body;
-
-    if (!notes || !notes.trim()) {
-      return NextResponse.json({ error: 'Notes content is required' }, { status: 400 });
+    const parsed = aiGenerateCardsSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten().fieldErrors }, { status: 400 });
     }
+    const { notes, category } = parsed.data;
 
     let generatedTerms: Array<{
       term: string;
@@ -47,8 +48,8 @@ export async function POST(req: NextRequest) {
         content = content.split('```')[1].split('```')[0].trim();
       }
 
-      const parsed = JSON.parse(content);
-      generatedTerms = Array.isArray(parsed) ? parsed : (parsed.terms || parsed.items || []);
+      const aiResult = JSON.parse(content);
+      generatedTerms = Array.isArray(aiResult) ? aiResult : (aiResult.terms || aiResult.items || []);
     } catch (sdkError: any) {
       console.warn("Ollama failed or unreachable. Falling back to local card generation simulator.", sdkError.message);
       generatedTerms = simulateCardGeneration(notes, category);
@@ -86,9 +87,9 @@ export async function POST(req: NextRequest) {
       terms: savedTerms
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("AI Card Generation Route failed:", error);
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
