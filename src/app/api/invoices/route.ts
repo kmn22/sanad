@@ -1,23 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { createListHandler } from '@/lib/api-helpers'
 
-export async function GET() {
-  const invoices = await db.invoice.findMany({
-    include: {
-      client: { select: { id: true, name: true, company: true } },
-      case: { select: { id: true, title: true } },
-      _count: { select: { timeEntries: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-  })
-  return NextResponse.json(invoices)
-}
+export const GET = createListHandler('invoice', {
+  include: {
+    client: { select: { id: true, name: true, company: true } },
+    case: { select: { id: true, title: true } },
+    _count: { select: { timeEntries: true } },
+  },
+  orderBy: { createdAt: 'desc' },
+})
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
   const { timeEntryIds, clientId, caseId, dueDate, notes } = body
 
-  // Fetch time entries
   const timeEntries = await db.timeEntry.findMany({
     where: { id: { in: timeEntryIds } },
   })
@@ -26,7 +23,6 @@ export async function POST(req: NextRequest) {
   const vatAmount = subtotal * 0.15
   const total = subtotal + vatAmount
 
-  // Generate invoice number
   const count = await db.invoice.count()
   const number = `INV-2026-${(count + 1).toString().padStart(3, '0')}`
 
@@ -45,7 +41,6 @@ export async function POST(req: NextRequest) {
     },
   })
 
-  // Link time entries to invoice
   await db.timeEntry.updateMany({
     where: { id: { in: timeEntryIds } },
     data: { invoiced: true, invoiceId: invoice.id },
