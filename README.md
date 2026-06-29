@@ -1,8 +1,32 @@
-# سند (Sanad) — Production Deployment Guide
+# سند (Sanad)
 
-لوحة العمليات اليومية للمحامين وطلاب القانون في السعودية.
+**لوحة العمليات اليومية للمحامين وطلاب القانون في السعودية**
+*Daily operations dashboard for Saudi lawyers and law students*
 
-Daily operations dashboard for Saudi lawyers and law students.
+> 🟢 **Live demo:** https://sanad.tail963524.ts.net
+> 🔑 **Demo login:** any email · password `admin`
+
+---
+
+## What is Sanad?
+
+Sanad unifies a Saudi lawyer's day in one Arabic-first dashboard:
+
+- 📋 **Cases & Compliance** — Kanban board, hearing dates, iqama/CR/license expiry tracking
+- 🧾 **ZATCA invoicing** — VAT-compliant invoice drafting with billable-hours linkage
+- 🤖 **Local AI** — Document analysis & contract drafting via on-device **Qwen 2.5 14B** (Ollama); no cloud, no API keys leaving the machine
+- ⚡ **Streaming AI** — Token-by-token responses (SSE) instead of staring at a spinner
+- 🎓 **Student mode** — Legal terms bank, casebook, deadline tracker, spaced-repetition review
+- 📊 **5 analytics charts** — Weekly hours, monthly revenue, invoice status, cases-by-type, 90-day compliance timeline
+- 📱 **Installable PWA** — Works on phone & desktop, partial offline support
+
+## Tech
+
+`Next.js 16` · `TypeScript` · `Prisma + SQLite` · `Tailwind + shadcn/ui` · `Recharts` · `Ollama (Qwen 2.5 14B)` · `Tailscale Funnel`
+
+## Screenshots
+
+> _Add screenshots in `download/` — see `PITCH.md` for the recommended shot list._
 
 ---
 
