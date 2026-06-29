@@ -111,23 +111,33 @@ function LectureRow({ lecture, onChange }: { lecture: Lecture; onChange: () => v
 
   const cycleStatus = async () => {
     const next = lecture.status === 'draft' ? 'reviewed' : lecture.status === 'reviewed' ? 'mastered' : 'draft'
-    await fetch(`/api/lectures/${lecture.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: next }),
-    })
-    onChange()
+    try {
+      const res = await fetch(`/api/lectures/${lecture.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: next }),
+      })
+      if (!res.ok) throw new Error('Failed to update lecture status')
+      onChange()
+    } catch {
+      toast.error(t('common.failed'))
+    }
   }
 
   const saveNotes = async () => {
-    await fetch(`/api/lectures/${lecture.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ notes }),
-    })
-    toast.success(t('courses.save'))
-    setEditing(false)
-    onChange()
+    try {
+      const res = await fetch(`/api/lectures/${lecture.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes }),
+      })
+      if (!res.ok) throw new Error('Failed to save notes')
+      toast.success(t('courses.save'))
+      setEditing(false)
+      onChange()
+    } catch {
+      toast.error(t('common.failed'))
+    }
   }
 
   const statusColor =
@@ -185,21 +195,26 @@ function AddCourseDialog({ open, onOpenChange, onSaved }: { open: boolean; onOpe
       toast.error(t('courses.f_title'))
       return
     }
-    await fetch('/api/courses', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...form,
-        credits: form.credits ? parseInt(form.credits) : null,
-        code: form.code || null,
-        instructor: form.instructor || null,
-        semester: form.semester || null,
-        notes: form.notes || null,
-      }),
-    })
-    toast.success(t('courses.create'))
-    setForm({ title: '', code: '', instructor: '', semester: '', credits: '', color: COLORS[0], notes: '' })
-    onSaved()
+    try {
+      const res = await fetch('/api/courses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...form,
+          credits: form.credits ? parseInt(form.credits) : null,
+          code: form.code || null,
+          instructor: form.instructor || null,
+          semester: form.semester || null,
+          notes: form.notes || null,
+        }),
+      })
+      if (!res.ok) throw new Error('Failed to create course')
+      toast.success(t('courses.create'))
+      setForm({ title: '', code: '', instructor: '', semester: '', credits: '', color: COLORS[0], notes: '' })
+      onSaved()
+    } catch {
+      toast.error(t('common.failed'))
+    }
   }
 
   return (
@@ -274,20 +289,25 @@ function AddLectureDialog({ courseId, open, onOpenChange, onSaved }: { courseId:
       toast.error(t('courses.lecture_title'))
       return
     }
-    await fetch('/api/lectures', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...form,
-        courseId,
-        lectureDate: new Date(form.lectureDate).toISOString(),
-        topic: form.topic || null,
-        notes: form.notes || '',
-      }),
-    })
-    toast.success(t('courses.lecture.add'))
-    setForm({ title: '', lectureDate: '', topic: '', notes: '', status: 'draft' })
-    onSaved()
+    try {
+      const res = await fetch('/api/lectures', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...form,
+          courseId,
+          lectureDate: new Date(form.lectureDate).toISOString(),
+          topic: form.topic || null,
+          notes: form.notes || '',
+        }),
+      })
+      if (!res.ok) throw new Error('Failed to create lecture')
+      toast.success(t('courses.lecture.add'))
+      setForm({ title: '', lectureDate: '', topic: '', notes: '', status: 'draft' })
+      onSaved()
+    } catch {
+      toast.error(t('common.failed'))
+    }
   }
 
   return (

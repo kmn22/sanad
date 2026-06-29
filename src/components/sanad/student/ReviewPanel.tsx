@@ -99,6 +99,7 @@ export function ReviewPanel({ courses }: Props) {
     ;(async () => {
       try {
         const res = await fetch('/api/student/review-sessions')
+        if (!res.ok) throw new Error('Failed to load sessions')
         const json: SessionsResponse = await res.json()
         if (!cancelled) setSessions(json)
       } catch (e) {
@@ -111,6 +112,7 @@ export function ReviewPanel({ courses }: Props) {
   const reloadSessions = async () => {
     try {
       const res = await fetch('/api/student/review-sessions')
+      if (!res.ok) throw new Error('Failed to reload sessions')
       const json: SessionsResponse = await res.json()
       setSessions(json)
     } catch (e) {
@@ -121,6 +123,7 @@ export function ReviewPanel({ courses }: Props) {
   const startSession = async () => {
     try {
       const res = await fetch(`/api/student/review?source=${encodeURIComponent(source)}&mode=${mode}`)
+      if (!res.ok) throw new Error('Failed to load review cards')
       const json: ReviewDeck = await res.json()
       if (json.cards.length === 0) {
         toast.error(t('review.no_cards'))
@@ -176,7 +179,7 @@ export function ReviewPanel({ courses }: Props) {
     const score = reviewedCount > 0 ? Math.round((correctCount / reviewedCount) * 100) : 0
 
     try {
-      await fetch('/api/student/review-sessions', {
+      const res = await fetch('/api/student/review-sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -189,6 +192,7 @@ export function ReviewPanel({ courses }: Props) {
           durationSec,
         }),
       })
+      if (!res.ok) throw new Error('Failed to save session')
       await reloadSessions()
     } catch (e) {
       console.error('Failed to save session', e)

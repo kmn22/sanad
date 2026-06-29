@@ -3,6 +3,7 @@
 import { db } from '@/lib/db'
 
 export async function getLawyerDashboard() {
+  try {
   const now = new Date()
   const in30 = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
 
@@ -108,5 +109,9 @@ export async function getLawyerDashboard() {
     clients,
     invoices,
     communications,
+  }
+  } catch (error) {
+    console.error('getLawyerDashboard failed:', error)
+    throw error
   }
 }

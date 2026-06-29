@@ -4,6 +4,7 @@ import { db } from '@/lib/db'
 // GET /api/student/review?source=all|terms|cases|lectures|course:{id}|subject:{value}&mode=flashcards|quiz
 // Generates a deck of review cards from the user's library.
 export async function GET(req: NextRequest) {
+  try {
   const { searchParams } = new URL(req.url)
   const source = searchParams.get('source') || 'all'
   const mode = (searchParams.get('mode') || 'flashcards') as 'flashcards' | 'quiz'
@@ -217,4 +218,8 @@ export async function GET(req: NextRequest) {
     mode,
     total: cards.length,
   })
+  } catch (error) {
+    console.error('GET /api/student/review failed:', error)
+    return NextResponse.json({ error: 'Failed to generate review deck' }, { status: 500 })
+  }
 }

@@ -45,12 +45,17 @@ export function TermsPanel({ terms, onChange }: Props) {
 
   const cycleMastery = async (term: LegalTerm) => {
     const next = term.mastery === 'learning' ? 'familiar' : term.mastery === 'familiar' ? 'mastered' : 'learning'
-    await fetch(`/api/terms/${term.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mastery: next }),
-    })
-    onChange()
+    try {
+      const res = await fetch(`/api/terms/${term.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mastery: next }),
+      })
+      if (!res.ok) throw new Error('Failed to update mastery')
+      onChange()
+    } catch {
+      toast.error(t('common.failed'))
+    }
   }
 
   const masteryColor = (m: string) =>
