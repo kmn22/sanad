@@ -18,7 +18,7 @@ import {
   DialogClose,
 } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Plus, ListTodo, Sparkles, Calendar } from 'lucide-react'
+import { Plus, ListTodo, Sparkles, Calendar, Kanban as KanbanIcon, LayoutList, GripVertical } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLang } from '@/lib/sanad/i18n'
 import {
@@ -29,6 +29,18 @@ import {
   type LegalCase,
 } from '@/lib/sanad/types'
 
+// DND Kit
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  useDroppable,
+  useDraggable,
+  DragEndEvent,
+} from '@dnd-kit/core'
+
 interface Props {
   tasks: Task[]
   cases: LegalCase[]
@@ -36,11 +48,18 @@ interface Props {
 }
 
 const PRIORITIES = ['low', 'normal', 'high', 'urgent']
+const STATUSES = ['todo', 'in_progress', 'done']
 
 export function TasksView({ tasks, cases, onChange }: Props) {
   const { lang, t } = useLang()
   const [open, setOpen] = useState(false)
   const [filter, setFilter] = useState<'all' | 'today' | 'overdue' | 'auto'>('all')
+  const [view, setView] = useState<'list' | 'kanban'>('kanban')
+  const [activeId, setActiveId] = useState<string | null>(null)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  )
 
   const now = new Date()
   const sorted = [...tasks].sort((a, b) => {
@@ -53,6 +72,7 @@ export function TasksView({ tasks, cases, onChange }: Props) {
   })
 
   const filtered = sorted.filter((task) => {
+    if (view === 'kanban') return true // Show all in kanban
     if (task.status === 'done') return filter === 'all'
     if (filter === 'today') return task.dueDate && new Date(task.dueDate).toDateString() === now.toDateString()
     if (filter === 'overdue') return task.dueDate && new Date(task.dueDate) < now
@@ -78,6 +98,34 @@ export function TasksView({ tasks, cases, onChange }: Props) {
     onChange()
   }
 
+  const handleDragStart = (e: any) => {
+    setActiveId(e.active.id)
+  }
+
+  const handleDragEnd = async (e: DragEndEvent) => {
+    setActiveId(null)
+    const { active, over } = e
+    if (!over) return
+
+    const taskId = active.id as string
+    const newStatus = over.id as string
+
+    const task = tasks.find((t) => t.id === taskId)
+    if (!task || task.status === newStatus) return
+
+    try {
+      await fetch(`/api/tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      })
+      toast.success(t('common.saved'))
+      onChange()
+    } catch {
+      toast.error('Failed to move task')
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -85,83 +133,211 @@ export function TasksView({ tasks, cases, onChange }: Props) {
           <h2 className="text-xl font-semibold tracking-tight">{t('tasks.title')}</h2>
           <p className="text-sm text-muted-foreground">{t('tasks.subtitle')}</p>
         </div>
-        <AddTaskDialog open={open} onOpenChange={setOpen} cases={cases} onSaved={() => { onChange(); setOpen(false) }} />
+        <div className="flex items-center gap-2">
+          <div className="bg-muted p-1 rounded-md flex items-center">
+            <Button 
+              variant={view === 'kanban' ? 'secondary' : 'ghost'} 
+              size="sm" 
+              className="h-7 px-2" 
+              onClick={() => setView('kanban')}
+            >
+              <KanbanIcon className="size-4" />
+            </Button>
+            <Button 
+              variant={view === 'list' ? 'secondary' : 'ghost'} 
+              size="sm" 
+              className="h-7 px-2" 
+              onClick={() => setView('list')}
+            >
+              <LayoutList className="size-4" />
+            </Button>
+          </div>
+          <AddTaskDialog open={open} onOpenChange={setOpen} cases={cases} onSaved={() => { onChange(); setOpen(false) }} />
+        </div>
       </div>
 
-      <div className="flex items-center gap-2 flex-wrap">
-        {([
-          ['all', t('tasks.all', { n: counts.all })],
-          ['today', t('tasks.today', { n: counts.today })],
-          ['overdue', t('tasks.overdue', { n: counts.overdue })],
-          ['auto', t('tasks.auto', { n: counts.auto })],
-        ] as const).map(([key, label]) => (
-          <Button key={key} variant={filter === key ? 'default' : 'outline'} size="sm" onClick={() => setFilter(key)} className="h-7 text-xs">
-            {label}
-          </Button>
-        ))}
-      </div>
+      {view === 'list' && (
+        <div className="flex items-center gap-2 flex-wrap">
+          {([
+            ['all', t('tasks.all', { n: counts.all })],
+            ['today', t('tasks.today', { n: counts.today })],
+            ['overdue', t('tasks.overdue', { n: counts.overdue })],
+            ['auto', t('tasks.auto', { n: counts.auto })],
+          ] as const).map(([key, label]) => (
+            <Button key={key} variant={filter === key ? 'default' : 'outline'} size="sm" onClick={() => setFilter(key)} className="h-7 text-xs">
+              {label}
+            </Button>
+          ))}
+        </div>
+      )}
 
-      <Card>
-        <CardContent className="p-0">
-          <ScrollArea className="h-[calc(100vh-280px)] min-h-[400px] scroll-thin">
-            <ul className="divide-y divide-border">
-              {filtered.map((task) => {
-                const days = task.dueDate ? daysUntil(task.dueDate) : null
-                const overdue = days !== null && days < 0 && task.status !== 'done'
-                const done = task.status === 'done'
-                const c = cases.find((c) => c.id === task.caseId)
-                return (
-                  <li key={task.id} className="flex items-start gap-3 p-3 hover:bg-muted/40 transition-colors">
-                    <Checkbox checked={done} onCheckedChange={() => toggleDone(task)} className="mt-0.5" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className={`text-sm font-medium ${done ? 'line-through text-muted-foreground' : ''}`}>{task.title}</p>
-                        {task.autoGen && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
-                            <Sparkles className="h-2.5 w-2.5 mx-0.5" />{t('tasks.auto_badge')}
+      {view === 'list' ? (
+        <Card>
+          <CardContent className="p-0">
+            <ScrollArea className="h-[calc(100vh-280px)] min-h-[400px] scroll-thin">
+              <ul className="divide-y divide-border">
+                {filtered.map((task) => {
+                  const days = task.dueDate ? daysUntil(task.dueDate) : null
+                  const overdue = days !== null && days < 0 && task.status !== 'done'
+                  const done = task.status === 'done'
+                  const c = cases.find((c) => c.id === task.caseId)
+                  return (
+                    <li key={task.id} className="flex items-start gap-3 p-3 hover:bg-muted/40 transition-colors">
+                      <Checkbox checked={done} onCheckedChange={() => toggleDone(task)} className="mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className={`text-sm font-medium ${done ? 'line-through text-muted-foreground' : ''}`}>{task.title}</p>
+                          {task.autoGen && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
+                              <Sparkles className="h-2.5 w-2.5 mx-0.5" />{t('tasks.auto_badge')}
+                            </Badge>
+                          )}
+                          {c && <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-muted">{c.title}</Badge>}
+                        </div>
+                        {task.description && (
+                          <p className={`text-xs text-muted-foreground mt-0.5 ${done ? 'line-through' : ''}`}>{task.description}</p>
+                        )}
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${PRIORITY_COLORS[task.priority]?.color}`}>
+                            {t(`prio.${task.priority}`)}
                           </Badge>
-                        )}
-                        {c && <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-muted">{c.title}</Badge>}
+                          {task.relatedDoc && (
+                            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                              <Sparkles className="h-2.5 w-2.5" />
+                              {t('tasks.from')} {task.relatedDoc}
+                            </span>
+                          )}
+                          {task.dueDate && (
+                            <span className={`text-[10px] flex items-center gap-1 ${overdue ? 'text-rose-600 dark:text-rose-400 font-medium' : 'text-muted-foreground'}`}>
+                              <Calendar className="h-2.5 w-2.5" />
+                              {formatDate(task.dueDate, lang)}
+                              {overdue && ` (${t('dash.d_overdue', { n: Math.abs(days!) })})`}
+                              {!overdue && days! <= 3 && ` (${t('dash.d_left', { n: days ?? 0 })})`}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      {task.description && (
-                        <p className={`text-xs text-muted-foreground mt-0.5 ${done ? 'line-through' : ''}`}>{task.description}</p>
-                      )}
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${PRIORITY_COLORS[task.priority]?.color}`}>
-                          {t(`prio.${task.priority}`)}
-                        </Badge>
-                        {task.relatedDoc && (
-                          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                            <Sparkles className="h-2.5 w-2.5" />
-                            {t('tasks.from')} {task.relatedDoc}
-                          </span>
-                        )}
-                        {task.dueDate && (
-                          <span className={`text-[10px] flex items-center gap-1 ${overdue ? 'text-rose-600 dark:text-rose-400 font-medium' : 'text-muted-foreground'}`}>
-                            <Calendar className="h-2.5 w-2.5" />
-                            {formatDate(task.dueDate, lang)}
-                            {overdue && ` (${t('dash.d_overdue', { n: Math.abs(days!) })})`}
-                            {!overdue && days! <= 3 && ` (${t('dash.d_left', { n: days ?? 0 })})`}
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                    </li>
+                  )
+                })}
+                {filtered.length === 0 && (
+                  <li className="p-12 text-center text-sm text-muted-foreground">
+                    <ListTodo className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                    {t('tasks.empty')}
                   </li>
-                )
-              })}
-              {filtered.length === 0 && (
-                <li className="p-12 text-center text-sm text-muted-foreground">
-                  <ListTodo className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                  {t('tasks.empty')}
-                </li>
-              )}
-            </ul>
-          </ScrollArea>
-        </CardContent>
-      </Card>
+                )}
+              </ul>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      ) : (
+        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {STATUSES.map((status) => (
+              <TaskKanbanColumn
+                key={status}
+                status={status}
+                tasks={filtered.filter(t => t.status === status)}
+                cases={cases}
+                lang={lang}
+              />
+            ))}
+          </div>
+          <DragOverlay>
+            {activeId ? (
+              <TaskCard 
+                task={filtered.find(t => t.id === activeId)!} 
+                c={cases.find((c) => c.id === filtered.find(t => t.id === activeId)?.caseId)} 
+                lang={lang} 
+                dragging 
+              />
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+      )}
     </div>
   )
 }
+
+function TaskKanbanColumn({ status, tasks, cases, lang }: { status: string, tasks: Task[], cases: LegalCase[], lang: string }) {
+  const { setNodeRef, isOver } = useDroppable({ id: status })
+  const statusLabels: Record<string, string> = {
+    'todo': lang === 'ar' ? 'قيد الانتظار' : 'To Do',
+    'in_progress': lang === 'ar' ? 'قيد التنفيذ' : 'In Progress',
+    'done': lang === 'ar' ? 'مكتمل' : 'Done'
+  }
+  
+  return (
+    <div
+      ref={setNodeRef}
+      className={`rounded-lg border-t-4 border-x border-b border-border bg-muted/30 transition-colors ${isOver ? 'bg-primary/5 border-primary/30' : ''} ${status === 'todo' ? 'border-t-slate-400' : status === 'in_progress' ? 'border-t-blue-500' : 'border-t-emerald-500'}`}
+    >
+      <div className="px-3 py-2.5 flex items-center justify-between border-b border-border">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold">{statusLabels[status]}</span>
+          <span className="text-xs text-muted-foreground bg-background rounded-full px-1.5 py-0.5">{tasks.length}</span>
+        </div>
+      </div>
+      <ScrollArea className="h-[calc(100vh-260px)] min-h-[400px] p-2 scroll-thin">
+        <div className="space-y-2">
+          {tasks.map((task) => (
+            <DraggableTask
+              key={task.id}
+              task={task}
+              c={cases.find((c) => c.id === task.caseId)}
+              lang={lang}
+            />
+          ))}
+        </div>
+      </ScrollArea>
+    </div>
+  )
+}
+
+function DraggableTask({ task, c, lang }: { task: Task, c?: LegalCase, lang: string }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: task.id })
+  return (
+    <div ref={setNodeRef} {...attributes} {...listeners} className={isDragging ? 'opacity-30' : ''}>
+      <TaskCard task={task} c={c} lang={lang} />
+    </div>
+  )
+}
+
+function TaskCard({ task, c, lang, dragging }: { task: Task, c?: LegalCase, lang: string, dragging?: boolean }) {
+  const days = task.dueDate ? daysUntil(task.dueDate) : null
+  const overdue = days !== null && days < 0 && task.status !== 'done'
+  
+  return (
+    <Card className={`group cursor-grab active:cursor-grabbing hover:border-primary/40 transition-all ${dragging ? 'shadow-lg rotate-1' : ''}`}>
+      <CardContent className="p-3 space-y-2">
+        <div className="flex items-start gap-2">
+          <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground/50 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className={`text-sm font-medium leading-tight ${task.status === 'done' ? 'line-through text-muted-foreground' : ''}`}>{task.title}</p>
+            {task.description && (
+              <p className={`text-xs text-muted-foreground mt-0.5 line-clamp-2 ${task.status === 'done' ? 'line-through' : ''}`}>{task.description}</p>
+            )}
+            {c && (
+              <p className="text-[10px] text-muted-foreground mt-1 truncate">القضية: {c.title}</p>
+            )}
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${PRIORITY_COLORS[task.priority]?.color}`}>
+                {task.priority}
+              </Badge>
+              {task.dueDate && (
+                <span className={`text-[10px] flex items-center gap-1 ${overdue ? 'text-rose-600 dark:text-rose-400 font-medium' : 'text-muted-foreground'}`}>
+                  <Calendar className="h-2.5 w-2.5" />
+                  {formatDate(task.dueDate, lang as "ar" | "en")}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 
 function AddTaskDialog({
   open,

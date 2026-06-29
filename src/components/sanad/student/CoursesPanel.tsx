@@ -32,8 +32,8 @@ export function CoursesPanel({ courses, onChange }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{t('courses.subtitle')}</p>
+      <div className="flex items-center gap-4">
+        <p className="text-sm font-semibold text-muted-foreground">{t('courses.subtitle')}</p>
         <AddCourseDialog open={open} onOpenChange={setOpen} onSaved={() => { onChange(); setOpen(false) }} />
       </div>
 
@@ -42,7 +42,7 @@ export function CoursesPanel({ courses, onChange }: Props) {
           <Card key={c.id} className="overflow-hidden">
             <Collapsible open={expandedId === c.id} onOpenChange={(o) => setExpandedId(o ? c.id : null)}>
               <CollapsibleTrigger asChild>
-                <button className="w-full flex items-center justify-between p-4 hover:bg-muted/40 transition-colors text-start">
+                <button className="w-full flex items-start gap-4 p-4 hover:bg-muted/40 transition-colors text-start">
                   <div className="flex items-center gap-3 min-w-0 flex-1">
                     <span className="h-10 w-1.5 rounded-full shrink-0" style={{ background: c.color }} />
                     <div className="min-w-0 flex-1">
@@ -50,11 +50,11 @@ export function CoursesPanel({ courses, onChange }: Props) {
                       <div className="flex items-center gap-2 mt-0.5 flex-wrap text-xs text-muted-foreground">
                         {c.code && <span className="font-mono">{c.code}</span>}
                         {c.instructor && <span>• {c.instructor}</span>}
-                        {c.credits && <span>• {c.credits} {t('courses.credits')}</span>}
+                        {c.credits && <span>• <bdi>{c.credits} {t('courses.credits')}</bdi></span>}
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 mt-1">
                     <Badge variant="outline" className="text-[10px] bg-muted/60">
                       {c.lectures.length} {t('courses.lectures_count')}
                     </Badge>
@@ -64,9 +64,9 @@ export function CoursesPanel({ courses, onChange }: Props) {
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <CardContent className="pt-0 pb-4 px-4 border-t border-border">
-                  {c.notes && <p className="text-xs text-muted-foreground bg-muted/50 rounded px-3 py-2 my-3">{c.notes}</p>}
+                  {c.notes && <p className="text-xs text-muted-foreground bg-muted/50 rounded px-3 py-2 my-3" dir="auto">{c.notes}</p>}
 
-                  <div className="flex items-center justify-between my-3">
+                  <div className="flex items-center gap-4 my-3">
                     <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t('courses.lectures_count')}</h4>
                     <AddLectureDialog
                       courseId={c.id}
@@ -137,16 +137,16 @@ function LectureRow({ lecture, onChange }: { lecture: Lecture; onChange: () => v
 
   return (
     <li className="rounded-md border border-border p-3">
-      <div className="flex items-start justify-between gap-2 mb-1">
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium">{lecture.title}</p>
-          {lecture.topic && <p className="text-xs text-muted-foreground mt-0.5">{lecture.topic}</p>}
-        </div>
-        <button onClick={cycleStatus}>
+      <div className="flex items-start gap-3 mb-1">
+        <button onClick={cycleStatus} className="shrink-0 mt-0.5">
           <Badge variant="outline" className={`text-[10px] px-1.5 py-0 cursor-pointer hover:opacity-80 ${statusColor}`}>
             {t(`lstatus.${lecture.status}`)}
           </Badge>
         </button>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium">{lecture.title}</p>
+          {lecture.topic && <p className="text-xs text-muted-foreground mt-0.5" dir="auto">{lecture.topic}</p>}
+        </div>
       </div>
       <div className="flex items-center gap-3 text-[11px] text-muted-foreground mb-2">
         <span className="flex items-center gap-1">
@@ -165,7 +165,7 @@ function LectureRow({ lecture, onChange }: { lecture: Lecture; onChange: () => v
       ) : (
         <>
           {lecture.notes && (
-            <p className="text-xs text-muted-foreground bg-muted/30 rounded px-2 py-1.5 mb-2 whitespace-pre-wrap">{lecture.notes}</p>
+            <p className="text-xs text-muted-foreground bg-muted/30 rounded px-2 py-1.5 mb-2 whitespace-pre-wrap" dir="auto">{lecture.notes}</p>
           )}
           <Button variant="ghost" size="sm" className="h-6 text-[11px] text-muted-foreground" onClick={() => setEditing(true)}>
             {lecture.notes ? 'تعديل' : 'إضافة ملاحظات'}
@@ -268,25 +268,44 @@ function AddCourseDialog({ open, onOpenChange, onSaved }: { open: boolean; onOpe
 function AddLectureDialog({ courseId, open, onOpenChange, onSaved }: { courseId: string; open: boolean; onOpenChange: (v: boolean) => void; onSaved: () => void }) {
   const { t } = useLang()
   const [form, setForm] = useState({ title: '', lectureDate: '', topic: '', notes: '', status: 'draft' })
+  const [repeat, setRepeat] = useState('none')
+  const [weeks, setWeeks] = useState('1')
 
   const submit = async () => {
     if (!form.title || !form.lectureDate) {
       toast.error(t('courses.lecture_title'))
       return
     }
-    await fetch('/api/lectures', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...form,
-        courseId,
-        lectureDate: new Date(form.lectureDate).toISOString(),
-        topic: form.topic || null,
-        notes: form.notes || '',
-      }),
-    })
+
+    const startDate = new Date(form.lectureDate)
+    const count = repeat === 'weekly' ? parseInt(weeks) || 1 : 1
+    const promises: Promise<Response>[] = []
+
+    for (let i = 0; i < count; i++) {
+      const d = new Date(startDate)
+      d.setDate(d.getDate() + i * 7)
+
+      promises.push(
+        fetch('/api/lectures', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...form,
+            courseId,
+            lectureDate: d.toISOString(),
+            topic: form.topic || null,
+            notes: form.notes || '',
+          }),
+        })
+      )
+    }
+
+    await Promise.all(promises)
+
     toast.success(t('courses.lecture.add'))
     setForm({ title: '', lectureDate: '', topic: '', notes: '', status: 'draft' })
+    setRepeat('none')
+    setWeeks('1')
     onSaved()
   }
 
@@ -322,6 +341,24 @@ function AddLectureDialog({ courseId, open, onOpenChange, onSaved }: { courseId:
                 </SelectContent>
               </Select>
             </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>التكرار التلقائي</Label>
+              <Select value={repeat} onValueChange={setRepeat}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">بدون تكرار</SelectItem>
+                  <SelectItem value="weekly">أسبوعياً</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {repeat === 'weekly' && (
+              <div className="space-y-1.5">
+                <Label>عدد الأسابيع</Label>
+                <Input type="number" min="1" max="20" value={weeks} onChange={(e) => setWeeks(e.target.value)} />
+              </div>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="l-topic">{t('courses.lecture_topic')}</Label>

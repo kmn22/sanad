@@ -70,8 +70,8 @@ export function DeadlinesPanel({ deadlines, courses, onChange }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{t('deadlines.subtitle')}</p>
+      <div className="flex items-center gap-4">
+        <p className="text-sm font-semibold text-muted-foreground">{t('deadlines.subtitle')}</p>
         <AddDeadlineDialog open={open} onOpenChange={setOpen} courses={courses} onSaved={() => { onChange(); setOpen(false) }} />
       </div>
 
@@ -108,7 +108,7 @@ export function DeadlinesPanel({ deadlines, courses, onChange }: Props) {
                           </Badge>
                         )}
                       </div>
-                      {d.notes && <p className={`text-xs text-muted-foreground mt-0.5 ${done ? 'line-through' : ''}`}>{d.notes}</p>}
+                      {d.notes && <p className={`text-xs text-muted-foreground mt-0.5 ${done ? 'line-through' : ''}`} dir="auto">{d.notes}</p>}
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
                         <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-muted/60">
                           {t(`dtype.${d.type}`)}

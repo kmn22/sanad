@@ -71,6 +71,7 @@ model LegalCase {
   court       String?  // المحكمة
   opposingParty String? // الخصم
   notes       String?
+  portalToken String?  @unique // رابط البوابة السري للعميل
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

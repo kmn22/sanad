@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ollamaChat } from '@/lib/ai/ollama';
+import { ollamaChat, SAUDI_PROMPTS } from '@/lib/ai/ollama';
 
 export async function POST(req: NextRequest) {
   try {
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       `;
 
       let content = await ollamaChat([
-        { role: 'system', content: 'You are a professional legal auditor for Saudi Arabian law. You output strict JSON only.' },
+        { role: 'system', content: SAUDI_PROMPTS.analyze },
         { role: 'user', content: prompt }
       ], { json: true });
 

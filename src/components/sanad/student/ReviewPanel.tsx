@@ -8,9 +8,10 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Progress } from '@/components/ui/progress'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Brain, Sparkles, Trophy, Clock, Target, Zap, CheckCircle2, XCircle,
-  ChevronLeft, RotateCcw, Library, Scale, BookOpen, Layers,
+  ChevronLeft, RotateCcw, Library, Scale, BookOpen, Layers, Loader2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLang } from '@/lib/sanad/i18n'
@@ -73,7 +74,7 @@ const SUBJECTS = ['civil', 'criminal', 'commercial', 'administrative', 'constitu
 
 type ViewState = 'setup' | 'session' | 'summary'
 
-export function ReviewPanel({ courses }: Props) {
+export function ReviewPanel({ courses, onSessionComplete }: Props) {
   const { lang, t } = useLang()
   const [view, setView] = useState<ViewState>('setup')
   const [mode, setMode] = useState<'flashcards' | 'quiz'>('flashcards')
@@ -92,6 +93,44 @@ export function ReviewPanel({ courses }: Props) {
 
   // Summary state
   const [lastSessionResult, setLastSessionResult] = useState<{ correct: number; reviewed: number; durationSec: number; score: number } | null>(null)
+
+  // AI Flashcard generator state
+  const [showGenerator, setShowGenerator] = useState(false)
+  const [notesText, setNotesText] = useState('')
+  const [notesCategory, setNotesCategory] = useState('general')
+  const [generatingCards, setGeneratingCards] = useState(false)
+
+  const handleGenerateCards = async () => {
+    if (!notesText.trim()) return
+    setGeneratingCards(true)
+    try {
+      const res = await fetch('/api/ai/generate-cards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: notesText, category: notesCategory }),
+      })
+      if (!res.ok) throw new Error('API failed')
+      const json = await res.json()
+      if (json.success) {
+        toast.success(
+          lang === 'ar'
+            ? `تم توليد ${json.count} بطاقات بنجاح وإضافتها لبنك المصطلحات!`
+            : `Successfully generated ${json.count} cards and added them to the Terms Bank!`
+        )
+        setNotesText('')
+        setShowGenerator(false)
+        await reloadSessions()
+        if (onSessionComplete) onSessionComplete()
+      } else {
+        throw new Error(json.error || 'Failed to generate')
+      }
+    } catch (e) {
+      console.error(e)
+      toast.error(lang === 'ar' ? 'فشل توليد البطاقات بالذكاء الاصطناعي' : 'AI card generation failed')
+    } finally {
+      setGeneratingCards(false)
+    }
+  }
 
   // Fetch sessions on mount (single-pass fetch — no setState-in-effect)
   useEffect(() => {
@@ -210,13 +249,90 @@ export function ReviewPanel({ courses }: Props) {
   if (view === 'setup') {
     return (
       <div className="space-y-6">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight flex items-center gap-2">
-            <Brain className="h-5 w-5 text-primary" />
-            {t('review.title')}
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">{t('review.subtitle')}</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight flex items-center gap-2">
+              <Brain className="h-5 w-5 text-primary" />
+              {t('review.title')}
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">{t('review.subtitle')}</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowGenerator(!showGenerator)}
+            className="border-primary/30 text-primary hover:bg-primary/5 gap-1.5 self-start sm:self-auto"
+          >
+            <Sparkles className="h-4 w-4 animate-pulse text-primary" />
+            {t('review.generator.toggle')}
+          </Button>
         </div>
+
+        {/* AI Flashcard Generator Card */}
+        {showGenerator && (
+          <Card className="border-2 border-primary/25 bg-gradient-to-br from-primary/5 to-background shadow-md overflow-hidden">
+            <CardContent className="p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold flex items-center gap-2 text-primary">
+                  <Sparkles className="h-4 w-4 text-primary fill-primary/10" />
+                  {t('review.generator.title')}
+                </h3>
+                <Button variant="ghost" size="sm" onClick={() => setShowGenerator(false)} className="h-6 w-6 p-0 rounded-full">
+                  <XCircle className="h-4 w-4 text-muted-foreground" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed font-normal">
+                {t('review.generator.desc')}
+              </p>
+              <div className="space-y-1.5">
+                <Label htmlFor="study-notes" className="text-xs font-semibold text-foreground">{t('review.generator.notes')}</Label>
+                <Textarea
+                  id="study-notes"
+                  value={notesText}
+                  onChange={(e) => setNotesText(e.target.value)}
+                  placeholder={t('review.generator.notes_ph')}
+                  rows={4}
+                  className="text-xs leading-relaxed"
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                <div className="space-y-1.5">
+                  <Label htmlFor="study-category" className="text-xs font-semibold text-foreground">{t('review.generator.category')}</Label>
+                  <Select value={notesCategory} onValueChange={setNotesCategory}>
+                    <SelectTrigger id="study-category" className="w-full h-9 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SUBJECTS.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {t(`tcat.${s}`)}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="general">{t('tcat.general')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  onClick={handleGenerateCards}
+                  disabled={generatingCards || !notesText.trim()}
+                  className="w-full h-9 text-xs font-semibold"
+                >
+                  {generatingCards ? (
+                    <>
+                      <Loader2 className="mx-1.5 h-3.5 w-3.5 animate-spin" />
+                      {t('review.generator.generating')}
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mx-1.5 h-3.5 w-3.5" />
+                      {t('review.generator.button')}
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats overview */}
         {sessions && sessions.stats.total > 0 && (
@@ -498,36 +614,48 @@ function SourcePill({ active, onClick, icon, label }: { active: boolean; onClick
 function FlashcardView({ card, flipped, onFlip }: { card: ReviewCard; flipped: boolean; onFlip: () => void }) {
   const { t } = useLang()
   return (
-    <button
-      onClick={onFlip}
-      className="w-full text-start min-h-[280px] rounded-2xl border-2 border-border hover:border-primary/40 transition-all overflow-hidden relative group"
-    >
-      {/* Type badge */}
-      <div className="absolute top-3 end-3 z-10">
-        <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${
-          card.type === 'term' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' :
-          card.type === 'case' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' :
-          'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
-        }`}>
-          {t(`review.type.${card.type}`)}
-        </Badge>
-      </div>
-
-      {!flipped ? (
-        <div className="p-8 flex flex-col items-center justify-center min-h-[280px]">
+    <div className="w-full min-h-[280px] [perspective:1000px]" onClick={onFlip}>
+      <div
+        className={`w-full min-h-[280px] relative transition-transform duration-500 [transform-style:preserve-3d] cursor-pointer ${
+          flipped ? '[transform:rotateY(180deg)]' : ''
+        }`}
+      >
+        {/* Front Side */}
+        <div className="absolute inset-0 w-full h-full p-8 flex flex-col items-center justify-center rounded-2xl border-2 border-border bg-card shadow-sm hover:border-primary/40 transition-colors [backface-visibility:hidden]">
+          {/* Type badge */}
+          <div className="absolute top-3 end-3 z-10">
+            <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${
+              card.type === 'term' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' :
+              card.type === 'case' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' :
+              'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+            }`}>
+              {t(`review.type.${card.type}`)}
+            </Badge>
+          </div>
           <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-3">{t('review.session.flip')}</p>
           <p className="text-xl font-semibold text-center leading-relaxed whitespace-pre-wrap">{card.front}</p>
           {card.hint && (
             <p className="text-xs text-muted-foreground mt-4 italic">{card.hint}</p>
           )}
         </div>
-      ) : (
-        <div className="p-8 flex flex-col items-center justify-center min-h-[280px] bg-primary/5">
+
+        {/* Back Side */}
+        <div className="absolute inset-0 w-full h-full p-8 flex flex-col items-center justify-center rounded-2xl border-2 border-primary/20 bg-primary/5 shadow-inner [backface-visibility:hidden] [transform:rotateY(180deg)]">
+          {/* Type badge */}
+          <div className="absolute top-3 end-3 z-10">
+            <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${
+              card.type === 'term' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' :
+              card.type === 'case' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' :
+              'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+            }`}>
+              {t(`review.type.${card.type}`)}
+            </Badge>
+          </div>
           <p className="text-[10px] text-primary uppercase tracking-wide mb-3 font-semibold">{t('review.session.show_answer')}</p>
           <p className="text-lg text-center leading-relaxed whitespace-pre-wrap">{card.back}</p>
         </div>
-      )}
-    </button>
+      </div>
+    </div>
   )
 }
 
