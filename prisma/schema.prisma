@@ -12,12 +12,42 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  role      String   @default("lawyer") // lawyer | sme_owner | hr | freelancer | student
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String    @id @default(cuid())
+  email       String    @unique
+  name        String?
+  role        String    @default("lawyer") // lawyer | sme_owner | hr | freelancer | student
+  workspaceId String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id])
+}
+
+model Workspace {
+  id          String   @id @default(cuid())
+  name        String
+  domain      String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       User[]
+  clients     Client[]
+  cases       LegalCase[]
+  documents   LegalDocument[]
+  tasks       Task[]
+  invoices    Invoice[]
+  compliance  ComplianceItem[]
+  timeEntries TimeEntry[]
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  message     String
+  isRead      Boolean  @default(false)
+  link        String?
+  createdAt   DateTime @default(now())
 }
 
 // ===== Client management (CRM) =====
@@ -31,9 +61,11 @@ model Client {
   address     String?
   company     String?  // company name if corporate
   notes       String?
+  workspaceId String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  workspace     Workspace? @relation(fields: [workspaceId], references: [id])
   cases         LegalCase[]
   documents     LegalDocument[]
   communications Communication[]
@@ -51,8 +83,11 @@ model ComplianceItem {
   status      String   @default("active") // active | expiring | expired | renewed
   notes       String?
   notifyDays  Int      @default(30)
+  workspaceId String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id])
 }
 
 // Case Kanban — Drafting / Client Review / Filed / Closed
@@ -72,9 +107,11 @@ model LegalCase {
   opposingParty String? // الخصم
   notes       String?
   portalToken String?  @unique // رابط البوابة السري للعميل
+  workspaceId String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  workspace     Workspace?       @relation(fields: [workspaceId], references: [id])
   client        Client?          @relation(fields: [clientId], references: [id], onDelete: SetNull)
   timeEntries   TimeEntry[]
   communications Communication[]
@@ -93,9 +130,11 @@ model LegalDocument {
   caseId       String?
   clientId     String?
   notes        String?
+  workspaceId  String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  workspace   Workspace?  @relation(fields: [workspaceId], references: [id])
   client      Client?     @relation(fields: [clientId], references: [id], onDelete: SetNull)
 }
 
@@ -110,8 +149,11 @@ model Task {
   relatedDoc   String?  // doc title if auto-generated
   caseId       String?
   autoGen      Boolean  @default(false)
+  workspaceId  String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  workspace   Workspace?  @relation(fields: [workspaceId], references: [id])
 }
 
 // Billable hours + focus sessions
@@ -126,8 +168,10 @@ model TimeEntry {
   invoiceId    String?  // link to invoice
   sessionType  String   @default("focus") // focus | billable | meeting | break
   date         DateTime @default(now())
+  workspaceId  String?
   createdAt    DateTime @default(now())
 
+  workspace    Workspace? @relation(fields: [workspaceId], references: [id])
   case         LegalCase? @relation(fields: [caseId], references: [id], onDelete: SetNull)
   invoice      Invoice?   @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
 }
@@ -160,11 +204,14 @@ model Invoice {
   paidAmount  Float    @default(0)
   paidAt      DateTime?
   notes       String?
+  paymentUrl  String?
+  workspaceId String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  client      Client?      @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  case        LegalCase?   @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id])
+  client      Client?    @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  case        LegalCase? @relation(fields: [caseId], references: [id], onDelete: SetNull)
   timeEntries TimeEntry[]
 }
 

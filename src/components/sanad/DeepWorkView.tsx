@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -20,7 +20,18 @@ import {
   DollarSign,
   Brain,
   History,
+  BarChart2,
 } from 'lucide-react'
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+} from 'recharts'
 import { toast } from 'sonner'
 import { useLang } from '@/lib/sanad/i18n'
 import {
@@ -164,6 +175,28 @@ export function DeepWorkView({ cases, timeEntries, onChange }: Props) {
   const focusTodaySec = todayEntries.filter((e) => !e.billable && e.sessionType === 'focus').reduce((s, e) => s + e.durationSec, 0)
   const billableTodaySAR = todayEntries.filter((e) => e.billable).reduce((s, e) => s + (e.durationSec / 3600) * (e.hourlyRate || 0), 0)
   const focusSessionsToday = todayEntries.filter((e) => e.sessionType === 'focus').length
+
+  const weeklyChartData = useMemo(() => {
+    const locale = lang === 'ar' ? 'ar-SA' : 'en-US'
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date()
+      d.setDate(d.getDate() - (6 - i))
+      d.setHours(0, 0, 0, 0)
+      const dayEntries = timeEntries.filter(
+        (e) => new Date(e.date).toDateString() === d.toDateString()
+      )
+      const billable = dayEntries.filter((e) => e.billable).reduce((s, e) => s + e.durationSec / 3600, 0)
+      const focus = dayEntries.filter((e) => !e.billable && e.sessionType === 'focus').reduce((s, e) => s + e.durationSec / 3600, 0)
+      return {
+        name: d.toLocaleDateString(locale, { weekday: 'short' }),
+        [lang === 'ar' ? 'فوترة' : 'Billable']: Number(billable.toFixed(1)),
+        [lang === 'ar' ? 'تركيز' : 'Focus']: Number(focus.toFixed(1)),
+      }
+    })
+  }, [timeEntries, lang])
+
+  const [chartMounted, setChartMounted] = useState(false)
+  useEffect(() => { setChartMounted(true) }, [])
 
   const modeMeta = {
     focus: { label: t('dw.mode_focus'), icon: Brain, color: 'text-primary', ring: 'border-primary' },
@@ -397,6 +430,38 @@ export function DeepWorkView({ cases, timeEntries, onChange }: Props) {
           </Card>
         </div>
       </div>
+
+      {/* Weekly hours chart */}
+      {chartMounted && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <BarChart2 className="h-4 w-4 text-primary" />
+              {lang === 'ar' ? 'ساعات الأسبوع الماضي' : 'Last 7 Days — Hours Breakdown'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="h-52 pt-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={weeklyChartData} margin={{ top: 8, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                <XAxis dataKey="name" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="#888888" fontSize={11} tickLine={false} axisLine={false} unit="h" />
+                <Tooltip
+                  contentStyle={{
+                    background: 'var(--card)',
+                    borderColor: 'var(--border)',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                  }}
+                />
+                <Legend verticalAlign="top" height={28} iconType="circle" wrapperStyle={{ fontSize: '11px' }} />
+                <Bar dataKey={lang === 'ar' ? 'فوترة' : 'Billable'} stackId="a" fill="oklch(0.42 0.09 160)" radius={[0, 0, 0, 0]} />
+                <Bar dataKey={lang === 'ar' ? 'تركيز' : 'Focus'} stackId="a" fill="oklch(0.7 0.13 160)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

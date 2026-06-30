@@ -608,7 +608,7 @@ export function ScannerView() {
           <CardHeader className="pb-3 border-b border-border">
             <CardTitle className="text-base font-bold flex items-center gap-2 text-primary">
               <Sparkles className="h-4 w-4 text-primary fill-primary/10" />
-              {lang === 'ar' ? 'تقرير التدقيق والتحليل القانوني الذكي (Gemini Legal)' : 'Smart Legal Audit & Analysis Report (Gemini)'}
+              {lang === 'ar' ? 'تقرير التدقيق والتحليل القانوني الذكي' : 'Smart Legal Audit & Analysis Report'}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-5 space-y-5 text-sm leading-relaxed">
