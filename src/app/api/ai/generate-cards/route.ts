@@ -151,7 +151,7 @@ function simulateCardGeneration(notes: string, category: string) {
   ];
 
   // If specific topics match, select those. Otherwise, select randomly.
-  let selected = pool.filter(item => {
+  const selected = pool.filter(item => {
     if (item.category === category) return true;
     if (containsWord([item.term, item.category])) return true;
     return false;

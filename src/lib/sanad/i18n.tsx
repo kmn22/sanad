@@ -1324,7 +1324,6 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const toggle = () => setLang(lang === 'ar' ? 'en' : 'ar')
 
   const t = (key: TranslationKey | (string & {}), vars?: Record<string, string | number>) => {
-    // @ts-ignore
     let str = translations[lang][key] ?? translations.en[key] ?? key
     if (vars) {
       Object.entries(vars).forEach(([k, v]) => {
