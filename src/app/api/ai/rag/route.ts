@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ollamaChat } from '@/lib/ai/ollama';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { db } from '@/lib/db';
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,7 +12,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Poor-man's RAG: Fetch recent cases to use as context
-    const cases = await prisma.legalCase.findMany({
+    const cases = await db.legalCase.findMany({
       take: 10,
       orderBy: { updatedAt: 'desc' },
       select: {

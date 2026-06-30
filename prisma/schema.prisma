@@ -12,44 +12,48 @@ datasource db {
 }
 
 model User {
-  id          String    @id @default(cuid())
-  email       String    @unique
-  name        String?
-  role        String    @default("lawyer") // lawyer | sme_owner | hr | freelancer | student
-  workspaceId String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  workspace   Workspace? @relation(fields: [workspaceId], references: [id])
-}
-
-model Workspace {
   id          String   @id @default(cuid())
-  name        String
-  domain      String?  @unique
-  subscriptionId String?
+  email       String   @unique
+  name        String?
+  role        String   @default("lawyer") // lawyer | sme_owner | hr | freelancer | student
+  workspaceId String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  users       User[]
-  clients     Client[]
-  cases       LegalCase[]
-  documents   LegalDocument[]
-  tasks       Task[]
-  invoices    Invoice[]
-  compliance  ComplianceItem[]
-  timeEntries TimeEntry[]
-  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+  workspace Workspace? @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
+}
+
+model Workspace {
+  id             String   @id @default(cuid())
+  name           String
+  domain         String?  @unique
+  subscriptionId String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  users        User[]
+  clients      Client[]
+  cases        LegalCase[]
+  documents    LegalDocument[]
+  tasks        Task[]
+  invoices     Invoice[]
+  compliance   ComplianceItem[]
+  timeEntries  TimeEntry[]
+  subscription Subscription?    @relation(fields: [subscriptionId], references: [id])
 }
 
 model Notification {
-  id          String   @id @default(cuid())
-  userId      String
-  title       String
-  message     String
-  isRead      Boolean  @default(false)
-  link        String?
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 // ===== Client management (CRM) =====
@@ -59,27 +63,29 @@ model Client {
   type        String   @default("individual") // individual | corporate
   phone       String?
   email       String?
-  nationalId  String?  // هوية وطنية أو سجل تجاري
+  nationalId  String? // هوية وطنية أو سجل تجاري
   address     String?
-  company     String?  // company name if corporate
+  company     String? // company name if corporate
   notes       String?
   workspaceId String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  workspace     Workspace? @relation(fields: [workspaceId], references: [id])
-  cases         LegalCase[]
-  documents     LegalDocument[]
+  workspace      Workspace?      @relation(fields: [workspaceId], references: [id])
+  cases          LegalCase[]
+  documents      LegalDocument[]
   communications Communication[]
-  invoices      Invoice[]
+  invoices       Invoice[]
+
+  @@index([workspaceId])
 }
 
 // Compliance Tracker — Iqama, CR, employee contracts, licenses
 model ComplianceItem {
   id          String   @id @default(cuid())
   title       String
-  category    String   // iqama | cr | contract | license | tax | gosi
-  entityName  String   // employee name, company name, etc.
+  category    String // iqama | cr | contract | license | tax | gosi
+  entityName  String // employee name, company name, etc.
   issueDate   DateTime
   expiryDate  DateTime
   status      String   @default("active") // active | expiring | expired | renewed
@@ -89,93 +95,116 @@ model ComplianceItem {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  workspace   Workspace? @relation(fields: [workspaceId], references: [id])
+  workspace Workspace? @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
+  @@index([expiryDate])
 }
 
 // Case Kanban — Drafting / Client Review / Filed / Closed
 model LegalCase {
-  id          String   @id @default(cuid())
-  title       String
-  clientId    String?
-  clientName  String   // kept for backwards compat / display
-  caseType    String   // litigation | contract | consultation | ip | corporate
-  stage       String   @default("drafting") // drafting | client_review | filed | closed
-  priority    String   @default("normal") // low | normal | high | urgent
-  dueDate     DateTime?
-  hearingDate DateTime? // next court hearing
-  value       Float?   // estimated value / billing amount
-  caseNumber  String?  // رقم القضية في المحكمة
-  court       String?  // المحكمة
+  id            String    @id @default(cuid())
+  title         String
+  clientId      String?
+  clientName    String // kept for backwards compat / display
+  caseType      String // litigation | contract | consultation | ip | corporate
+  stage         String    @default("drafting") // drafting | client_review | filed | closed
+  priority      String    @default("normal") // low | normal | high | urgent
+  dueDate       DateTime?
+  hearingDate   DateTime? // next court hearing
+  value         Float? // estimated value / billing amount
+  caseNumber    String? // رقم القضية في المحكمة
+  court         String? // المحكمة
   opposingParty String? // الخصم
-  notes       String?
-  portalToken String?  @unique // رابط البوابة السري للعميل
-  workspaceId String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  notes         String?
+  portalToken   String?   @unique // رابط البوابة السري للعميل
+  workspaceId   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  workspace     Workspace?       @relation(fields: [workspaceId], references: [id])
-  client        Client?          @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  timeEntries   TimeEntry[]
+  workspace      Workspace?      @relation(fields: [workspaceId], references: [id])
+  client         Client?         @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  timeEntries    TimeEntry[]
   communications Communication[]
-  invoices      Invoice[]
+  invoices       Invoice[]
+
+  @@index([workspaceId])
+  @@index([clientId])
+  @@index([stage])
+  @@index([caseNumber])
 }
 
 // Document Lifecycle
 model LegalDocument {
-  id           String   @id @default(cuid())
-  title        String
-  docType      String   // nda | employment | non_compete | msa | subcontract | policy | pleading | contract_draft | court_filing
-  status       String   @default("draft") // draft | sent | active | expiring | expired
-  parties      String
-  signedDate   DateTime?
-  expiryDate   DateTime?
-  caseId       String?
-  clientId     String?
-  notes        String?
-  workspaceId  String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String    @id @default(cuid())
+  title       String
+  docType     String // nda | employment | non_compete | msa | subcontract | policy | pleading | contract_draft | court_filing
+  status      String    @default("draft") // draft | sent | active | expiring | expired
+  parties     String
+  signedDate  DateTime?
+  expiryDate  DateTime?
+  caseId      String?
+  clientId    String?
+  notes       String?
+  workspaceId String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  workspace   Workspace?  @relation(fields: [workspaceId], references: [id])
-  client      Client?     @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id])
+  client    Client?    @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId])
+  @@index([caseId])
+  @@index([clientId])
+  @@index([expiryDate])
 }
 
 // Tasks — manual and auto-generated from doc lifecycle events
 model Task {
-  id           String   @id @default(cuid())
-  title        String
-  description  String?
-  status       String   @default("todo") // todo | in_progress | done
-  priority     String   @default("normal") // low | normal | high
-  dueDate      DateTime?
-  relatedDoc   String?  // doc title if auto-generated
-  caseId       String?
-  autoGen      Boolean  @default(false)
-  workspaceId  String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  status      String    @default("todo") // todo | in_progress | done
+  priority    String    @default("normal") // low | normal | high
+  dueDate     DateTime?
+  relatedDoc  String? // doc title if auto-generated
+  caseId      String?
+  autoGen     Boolean   @default(false)
+  workspaceId String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  workspace   Workspace?  @relation(fields: [workspaceId], references: [id])
+  workspace Workspace? @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
+  @@index([caseId])
+  @@index([status])
+  @@index([dueDate])
 }
 
 // Billable hours + focus sessions
 model TimeEntry {
-  id           String   @id @default(cuid())
-  caseId       String?
-  description  String
-  durationSec  Int
-  billable     Boolean  @default(false)
-  hourlyRate   Float?
-  invoiced     Boolean  @default(false) // true once attached to an invoice
-  invoiceId    String?  // link to invoice
-  sessionType  String   @default("focus") // focus | billable | meeting | break
-  date         DateTime @default(now())
-  workspaceId  String?
-  createdAt    DateTime @default(now())
+  id          String   @id @default(cuid())
+  caseId      String?
+  description String
+  durationSec Int
+  billable    Boolean  @default(false)
+  hourlyRate  Float?
+  invoiced    Boolean  @default(false) // true once attached to an invoice
+  invoiceId   String? // link to invoice
+  sessionType String   @default("focus") // focus | billable | meeting | break
+  date        DateTime @default(now())
+  workspaceId String?
+  createdAt   DateTime @default(now())
 
-  workspace    Workspace? @relation(fields: [workspaceId], references: [id])
-  case         LegalCase? @relation(fields: [caseId], references: [id], onDelete: SetNull)
-  invoice      Invoice?   @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id])
+  case      LegalCase? @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  invoice   Invoice?   @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId])
+  @@index([caseId])
+  @@index([invoiceId])
+  @@index([date])
 }
 
 // Daily Brief — micro feed of MoJ/MHRSD updates
@@ -183,8 +212,8 @@ model DailyBrief {
   id          String   @id @default(cuid())
   title       String
   summary     String
-  source      String   // MoJ | MHRSD | VAT | local_tip
-  category    String   // regulation | labor | tax | corporate | ip
+  source      String // MoJ | MHRSD | VAT | local_tip
+  category    String // regulation | labor | tax | corporate | ip
   url         String?
   publishedAt DateTime @default(now())
   createdAt   DateTime @default(now())
@@ -192,32 +221,37 @@ model DailyBrief {
 
 // ===== Invoicing =====
 model Invoice {
-  id          String   @id @default(cuid())
-  number      String   @unique // INV-2026-001
+  id          String    @id @default(cuid())
+  number      String    @unique // INV-2026-001
   clientId    String?
   caseId      String?
-  issueDate   DateTime @default(now())
+  issueDate   DateTime  @default(now())
   dueDate     DateTime?
-  status      String   @default("draft") // draft | sent | paid | overdue | cancelled
-  subtotal    Float    @default(0)
-  vatRate     Float    @default(15) // Saudi VAT
-  vatAmount   Float    @default(0)
-  total       Float    @default(0)
-  paidAmount  Float    @default(0)
+  status      String    @default("draft") // draft | sent | paid | overdue | cancelled
+  subtotal    Float     @default(0)
+  vatRate     Float     @default(15) // Saudi VAT
+  vatAmount   Float     @default(0)
+  total       Float     @default(0)
+  paidAmount  Float     @default(0)
   paidAt      DateTime?
   notes       String?
   paymentUrl  String?
   zatcaHash   String?
   zatcaXml    String?
-  zatcaStatus String   @default("not_submitted") // not_submitted | submitted | valid | rejected
+  zatcaStatus String    @default("not_submitted") // not_submitted | submitted | valid | rejected
   workspaceId String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  workspace   Workspace? @relation(fields: [workspaceId], references: [id])
-  client      Client?    @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  case        LegalCase? @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  workspace   Workspace?  @relation(fields: [workspaceId], references: [id])
+  client      Client?     @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  case        LegalCase?  @relation(fields: [caseId], references: [id], onDelete: SetNull)
   timeEntries TimeEntry[]
+
+  @@index([workspaceId])
+  @@index([clientId])
+  @@index([caseId])
+  @@index([status])
 }
 
 // ===== Communications log =====
@@ -225,34 +259,38 @@ model Communication {
   id          String   @id @default(cuid())
   clientId    String?
   caseId      String?
-  type        String   // call | email | meeting | sms | note
+  type        String // call | email | meeting | sms | note
   direction   String   @default("outgoing") // incoming | outgoing
   subject     String
   body        String
-  durationMin Int?     // for calls/meetings
+  durationMin Int? // for calls/meetings
   date        DateTime @default(now())
   createdAt   DateTime @default(now())
 
-  client      Client?      @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  case        LegalCase?   @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  client Client?    @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  case   LegalCase? @relation(fields: [caseId], references: [id], onDelete: SetNull)
+
+  @@index([clientId])
+  @@index([caseId])
+  @@index([date])
 }
 
 // ===== Student mode tables =====
 
 model Course {
-  id          String   @id @default(cuid())
-  title       String
-  code        String?
-  instructor  String?
-  semester    String?
-  credits     Int?
-  color       String   @default("#0F5132")
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  title      String
+  code       String?
+  instructor String?
+  semester   String?
+  credits    Int?
+  color      String   @default("#0F5132")
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  lectures    Lecture[]
-  deadlines   AcademicDeadline[]
+  lectures  Lecture[]
+  deadlines AcademicDeadline[]
 }
 
 model Lecture {
@@ -267,101 +305,112 @@ model Lecture {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
 }
 
 model AcademicDeadline {
-  id          String   @id @default(cuid())
-  courseId    String?
-  title       String
-  type        String
-  dueDate     DateTime
-  status      String   @default("todo")
-  priority    String   @default("normal")
-  weight      Float?
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  courseId  String?
+  title     String
+  type      String
+  dueDate   DateTime
+  status    String   @default("todo")
+  priority  String   @default("normal")
+  weight    Float?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  course      Course?  @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  course Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  @@index([courseId])
+  @@index([dueDate])
 }
 
 model LegalTerm {
-  id          String   @id @default(cuid())
-  term        String   @unique
-  definition  String
-  category    String   @default("general")
-  origin      String?
-  example     String?
-  mastery     String   @default("learning")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  term       String   @unique
+  definition String
+  category   String   @default("general")
+  origin     String?
+  example    String?
+  mastery    String   @default("learning")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model CaseEntry {
-  id            String   @id @default(cuid())
-  caseName      String
-  citation      String?
-  court         String?
-  principle     String
-  subject       String
-  summary       String?
-  significance  String?
-  rating        Int      @default(3)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String   @id @default(cuid())
+  caseName     String
+  citation     String?
+  court        String?
+  principle    String
+  subject      String
+  summary      String?
+  significance String?
+  rating       Int      @default(3)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model ReviewSession {
-  id           String   @id @default(cuid())
-  mode         String
-  sourceType   String
-  sourceLabel  String
-  cardCount    Int
-  correctCount Int      @default(0)
-  reviewedCount Int     @default(0)
-  durationSec  Int      @default(0)
-  score        Float?
-  date         DateTime @default(now())
-  createdAt    DateTime @default(now())
+  id            String   @id @default(cuid())
+  mode          String
+  sourceType    String
+  sourceLabel   String
+  cardCount     Int
+  correctCount  Int      @default(0)
+  reviewedCount Int      @default(0)
+  durationSec   Int      @default(0)
+  score         Float?
+  date          DateTime @default(now())
+  createdAt     DateTime @default(now())
 }
 
 // ===== Phase 3: SaaS & Digital Signatures =====
 
 model Plan {
-  id          String   @id @default(cuid())
-  name        String   // starter | pro | enterprise
-  price       Float
-  features    String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  name      String // starter | pro | enterprise
+  price     Float
+  features  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   subscriptions Subscription[]
 }
 
 model Subscription {
-  id          String   @id @default(cuid())
-  planId      String
-  status      String   @default("active") // active | past_due | canceled
-  currentPeriodEnd DateTime
-  stripeCustomerId String?
+  id                   String   @id @default(cuid())
+  planId               String
+  status               String   @default("active") // active | past_due | canceled
+  currentPeriodEnd     DateTime
+  stripeCustomerId     String?
   stripeSubscriptionId String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
-  plan        Plan     @relation(fields: [planId], references: [id])
-  workspaces  Workspace[]
+  plan       Plan        @relation(fields: [planId], references: [id])
+  workspaces Workspace[]
+
+  @@index([planId])
+  @@index([stripeCustomerId])
+  @@index([stripeSubscriptionId])
 }
 
 model DocumentSignature {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   documentId  String
   signerName  String
-  signerId    String   // National ID for Nafath
-  status      String   @default("pending") // pending | signed | rejected
-  nafathReqId String?  // Nafath request reference
+  signerId    String // National ID for Nafath
+  status      String    @default("pending") // pending | signed | rejected
+  nafathReqId String? // Nafath request reference
   signedAt    DateTime?
   ipAddress   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([documentId])
 }

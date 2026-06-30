@@ -1,25 +1,24 @@
 import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { db } from '@/lib/db'
 
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
     const userId = searchParams.get('userId')
-    
+
     if (!userId) {
       return NextResponse.json({ error: 'userId is required' }, { status: 400 })
     }
 
-    const notifications = await prisma.notification.findMany({
+    const notifications = await db.notification.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
       take: 20
     })
-    
+
     return NextResponse.json(notifications)
   } catch (error) {
+    console.error('Failed to fetch notifications:', error)
     return NextResponse.json({ error: 'Failed to fetch notifications' }, { status: 500 })
   }
 }
@@ -32,7 +31,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    const notification = await prisma.notification.create({
+    const notification = await db.notification.create({
       data: {
         userId,
         title,
@@ -41,9 +40,10 @@ export async function POST(req: Request) {
         isRead: false
       }
     })
-    
+
     return NextResponse.json(notification)
   } catch (error) {
+    console.error('Failed to create notification:', error)
     return NextResponse.json({ error: 'Failed to create notification' }, { status: 500 })
   }
 }
