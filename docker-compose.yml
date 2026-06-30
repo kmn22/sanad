@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sanad-app:latest
+    container_name: sanad-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://sanad:sanad_secure_pwd@db:5432/sanad_db?schema=public
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=zP8X59TjmATELNBJOHGs2Tf7kIy/G4Qfmd4KN++7hXI=
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:15-alpine
+    container_name: sanad-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=sanad
+      - POSTGRES_PASSWORD=sanad_secure_pwd
+      - POSTGRES_DB=sanad_db
+    volumes:
+      - sanad_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sanad -d sanad_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  sanad_pg_data:
