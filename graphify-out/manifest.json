@@ -335,8 +335,8 @@
     "semantic_hash": "e79949fab93ef26708d4aaef3b97a5bb"
   },
   "src/app/layout.tsx": {
-    "mtime": 1782765884.7651396,
-    "ast_hash": "3925afa9ecf7926d318391df5cc107b8",
+    "mtime": 1782785847.187702,
+    "ast_hash": "94474a8e797379f57e39bce9d5f67a5f",
     "semantic_hash": ""
   },
   "src/app/login/page.tsx": {
@@ -345,8 +345,8 @@
     "semantic_hash": ""
   },
   "src/app/page.tsx": {
-    "mtime": 1782782255.2001097,
-    "ast_hash": "355be2261954f5d95659c42589f384cf",
+    "mtime": 1782785882.6439385,
+    "ast_hash": "43b224fc721f4f6c9b6a2f44a33d89dd",
     "semantic_hash": ""
   },
   "src/app/portal/[token]/page.tsx": {
@@ -535,9 +535,9 @@
     "semantic_hash": "1e77fec2019c58137ac99ac43b8dc18b"
   },
   "src/components/ui/card.tsx": {
-    "mtime": 1778580365.0,
-    "ast_hash": "a1468e2e35dfde14b63b4308cd20d2c2",
-    "semantic_hash": "a1468e2e35dfde14b63b4308cd20d2c2"
+    "mtime": 1782785865.9599206,
+    "ast_hash": "87e7c09a400bb83689a85e14e9b93428",
+    "semantic_hash": ""
   },
   "src/components/ui/carousel.tsx": {
     "mtime": 1782324811.7198758,
@@ -1122,6 +1122,11 @@
   "docker-compose.yml": {
     "mtime": 1782785592.8136826,
     "ast_hash": "4325b1ddfc680a0fed97417d2d1454d0",
+    "semantic_hash": ""
+  },
+  "src/app/template.tsx": {
+    "mtime": 1782785838.1095552,
+    "ast_hash": "046648fbab3dbaf13d4e86949d6ed1ef",
     "semantic_hash": ""
   }
 }
