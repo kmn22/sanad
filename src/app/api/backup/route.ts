@@ -1,40 +1,16 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { exec } from 'child_process'
+import util from 'util'
 
-export async function GET() {
+const execPromise = util.promisify(exec)
+
+export async function POST(req: Request) {
   try {
-    const [clients, cases, tasks, invoices, docs, compliance, comms] = await Promise.all([
-      db.client.findMany(),
-      db.legalCase.findMany(),
-      db.task.findMany(),
-      db.invoice.findMany(),
-      db.legalDocument.findMany(),
-      db.complianceItem.findMany(),
-      db.communication.findMany(),
-    ])
-
-    const backupData = {
-      timestamp: new Date().toISOString(),
-      version: '1.0',
-      data: {
-        clients,
-        cases,
-        tasks,
-        invoices,
-        docs,
-        compliance,
-        comms
-      }
-    }
-
-    return new NextResponse(JSON.stringify(backupData, null, 2), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Disposition': `attachment; filename="sanad_backup_${new Date().toISOString().split('T')[0]}.json"`,
-      },
-    })
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to generate backup' }, { status: 500 })
+    // Run the backup script
+    const { stdout, stderr } = await execPromise('bash scripts/backup.sh')
+    
+    return NextResponse.json({ success: true, message: 'Backup triggered', log: stdout })
+  } catch (error: any) {
+    return NextResponse.json({ error: 'Backup failed', details: error.message }, { status: 500 })
   }
 }
