@@ -112,31 +112,7 @@ export function DeepWorkView({ cases, timeEntries, onChange }: Props) {
   const displaySec = state.running ? Math.max(0, state.total - elapsedSec) : state.remaining
   const progressPct = state.total > 0 ? ((state.total - displaySec) / state.total) * 100 : 0
 
-  useEffect(() => {
-    if (state.running && displaySec === 0) {
-      completeSession()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [displaySec])
-
-  const start = () => setState({ ...state, running: true, startedAt: Date.now() })
-  const pause = () => setState({ ...state, running: false, startedAt: null, remaining: displaySec })
-
-  const stop = async () => {
-    const elapsedTotal = state.total - displaySec
-    if (elapsedTotal >= 60) await saveSession(elapsedTotal)
-    setState({ ...DEFAULT_STATE })
-    toast.info(t('dw.stopped'))
-  }
-
-  async function completeSession() {
-    await saveSession(state.total)
-    setState({ ...DEFAULT_STATE })
-    const modeLabel = state.mode === 'focus' ? t('dw.mode_focus') : state.mode === 'billable' ? t('dw.mode_billable') : t('dw.mode_break')
-    toast.success(t('dw.session_complete', { mode: modeLabel }))
-  }
-
-  const saveSession = async (durationSec: number) => {
+  async function saveSession(durationSec: number) {
     const isBillable = state.mode === 'billable'
     const payload = {
       caseId: isBillable ? state.caseId : null,
@@ -158,6 +134,31 @@ export function DeepWorkView({ cases, timeEntries, onChange }: Props) {
       toast.error(t('dw.failed_save'))
     }
   }
+
+  async function completeSession() {
+    await saveSession(state.total)
+    setState({ ...DEFAULT_STATE })
+    const modeLabel = state.mode === 'focus' ? t('dw.mode_focus') : state.mode === 'billable' ? t('dw.mode_billable') : t('dw.mode_break')
+    toast.success(t('dw.session_complete', { mode: modeLabel }))
+  }
+
+  useEffect(() => {
+    if (state.running && displaySec === 0) {
+      completeSession()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displaySec])
+
+  const start = () => setState({ ...state, running: true, startedAt: Date.now() })
+  const pause = () => setState({ ...state, running: false, startedAt: null, remaining: displaySec })
+
+  const stop = async () => {
+    const elapsedTotal = state.total - displaySec
+    if (elapsedTotal >= 60) await saveSession(elapsedTotal)
+    setState({ ...DEFAULT_STATE })
+    toast.info(t('dw.stopped'))
+  }
+
 
   const setMode = (mode: 'focus' | 'billable' | 'break') => {
     const presets = { focus: 25 * 60, billable: 60 * 60, break: 5 * 60 }
