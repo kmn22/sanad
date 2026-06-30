@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { PrismaClient } from '@prisma/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Shield, Clock, FileText, CheckCircle2, AlertTriangle, Calendar } from 'lucide-react'
 
 const prisma = new PrismaClient()
@@ -102,7 +103,14 @@ export default async function ClientPortal({ params }: { params: { token: string
                       <p className="text-sm font-medium">{inv.number}</p>
                       <p className="text-xs text-muted-foreground">مستحقة في {inv.dueDate ? new Date(inv.dueDate).toLocaleDateString('ar-SA') : 'غير محدد'}</p>
                     </div>
-                    <Badge variant="destructive">{inv.total} ر.س</Badge>
+                    <div className="flex items-center gap-3">
+                      <Badge variant="destructive">{inv.total} ر.س</Badge>
+                      {inv.paymentUrl && (
+                        <Button size="sm" asChild>
+                          <a href={inv.paymentUrl} target="_blank" rel="noopener noreferrer">ادفع الآن</a>
+                        </Button>
+                      )}
+                    </div>
                   </li>
                 ))}
                 {caseData.invoices.filter(i => i.status !== 'paid').length === 0 && (

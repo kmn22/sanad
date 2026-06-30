@@ -16,6 +16,7 @@ import { ClientsView } from '@/components/sanad/ClientsView'
 import { InvoicesView } from '@/components/sanad/InvoicesView'
 import { ScannerView } from '@/components/sanad/ScannerView'
 import { CalendarView } from '@/components/sanad/CalendarView'
+import { CommunicationsView } from '@/components/sanad/CommunicationsView'
 import { StudentView } from '@/components/sanad/StudentView'
 import { TodayFocusView } from '@/components/sanad/TodayFocusView'
 import { CommandPalette } from '@/components/sanad/CommandPalette'
@@ -24,7 +25,7 @@ import { MobileNav } from '@/components/sanad/MobileNav'
 import { Sidebar } from '@/components/sanad/Sidebar'
 import type { DashboardData, StudentDashboardData } from '@/lib/sanad/types'
 
-type View = 'today' | 'dashboard' | 'compliance' | 'cases' | 'deepwork' | 'tasks' | 'documents' | 'clients' | 'invoices' | 'scanner' | 'calendar'
+type View = 'today' | 'dashboard' | 'compliance' | 'cases' | 'deepwork' | 'tasks' | 'documents' | 'clients' | 'invoices' | 'scanner' | 'calendar' | 'communications'
 type Persona = 'lawyer' | 'student'
 
 import { useQuery } from '@tanstack/react-query'
@@ -167,6 +168,7 @@ export default function Home() {
               {view === 'invoices' && <InvoicesView invoices={data.invoices} clients={data.clients} cases={data.cases.all} timeEntries={data.timeEntries.filter((te: any) => te.billable && !te.invoiced)} stats={data.stats} onChange={onChange} />}
               {view === 'scanner' && <ScannerView />}
               {view === 'calendar' && <CalendarView onNavigate={(v) => setView(v)} />}
+              {view === 'communications' && <CommunicationsView cases={data.cases.all} clients={data.clients} onChange={onChange} />}
             </>
           ) : (
             <div className="text-center py-12 text-sm text-muted-foreground">{t('dash.failed_load')} <Button variant="link" onClick={() => onChange()}>{t('dash.retry')}</Button></div>

@@ -42,6 +42,7 @@ const translations = {
     'nav.invoices': 'الفواتير',
     'nav.scanner': 'ماسح المستندات',
     'nav.calendar': 'التقويم',
+    'nav.communications': 'سجل التواصل',
 
     // Dashboard
     'dash.start_focus': 'ابدأ تركيز',
@@ -694,6 +695,7 @@ const translations = {
     'nav.invoices': 'Invoices',
     'nav.scanner': 'Document Scanner',
     'nav.calendar': 'Calendar',
+    'nav.communications': 'Communications',
 
     'dash.start_focus': 'Start focus',
     'dash.tasks_count': '{n} tasks',
