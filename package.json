@@ -13,9 +13,9 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset",
-    "seed": "bun run scripts/seed.ts && bun run scripts/seed_student.ts",
-    "seed:lawyer": "bun run scripts/seed.ts",
-    "seed:student": "bun run scripts/seed_student.ts",
+    "seed": "npx tsx scripts/seed.ts && npx tsx scripts/seed_student.ts",
+    "seed:lawyer": "npx tsx scripts/seed.ts",
+    "seed:student": "npx tsx scripts/seed_student.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
