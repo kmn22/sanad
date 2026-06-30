@@ -129,7 +129,12 @@ export default function Home() {
   const dateStr = now.toLocaleDateString(timeLocale, { weekday: 'short', day: 'numeric', month: 'short' })
 
   return (
-    <div className="min-h-screen flex flex-col bg-background" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen flex flex-col bg-background relative overflow-hidden" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-600/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:32px] pointer-events-none" />
+      
+      <div className="relative z-10 flex flex-col min-h-screen w-full">
       <SonnerToaster position="top-right" richColors closeButton />
 
       <TopNav
@@ -186,6 +191,7 @@ export default function Home() {
       </footer>
 
       {mounted && <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} onNavigate={(v) => setView(v)} onCreate={() => {}} />}
+      </div>
     </div>
   )
 }

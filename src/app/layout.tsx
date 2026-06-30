@@ -70,7 +70,8 @@ export default function RootLayout({
           <ReactQueryProvider>
             <ThemeProvider
               attribute="class"
-              defaultTheme="light"
+              defaultTheme="dark"
+              forcedTheme="dark"
               enableSystem={false}
               disableTransitionOnChange
             >
