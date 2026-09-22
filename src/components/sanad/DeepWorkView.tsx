@@ -146,7 +146,6 @@ export function DeepWorkView({ cases, timeEntries, onChange }: Props) {
     if (state.running && displaySec === 0) {
       completeSession()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displaySec])
 
   const start = () => setState({ ...state, running: true, startedAt: Date.now() })

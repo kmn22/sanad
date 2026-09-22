@@ -27,7 +27,7 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: process.env.PORT || 3001,
         NEXT_TELEMETRY_DISABLED: 1,
-        DATABASE_URL: `file:${path.join(PROJECT_DIR, 'db/custom.db')}`,
+        DATABASE_URL: `file:${path.join(PROJECT_DIR, 'prisma/db/custom.db')}`,
       },
       env_production: {
         NODE_ENV: 'production',

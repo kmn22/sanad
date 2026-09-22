@@ -2,24 +2,48 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { signIn } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Scale, ArrowLeft, ShieldCheck, Mail, Lock } from 'lucide-react'
+import { Scale, ArrowLeft, ShieldCheck, Mail, Lock, AlertCircle } from 'lucide-react'
+import { toast } from 'sonner'
 
 export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setErrorMsg('')
 
-    // Dummy login delay for premium feel
-    setTimeout(() => {
+    try {
+      const res = await signIn('credentials', {
+        email: email.trim(),
+        password,
+        redirect: false,
+      })
+
+      if (res?.error) {
+        const msg = 'البريد الإلكتروني أو كلمة المرور غير صحيحة'
+        setErrorMsg(msg)
+        toast.error(msg)
+        setLoading(false)
+        return
+      }
+
+      toast.success('تم تسجيل الدخول بنجاح')
       router.push('/')
-    }, 1200)
+      router.refresh()
+    } catch {
+      const msg = 'حدث خطأ غير متوقع أثناء تسجيل الدخول'
+      setErrorMsg(msg)
+      toast.error(msg)
+      setLoading(false)
+    }
   }
 
   return (
@@ -64,6 +88,13 @@ export default function LoginPage() {
             <h3 className="text-2xl font-bold text-white mb-2">مرحباً بعودتك</h3>
             <p className="text-slate-400">سجل الدخول للمتابعة إلى مساحة العمل الخاصة بك</p>
           </div>
+
+          {errorMsg && (
+            <div className="mb-6 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">

@@ -29,13 +29,16 @@ export async function GET() {
     (d) => d.expiryDate && d.expiryDate <= in30 && d.expiryDate >= now
   )
 
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
+
   const openTasks = tasks.filter((t) => t.status !== 'done')
-  // Overdue = due before today (not today). Today = due today. Mutually exclusive.
+  // Overdue = due before today. Today = due today. Mutually exclusive.
   const overdueTasks = openTasks.filter(
-    (t) => t.dueDate && t.dueDate.toDateString() < now.toDateString()
+    (t) => t.dueDate && new Date(t.dueDate) < startOfToday
   )
   const todayTasks = openTasks.filter(
-    (t) => t.dueDate && t.dueDate.toDateString() === now.toDateString()
+    (t) => t.dueDate && new Date(t.dueDate) >= startOfToday && new Date(t.dueDate) <= endOfToday
   )
 
   const activeCases = cases.filter((c) => c.stage !== 'closed')

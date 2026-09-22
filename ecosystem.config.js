@@ -3,8 +3,8 @@ module.exports = {
     {
       name: 'sanad-web',
       script: '.next/standalone/server.js',
-      instances: 'max', // Utilizes all available CPU cores
-      exec_mode: 'cluster', // Enables cluster mode for zero-downtime reloads
+      instances: 1, // SQLite single-instance only
+      exec_mode: 'fork',
       env: {
         NODE_ENV: 'production',
         PORT: 3000,

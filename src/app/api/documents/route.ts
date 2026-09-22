@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { createDocumentSchema } from '@/lib/validations'
 
 export async function GET() {
   const docs = await db.legalDocument.findMany({ orderBy: { updatedAt: 'desc' } })
@@ -7,9 +8,11 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json()
-  const doc = await db.legalDocument.create({ data: body })
-  // Auto-generate follow-up task when a doc is created
+  try {
+    const rawBody = await req.json()
+    const parsed = createDocumentSchema.parse(rawBody)
+    const doc = await db.legalDocument.create({ data: parsed })
+    // Auto-generate follow-up task when a doc is created
   if (doc.docType === 'nda' && doc.status === 'sent') {
     const due = new Date()
     due.setDate(due.getDate() + 3)
@@ -42,5 +45,11 @@ export async function POST(req: NextRequest) {
       })
     }
   }
-  return NextResponse.json(doc)
+    return NextResponse.json(doc)
+  } catch (err: any) {
+    if (err?.name === 'ZodError') {
+      return NextResponse.json({ error: 'Validation failed', details: err.errors }, { status: 400 })
+    }
+    return NextResponse.json({ error: err.message || 'Failed to create document' }, { status: 500 })
+  }
 }

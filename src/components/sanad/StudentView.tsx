@@ -37,11 +37,15 @@ import { ReviewPanel } from './student/ReviewPanel'
 interface Props {
   data: StudentDashboardData
   onChange: () => void
+  activeTab?: string
+  onTabChange?: (tab: string) => void
 }
 
-export function StudentView({ data, onChange }: Props) {
+export function StudentView({ data, onChange, activeTab, onTabChange }: Props) {
   const { lang, t } = useLang()
-  const [tab, setTab] = useState('overview')
+  const [internalTab, setInternalTab] = useState('overview')
+  const tab = activeTab ?? internalTab
+  const setTab = onTabChange ?? setInternalTab
 
   const { stats } = data
   const now = new Date()
