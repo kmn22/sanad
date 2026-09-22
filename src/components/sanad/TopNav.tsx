@@ -1,10 +1,19 @@
 'use client'
 
 import React from 'react'
-import { Moon, Sun, RefreshCw, Languages, GraduationCap, Briefcase, Search } from 'lucide-react'
+import { Moon, Sun, RefreshCw, Languages, GraduationCap, Briefcase, Search, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useLang } from '@/lib/sanad/i18n'
 import { useTheme } from 'next-themes'
+import { signOut } from 'next-auth/react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface TopNavProps {
   persona: 'lawyer' | 'student'
@@ -116,9 +125,45 @@ export function TopNav({
                 {theme === 'dark' ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
               </Button>
             )}
-            <div className="h-7 w-7 rounded-full bg-primary/15 text-primary grid place-items-center text-xs font-medium">
-              {persona === 'lawyer' ? 'أ' : 'ط'}
-            </div>
+            <DropdownMenu dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="h-8 w-8 rounded-full bg-primary/15 hover:bg-primary/25 text-primary grid place-items-center text-xs font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
+                  title="الملف الشخصي"
+                >
+                  {persona === 'lawyer' ? 'أ' : 'ط'}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-semibold leading-none">أحمد القحطاني</p>
+                    <p className="text-xs leading-none text-muted-foreground">ahmed@sanad.sa</p>
+                    <div className="pt-1">
+                      <span className="inline-block text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded font-medium">
+                        {persona === 'lawyer' ? 'محامٍ ممارس' : 'طالب قانون'}
+                      </span>
+                    </div>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => switchPersona(persona === 'lawyer' ? 'student' : 'lawyer')}
+                  className="cursor-pointer gap-2"
+                >
+                  {persona === 'lawyer' ? <GraduationCap className="h-4 w-4" /> : <Briefcase className="h-4 w-4" />}
+                  <span>{persona === 'lawyer' ? 'التبديل إلى وضع الطالب' : 'التبديل إلى وضع المحامي'}</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => signOut({ callbackUrl: '/login' })}
+                  className="text-rose-600 dark:text-rose-400 focus:text-rose-600 focus:bg-rose-500/10 cursor-pointer gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>تسجيل الخروج</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>

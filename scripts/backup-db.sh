@@ -7,8 +7,8 @@
 
 set -euo pipefail
 
-PROJECT_DIR="/home/z/my-project"
-DB_FILE="$PROJECT_DIR/db/custom.db"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+DB_FILE="$PROJECT_DIR/prisma/db/custom.db"
 BACKUP_DIR="$PROJECT_DIR/backups"
 DATE=$(date +%Y%m%d-%H%M%S)
 BACKUP_FILE="$BACKUP_DIR/sanad-$DATE.db"

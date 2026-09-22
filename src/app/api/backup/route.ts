@@ -4,13 +4,19 @@ import util from 'util'
 
 const execPromise = util.promisify(exec)
 
-export async function POST(req: Request) {
+async function handleBackup() {
   try {
-    // Run the backup script
-    const { stdout, stderr } = await execPromise('bash scripts/backup.sh')
-    
-    return NextResponse.json({ success: true, message: 'Backup triggered', log: stdout })
+    const { stdout } = await execPromise('bash scripts/backup.sh')
+    return NextResponse.json({ success: true, message: 'Backup completed successfully', log: stdout.trim() })
   } catch (error: any) {
     return NextResponse.json({ error: 'Backup failed', details: error.message }, { status: 500 })
   }
+}
+
+export async function POST() {
+  return handleBackup()
+}
+
+export async function GET() {
+  return handleBackup()
 }

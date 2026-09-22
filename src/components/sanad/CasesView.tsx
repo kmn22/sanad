@@ -334,7 +334,7 @@ function CaseCard({
   const copyPortalLink = async () => {
     let token = c.portalToken
     if (!token) {
-      token = Math.random().toString(36).substring(2, 15)
+      token = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15)
       await fetch(`/api/cases/${c.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },

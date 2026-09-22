@@ -1,15 +1,14 @@
 import { notFound } from 'next/navigation'
-import { PrismaClient } from '@prisma/client'
+import { db } from '@/lib/db'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Shield, Clock, FileText, CheckCircle2, AlertTriangle, Calendar } from 'lucide-react'
 
-const prisma = new PrismaClient()
-
-export default async function ClientPortal({ params }: { params: { token: string } }) {
-  const caseData = await prisma.legalCase.findUnique({
-    where: { portalToken: params.token },
+export default async function ClientPortal({ params }: { params: Promise<{ token: string }> }) {
+  const { token } = await params
+  const caseData = await db.legalCase.findUnique({
+    where: { portalToken: token },
     include: {
       client: true,
       timeEntries: { orderBy: { date: 'desc' } },

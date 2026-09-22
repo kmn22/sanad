@@ -38,6 +38,7 @@ export default function Home() {
   const { lang, t, toggle: toggleLang } = useLang()
   const [persona, setPersona] = useState<Persona>('lawyer')
   const [view, setView] = useState<string>('today')
+  const [studentTab, setStudentTab] = useState<string>('overview')
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [paletteOpen, setPaletteOpen] = useState(false)
@@ -146,10 +147,20 @@ export default function Home() {
         mounted={mounted}
       />
 
-      <MobileNav persona={persona} view={view} setView={setView} />
+      <MobileNav
+        persona={persona}
+        view={persona === 'student' ? studentTab : view}
+        setView={persona === 'student' ? setStudentTab : setView}
+      />
 
       <div className="flex flex-1 mx-auto max-w-7xl w-full px-4 sm:px-6 lg:px-8 py-6 gap-6">
-        <Sidebar persona={persona} view={view} setView={setView} data={data} />
+        <Sidebar
+          persona={persona}
+          view={persona === 'student' ? studentTab : view}
+          setView={persona === 'student' ? setStudentTab : setView}
+          data={data}
+          studentData={studentData}
+        />
 
         <main className="flex-1 min-w-0">
           {loading && (!data || (persona === 'student' && !studentData)) ? (
@@ -159,7 +170,12 @@ export default function Home() {
               <div className="h-64 bg-muted rounded-lg" />
             </div>
           ) : persona === 'student' && studentData ? (
-            <StudentView data={studentData} onChange={onChange} />
+            <StudentView
+              data={studentData}
+              onChange={onChange}
+              activeTab={studentTab}
+              onTabChange={setStudentTab}
+            />
           ) : data ? (
             <>
               {view === 'today' && <TodayFocusView data={data} onNavigate={(v) => setView(v)} onStartFocus={() => setView('deepwork')} />}
