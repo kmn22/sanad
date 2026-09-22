@@ -46,7 +46,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Plus, Search, Filter, MoreVertical, LayoutGrid, List, FileText, Download, Upload, CheckCircle2, Circle, Clock, AlertCircle, Edit, Trash2, CalendarRange, Kanban, Link, GripVertical, Users } from 'lucide-react'
+import { Plus, Search, Filter, MoreVertical, LayoutGrid, List, FileText, Download, Upload, CheckCircle2, Circle, Clock, AlertCircle, Edit, Trash2, CalendarRange, Kanban, Link, GripVertical, Users, Scale } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLang } from '@/lib/sanad/i18n'
 import {
@@ -59,6 +59,7 @@ import {
   type Client,
 } from '@/lib/sanad/types'
 import { CaseDetailDrawer } from './CaseDetailDrawer'
+import { DraftingHub } from './DraftingHub'
 
 interface Props {
   cases: LegalCase[]
@@ -73,6 +74,8 @@ const PRIORITIES = ['low', 'normal', 'high', 'urgent']
 export function CasesView({ cases, clients = [], onChange }: Props) {
   const { lang, t } = useLang()
   const [open, setOpen] = useState(false)
+  const [draftingOpen, setDraftingOpen] = useState(false)
+  const [draftingCase, setDraftingCase] = useState<LegalCase | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null)
   const [editingCase, setEditingCase] = useState<LegalCase | null>(null)
@@ -141,9 +144,32 @@ export function CasesView({ cases, clients = [], onChange }: Props) {
               <CalendarRange className="size-4" />
             </Button>
           </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setDraftingOpen(true)}
+            className="h-9 text-xs gap-1.5 border-primary/20 text-primary hover:bg-primary/5"
+          >
+            <Scale className="h-4 w-4" />
+            <span>{lang === 'ar' ? 'إعداد مذكرة' : 'Draft Pleading'}</span>
+          </Button>
           <AddCaseDialog open={open} onOpenChange={setOpen} clients={clients} onSaved={() => { onChange(); setOpen(false) }} />
         </div>
       </div>
+
+      <DraftingHub
+        open={draftingOpen || !!draftingCase}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            setDraftingOpen(false)
+            setDraftingCase(null)
+          }
+        }}
+        cases={cases}
+        initialTemplateId="defense"
+        initialCaseId={draftingCase?.id}
+        onDocumentSaved={onChange}
+      />
 
       {view === 'kanban' ? (
         <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
@@ -156,6 +182,7 @@ export function CasesView({ cases, clients = [], onChange }: Props) {
                 onCaseClick={(id) => setSelectedCaseId(id)}
                 onCaseEdit={(c) => setEditingCase(c)}
                 onCaseDelete={(id) => deleteCase(id)}
+                onCaseDraftPleading={(c) => setDraftingCase(c)}
               />
             ))}
           </div>
@@ -254,12 +281,14 @@ function KanbanColumn({
   onCaseClick,
   onCaseEdit,
   onCaseDelete,
+  onCaseDraftPleading,
 }: {
   stage: string
   cases: LegalCase[]
   onCaseClick: (id: string) => void
   onCaseEdit: (c: LegalCase) => void
   onCaseDelete: (id: string) => void
+  onCaseDraftPleading?: (c: LegalCase) => void
 }) {
   const { t } = useLang()
   const { setNodeRef, isOver } = useDroppable({ id: stage })
@@ -284,6 +313,7 @@ function KanbanColumn({
               onClick={() => onCaseClick(c.id)}
               onEdit={() => onCaseEdit(c)}
               onDelete={() => onCaseDelete(c.id)}
+              onDraftPleading={() => onCaseDraftPleading?.(c)}
             />
           ))}
           {cases.length === 0 && (
@@ -300,16 +330,18 @@ function DraggableCase({
   onClick,
   onEdit,
   onDelete,
+  onDraftPleading,
 }: {
   c: LegalCase
   onClick: () => void
   onEdit: () => void
   onDelete: () => void
+  onDraftPleading?: () => void
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: c.id })
   return (
     <div ref={setNodeRef} {...attributes} {...listeners} className={isDragging ? 'opacity-30' : ''}>
-      <CaseCard c={c} onClick={onClick} onEdit={onEdit} onDelete={onDelete} />
+      <CaseCard c={c} onClick={onClick} onEdit={onEdit} onDelete={onDelete} onDraftPleading={onDraftPleading} />
     </div>
   )
 }
@@ -320,12 +352,14 @@ function CaseCard({
   onClick,
   onEdit,
   onDelete,
+  onDraftPleading,
 }: {
   c: LegalCase
   dragging?: boolean
   onClick?: () => void
   onEdit?: () => void
   onDelete?: () => void
+  onDraftPleading?: () => void
 }) {
   const { lang, t } = useLang()
   const days = c.dueDate ? daysUntil(c.dueDate) : null
@@ -370,6 +404,12 @@ function CaseCard({
                     <Edit className="h-3 w-3 me-2" />
                     {t('common.edit')}
                   </DropdownMenuItem>
+                  {onDraftPleading && (
+                    <DropdownMenuItem onClick={onDraftPleading}>
+                      <Scale className="h-3 w-3 me-2 text-primary" />
+                      {lang === 'ar' ? 'إعداد مذكرة قضائية' : 'Draft Pleading'}
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={copyPortalLink}>
                     <Link className="h-3 w-3 me-2" />
                     {lang === 'ar' ? 'نسخ رابط العميل' : 'Copy Portal Link'}
