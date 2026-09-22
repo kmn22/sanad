@@ -380,8 +380,8 @@
     "semantic_hash": "3b6315fedd1709f89f9db2f38c7a70e6"
   },
   "src/components/sanad/CasesView.tsx": {
-    "mtime": 1790099762.328906,
-    "ast_hash": "8ccd3deab1b5c493a4bba4a7b50c0752",
+    "mtime": 1790102169.7978952,
+    "ast_hash": "0fecbdd9833e8c1d769406ac4e1eb740",
     "semantic_hash": ""
   },
   "src/components/sanad/ClientsView.tsx": {
@@ -410,8 +410,8 @@
     "semantic_hash": ""
   },
   "src/components/sanad/DocumentsView.tsx": {
-    "mtime": 1782764903.1876118,
-    "ast_hash": "0eae285d66720f82a31b0c731157b010",
+    "mtime": 1790102111.9079545,
+    "ast_hash": "14d82ca980b071dbad344942a8c0fb5c",
     "semantic_hash": ""
   },
   "src/components/sanad/InvoicesView.tsx": {
@@ -1152,6 +1152,31 @@
   "src/middleware.ts": {
     "mtime": 1790101304.3664753,
     "ast_hash": "ca57c88ae504f0c8994e31f8c2ba912f",
+    "semantic_hash": ""
+  },
+  "src/components/sanad/DraftingHub.tsx": {
+    "mtime": 1790102237.0799155,
+    "ast_hash": "22dc1323ce71fc97d794c1f3d0e7b42d",
+    "semantic_hash": ""
+  },
+  "src/lib/sanad/drafting/regulatorySafeguards.ts": {
+    "mtime": 1790102047.8260126,
+    "ast_hash": "4daeaae092f6535272fd64ef3e7a0acd",
+    "semantic_hash": ""
+  },
+  "src/lib/sanad/drafting/templates.ts": {
+    "mtime": 1790102212.6098607,
+    "ast_hash": "9015c440b293ab1fce90962bf39d859d",
+    "semantic_hash": ""
+  },
+  "src/lib/sanad/drafting/types.ts": {
+    "mtime": 1790102038.7137175,
+    "ast_hash": "f426bd45bb467062be3ac6dfc425fc3c",
+    "semantic_hash": ""
+  },
+  "tests/drafting.test.ts": {
+    "mtime": 1790102269.743111,
+    "ast_hash": "410df4b2c443ba30b65a3ee79448aae0",
     "semantic_hash": ""
   }
 }

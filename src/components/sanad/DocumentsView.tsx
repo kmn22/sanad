@@ -23,10 +23,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { FileText, Plus, MoreVertical, FileSignature, Calendar, ArrowRight, Sparkles, Bot, Copy, CheckCircle2 } from 'lucide-react'
+import { FileText, Plus, MoreVertical, FileSignature, Calendar, ArrowRight, Sparkles, Bot, Copy, CheckCircle2, Scale } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLang } from '@/lib/sanad/i18n'
 import { SmartEditor } from './SmartEditor'
+import { DraftingHub } from './DraftingHub'
 import {
   DOC_STATUS_COLORS,
   daysUntil,
@@ -47,6 +48,7 @@ const DOC_TYPES = ['nda', 'employment', 'non_compete', 'msa', 'subcontract', 'po
 export function DocumentsView({ documents, cases, onChange }: Props) {
   const { lang, t } = useLang()
   const [open, setOpen] = useState(false)
+  const [draftingOpen, setDraftingOpen] = useState(false)
   const [filter, setFilter] = useState<string>('all')
 
   const sorted = [...documents].sort((a, b) => {
@@ -77,10 +79,25 @@ export function DocumentsView({ documents, cases, onChange }: Props) {
           <p className="text-sm text-muted-foreground">{t('docs.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            onClick={() => setDraftingOpen(true)}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 gap-1.5 shadow-sm"
+          >
+            <Scale className="h-4 w-4" />
+            <span>{lang === 'ar' ? 'أتمتة العقود والمذكرات' : 'Drafting Hub'}</span>
+          </Button>
           <AiDraftDialog cases={cases} onSaved={() => onChange()} />
           <AddDocDialog open={open} onOpenChange={setOpen} cases={cases} onSaved={() => { onChange(); setOpen(false) }} />
         </div>
       </div>
+
+      <DraftingHub
+        open={draftingOpen}
+        onOpenChange={setDraftingOpen}
+        cases={cases}
+        onDocumentSaved={onChange}
+      />
 
       <div className="flex items-center gap-2 flex-wrap">
         {(['all', ...STATUSES] as const).map((s) => (

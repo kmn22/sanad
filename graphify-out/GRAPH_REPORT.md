@@ -1,16 +1,16 @@
 # Graph Report - Legal App  (2026-09-22)
 
 ## Corpus Check
-- 177 files · ~496,641 words
+- 182 files · ~503,751 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1308 nodes · 2736 edges · 127 communities (85 shown, 42 thin omitted)
+- 1332 nodes · 2816 edges · 128 communities (84 shown, 44 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `837b99d8`
+- Built from commit: `d1de7c3e`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -87,6 +87,7 @@
 - [[_COMMUNITY_Community 77|Community 77]]
 - [[_COMMUNITY_Cluster 79|Cluster 79]]
 - [[_COMMUNITY_Community 80|Community 80]]
+- [[_COMMUNITY_Community 81|Community 81]]
 - [[_COMMUNITY_Cluster 85|Cluster 85]]
 - [[_COMMUNITY_Cluster 86|Cluster 86]]
 - [[_COMMUNITY_Cluster 87|Cluster 87]]
@@ -127,15 +128,15 @@
 
 ## God Nodes (most connected - your core abstractions)
 1. `cn()` - 226 edges
-2. `useLang()` - 87 edges
-3. `Button()` - 33 edges
+2. `useLang()` - 89 edges
+3. `Button()` - 34 edges
 4. `formatDate()` - 25 edges
 5. `Sanad Sidebar Navigation` - 25 edges
-6. `Card()` - 23 edges
-7. `CardContent()` - 23 edges
-8. `Badge()` - 22 edges
-9. `Input()` - 20 edges
-10. `ScrollArea()` - 18 edges
+6. `Badge()` - 23 edges
+7. `Card()` - 23 edges
+8. `CardContent()` - 23 edges
+9. `Input()` - 21 edges
+10. `Label()` - 18 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Sanad Sidebar Navigation` --NAVIGATES_TO--> `CasesView Component`  [EXTRACTED]
@@ -154,11 +155,11 @@
 - 1-file cycle: `src/components/ui/input-otp.tsx -> src/components/ui/input-otp.tsx`
 - 1-file cycle: `src/middleware.ts -> src/middleware.ts`
 
-## Communities (127 total, 42 thin omitted)
+## Communities (128 total, 44 thin omitted)
 
 ### Community 0 - "Scanner & Client Capture"
-Cohesion: 0.10
-Nodes (16): Smart Review Flashcard Feature, Student Mode (طالب), Daily Legal Digest Widget, Review Session Complete Screen, CasebookPanel(), CoursesPanel(), DeadlinesPanel(), TermsPanel() (+8 more)
+Cohesion: 0.50
+Nodes (3): Daily Legal Digest Widget, Student Dashboard Layout Design, Student Role Mode
 
 ### Community 1 - "NPM Dependencies"
 Cohesion: 0.03
@@ -169,16 +170,16 @@ Cohesion: 0.06
 Nodes (37): Legal Term Card Design, Terms Bank Panel (بنك المصطلحات), geistMono, geistSans, metadata, plexArabic, viewport, ReactQueryProvider() (+29 more)
 
 ### Community 3 - "UI: Sheet & Overlays"
-Cohesion: 0.06
-Nodes (40): Separator(), Sheet(), SheetContent(), SheetDescription(), SheetFooter(), SheetHeader(), SheetOverlay(), SheetTitle() (+32 more)
+Cohesion: 0.05
+Nodes (41): Separator(), Sheet(), SheetContent(), SheetDescription(), SheetFooter(), SheetHeader(), SheetOverlay(), SheetTitle() (+33 more)
 
 ### Community 4 - "UI: Avatar & Dialog"
 Cohesion: 0.07
-Nodes (36): AlertDialogOverlay(), Avatar(), AvatarFallback(), AvatarImage(), BreadcrumbEllipsis(), BreadcrumbItem(), BreadcrumbLink(), BreadcrumbList() (+28 more)
+Nodes (38): Avatar(), AvatarFallback(), AvatarImage(), CardAction(), CardDescription(), CardFooter(), Command(), CommandDialog() (+30 more)
 
 ### Community 5 - "Dashboard Server Actions"
-Cohesion: 0.11
-Nodes (18): getLawyerDashboard(), getStudentDashboard(), Home(), Persona, View, CasesView(), ClientsView(), CommunicationsView() (+10 more)
+Cohesion: 0.13
+Nodes (14): getLawyerDashboard(), getStudentDashboard(), Home(), Persona, View, CasesView(), ClientsView(), CommunicationsView() (+6 more)
 
 ### Community 6 - "Build Configuration"
 Cohesion: 0.06
@@ -190,39 +191,39 @@ Nodes (3): AccordionContent(), AccordionItem(), AccordionTrigger()
 
 ### Community 8 - "Case Detail & AI"
 Cohesion: 0.09
-Nodes (14): Client Card Component, AiInsightsTab(), CaseDetailDrawer(), COMM_TYPE_META, CommsTab(), DIRECTION_META, DocumentsTab(), INVOICE_STATUS_COLORS (+6 more)
+Nodes (17): Client Card Component, AiInsightsTab(), CaseDetailDrawer(), COMM_TYPE_META, CommsTab(), DIRECTION_META, DocumentsTab(), INVOICE_STATUS_COLORS (+9 more)
 
 ### Community 9 - "Preview & AI Search"
-Cohesion: 0.06
-Nodes (30): AiSearchChat(), Props, Props, Props, Props, ReviewCard, ReviewDeck, ReviewSession (+22 more)
+Cohesion: 0.11
+Nodes (22): Sanad Preview Screenshot, Sanad Daily Operations / Today View, Lawyer / Student Role Switch, AiSearchChat(), DashboardView(), Props, Props, TodayFocusView() (+14 more)
 
 ### Community 10 - "UI: Accordion & Hover"
-Cohesion: 0.11
-Nodes (9): HoverCardContent(), PopoverContent(), Slider(), Switch(), ToggleGroup(), ToggleGroupContext, ToggleGroupItem(), Toggle() (+1 more)
+Cohesion: 0.12
+Nodes (10): Checkbox(), HoverCardContent(), Progress(), Slider(), Switch(), ToggleGroup(), ToggleGroupContext, ToggleGroupItem() (+2 more)
 
 ### Community 11 - "Communications & Compliance"
 Cohesion: 0.12
-Nodes (25): Billable Time Tracker, Billable Time Tracking, Compliance Expiry Tracker, Compliance Expiry Tracking, Daily Brief Panel, Dashboard View (Concept), Sanad Dashboard Screenshot, Focus Timer (+17 more)
+Nodes (19): Add Communication Action (تسجيل اتصال), Billable Time Tracking, Communication Entry Card, Communications Log View, Compliance Expiry Tracking, Focus Timer, Lawyer-Client CRM Feature, Role Switcher (طالب / محامي) (+11 more)
 
 ### Community 12 - "Student Review System"
 Cohesion: 0.09
-Nodes (25): AddCaseDialog(), KanbanColumn(), ClientCard(), ClientFormDialog(), AddComplianceDialog(), DashboardView(), DeepWorkView(), AddDocDialog() (+17 more)
+Nodes (27): AddCaseDialog(), KanbanColumn(), ClientCard(), ClientFormDialog(), AddComplianceDialog(), DeepWorkView(), AddDocDialog(), AiDraftDialog() (+19 more)
 
 ### Community 13 - "API Route Handlers"
 Cohesion: 0.07
 Nodes (3): authOptions, handler, globalForPrisma
 
 ### Community 14 - "Student Panels & Brief"
-Cohesion: 0.14
-Nodes (25): Calendar Event Summary Stats Bar, Calendar Time Filter Tabs, Sanad Preview Screenshot, Sanad Scanner Full Screenshot, Document Scanner Navigation Entry, Sanad App Identity & Purpose, Arabic RTL UI Design, Calendar Event Card (+17 more)
+Cohesion: 0.17
+Nodes (21): Calendar Event Summary Stats Bar, Calendar Time Filter Tabs, Sanad Scanner Full Screenshot, Document Scanner Navigation Entry, Sanad App Identity & Purpose, Calendar Event Card, ⌘K Quick Search / Command Palette, Compliance Feature (+13 more)
 
 ### Community 15 - "TypeScript Config"
 Cohesion: 0.10
 Nodes (20): compilerOptions, allowJs, esModuleInterop, incremental, isolatedModules, jsx, lib, module (+12 more)
 
 ### Community 16 - "Community 16"
-Cohesion: 0.11
-Nodes (29): CaseDetail, CASE_TYPES, PRIORITIES, Props, STAGES, CLIENT_TYPES, FormState, Props (+21 more)
+Cohesion: 0.06
+Nodes (103): Clients View (العملاء), Message, User, CaseDetail, CASE_TYPES, PRIORITIES, Props, STAGES (+95 more)
 
 ### Community 17 - "Socket.IO Server"
 Cohesion: 0.08
@@ -241,8 +242,8 @@ Cohesion: 0.11
 Nodes (17): aliases, components, hooks, lib, ui, utils, iconLibrary, rsc (+9 more)
 
 ### Community 21 - "UI: Menubar"
-Cohesion: 0.12
-Nodes (20): Arabic RTL UI Design, Billable Hours Tracker, Camera Integration, Deep Work View, Document Upload from Device, Sanad Scanner View Screenshot, Sanad Navigation Sidebar, OCR Document Scanning Feature (+12 more)
+Cohesion: 0.24
+Nodes (11): Billable Hours Tracker, Deep Work View, RTL Arabic UI Design, Sanad App Navigation, PWA + Local Server Architecture, Dual-Role Switcher (Student / Lawyer), RTL Arabic UI Design, Today / Daily Priorities View (+3 more)
 
 ### Community 22 - "Seed: Case Data"
 Cohesion: 0.18
@@ -253,16 +254,16 @@ Cohesion: 0.12
 Nodes (9): ContextMenuCheckboxItem(), ContextMenuContent(), ContextMenuItem(), ContextMenuLabel(), ContextMenuRadioItem(), ContextMenuSeparator(), ContextMenuShortcut(), ContextMenuSubContent() (+1 more)
 
 ### Community 24 - "Brief & Student Overview"
-Cohesion: 0.15
-Nodes (15): Cases Bank - Student (بنك القضايا), Daily Legal Brief, Flashcard Review Mode, Lecture Notes Status Workflow, Quiz Review Mode, Smart Review Feature, Student Morning Overview Tab, Student Role (طالب) (+7 more)
+Cohesion: 0.27
+Nodes (9): Daily Legal Brief, Lecture Notes Status Workflow, Student Morning Overview Tab, Terms Mastery Progress System, Sanad Student Overview Screenshot, Student Role (طالب), Smart Review Session Completion Screen, ReviewPanel (+1 more)
 
 ### Community 25 - "Cluster 25"
 Cohesion: 0.32
 Nodes (8): POST(), simulateDraft(), POST(), simulateCardGeneration(), POST(), ChatMessage, ollamaChat(), SAUDI_PROMPTS
 
 ### Community 26 - "Cluster 26"
-Cohesion: 0.27
-Nodes (11): Bilingual Arabic/English UI, Case Board Module, Compliance Module, Daily Brief Feature, Dashboard View, Deep Work Module, Documents Module, Hijri Calendar Display (+3 more)
+Cohesion: 0.23
+Nodes (12): Bilingual Arabic/English UI, Case Board Module, Compliance Module, Daily Brief Feature, Dashboard View, Deep Work Module, Documents Module, Hijri Calendar Display (+4 more)
 
 ### Community 27 - "Cluster 27"
 Cohesion: 0.25
@@ -273,8 +274,8 @@ Cohesion: 0.17
 Nodes (11): Sanad Student Deadlines Screenshot, Lecture Note Status Workflow, Cases Bank Feature (بنك القضايا), Legal Case Card UI Pattern, Sanad Student Dashboard (صباح الطالب), src/app/page.tsx, CasebookPanel, StudentView (+3 more)
 
 ### Community 29 - "Community 29"
-Cohesion: 0.14
-Nodes (20): Clients View (العملاء), Message, User, Client, EMPTY_FORM, TYPE_COLORS, TYPE_ICONS, DEFAULT_STATE (+12 more)
+Cohesion: 0.13
+Nodes (11): Props, evaluateSafeguards(), GLOBAL_SAFEGUARDS, TEMPLATES, ContractType, DocumentCategory, DocumentTemplate, PleadingType (+3 more)
 
 ### Community 30 - "Cluster 30"
 Cohesion: 0.19
@@ -285,8 +286,8 @@ Cohesion: 0.27
 Nodes (13): Sanad Lawyer Interface Audit, Calendar / Session Appointments (التقويم / مواعيد الجلسات), Cases Kanban Board (لوحة القضايا), Client Management / CRM (إدارة العملاء), Communications Log (سجل الاتصالات), Compliance Tracker (متتبع الامتثال), Conflict of Interest Check (فحص تضارب المصالح), Deep Work & Billing (العمل العميق والفوترة) (+5 more)
 
 ### Community 32 - "Cluster 32"
-Cohesion: 0.17
-Nodes (23): CATEGORIES, SUBJECTS, PRIORITIES, TYPES, CATEGORIES, MASTERY_LEVELS, PRIORITIES, STATUSES (+15 more)
+Cohesion: 0.12
+Nodes (10): Review Session Complete Screen, FlashcardView(), QuizView(), ReviewCard, ReviewDeck, ReviewSession, SessionsResponse, SessionStats (+2 more)
 
 ### Community 33 - "Cluster 33"
 Cohesion: 0.17
@@ -297,8 +298,8 @@ Cohesion: 0.15
 Nodes (9): TopNav(), TopNavProps, DropdownMenuCheckboxItem(), DropdownMenuLabel(), DropdownMenuRadioItem(), DropdownMenuSeparator(), DropdownMenuShortcut(), DropdownMenuSubContent() (+1 more)
 
 ### Community 35 - "Community 35"
-Cohesion: 0.29
-Nodes (8): COLORS, Props, Badge(), badgeVariants, Collapsible(), CollapsibleContent(), CollapsibleTrigger(), Lecture
+Cohesion: 0.33
+Nodes (6): Props, Props, Props, AcademicDeadline, Course, Lecture
 
 ### Community 36 - "Cluster 36"
 Cohesion: 0.23
@@ -313,8 +314,8 @@ Cohesion: 0.22
 Nodes (8): ChartConfig, ChartContainer(), ChartContext, ChartContextProps, ChartLegendContent(), ChartTooltipContent(), THEMES, useChart()
 
 ### Community 39 - "Cluster 39"
-Cohesion: 0.18
-Nodes (9): Command(), CommandDialog(), CommandGroup(), CommandInput(), CommandItem(), CommandList(), CommandSeparator(), CommandShortcut() (+1 more)
+Cohesion: 0.20
+Nodes (9): Arabic RTL UI Design, Camera Integration, Document Upload from Device, Sanad Scanner View Screenshot, Sanad Navigation Sidebar, OCR Document Scanning Feature, Pomodoro Timer, PWA Feature (+1 more)
 
 ### Community 40 - "Cluster 40"
 Cohesion: 0.24
@@ -329,8 +330,8 @@ Cohesion: 0.25
 Nodes (8): Case Entity / Data Model, Case Detail Drawer UI Pattern, Case Workflow Stages, CasesView / Case Board, Case Detail Drawer Screenshot, PWA / Home-Server Design, CaseDetailDrawer Component, CasesView Component
 
 ### Community 43 - "Cluster 43"
-Cohesion: 0.25
-Nodes (8): DOC_TYPES, Props, STATUSES, DropdownMenu(), DropdownMenuContent(), DropdownMenuItem(), DropdownMenuTrigger(), LegalDocument
+Cohesion: 0.38
+Nodes (10): Billable Time Tracker, Compliance Expiry Tracker, Daily Brief Panel, Dashboard View (Concept), Sanad Dashboard Screenshot, Focus Timer KPI, Today's Priorities Panel, PWA Capabilities (+2 more)
 
 ### Community 44 - "Cluster 44"
 Cohesion: 0.43
@@ -389,20 +390,16 @@ Cohesion: 0.70
 Nodes (4): execPromise, GET(), handleBackup(), POST()
 
 ### Community 62 - "Cluster 62"
-Cohesion: 0.50
-Nodes (4): Add Communication Action (تسجيل اتصال), Communication Entry Card, Communications Log View, Lawyer-Client CRM Feature
+Cohesion: 0.25
+Nodes (6): BreadcrumbEllipsis(), BreadcrumbItem(), BreadcrumbLink(), BreadcrumbList(), BreadcrumbPage(), BreadcrumbSeparator()
 
 ### Community 64 - "Community 64"
-Cohesion: 0.29
-Nodes (6): CommandAction, CommandPalette(), Props, SearchResult, TYPE_COLORS, TYPE_ICONS
+Cohesion: 0.38
+Nodes (6): Cases Bank - Student (بنك القضايا), Flashcard Review Mode, Quiz Review Mode, Smart Review Feature, Student Role (طالب), Terms Bank (بنك المصطلحات)
 
 ### Community 70 - "Cluster 70"
 Cohesion: 0.40
 Nodes (4): input-otp, InputOTP(), InputOTPGroup(), InputOTPSlot()
-
-### Community 71 - "Cluster 71"
-Cohesion: 0.33
-Nodes (5): Ctx, Lang, LangCtx, TranslationKey, translations
 
 ### Community 79 - "Cluster 79"
 Cohesion: 0.33
@@ -425,24 +422,24 @@ Cohesion: 0.29
 Nodes (7): Flashcard Review Mode (بطاقات), Quiz Review Mode (اختبار), Recent Review Sessions History, Review Session Statistics, Review Source Filter, Smart Review Feature (المراجعة الذكية), Student Morning View (صباح الطالب)
 
 ## Knowledge Gaps
-- **376 isolated node(s):** `build.sh script`, `NEXT_TELEMETRY_DISABLED`, `start.sh script`, `$schema`, `style` (+371 more)
+- **379 isolated node(s):** `build.sh script`, `NEXT_TELEMETRY_DISABLED`, `start.sh script`, `$schema`, `style` (+374 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **42 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **44 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `cn()` connect `UI: Avatar & Dialog` to `Scanner & Client Capture`, `Legal Terms & Layout`, `UI: Sheet & Overlays`, `Calendar & Screens`, `Case Detail & AI`, `Preview & AI Search`, `UI: Accordion & Hover`, `Community 16`, `View Card Components`, `UI: Context Menu`, `Community 29`, `Cluster 30`, `Cluster 32`, `Cluster 34`, `Community 35`, `Cluster 36`, `Cluster 38`, `Cluster 39`, `Cluster 43`, `Cluster 49`, `Cluster 53`, `Cluster 70`, `Community 77`, `Community 101`?**
-  _High betweenness centrality (0.231) - this node is a cross-community bridge._
+- **Why does `cn()` connect `UI: Avatar & Dialog` to `Legal Terms & Layout`, `UI: Sheet & Overlays`, `Calendar & Screens`, `Case Detail & AI`, `UI: Accordion & Hover`, `Community 16`, `View Card Components`, `UI: Context Menu`, `Cluster 30`, `Cluster 34`, `Cluster 36`, `Cluster 38`, `Cluster 49`, `Cluster 53`, `Cluster 62`, `Cluster 70`, `Cluster 71`, `Community 77`, `Community 101`?**
+  _High betweenness centrality (0.216) - this node is a cross-community bridge._
 - **Why does `dependencies` connect `NPM Dependencies` to `Cluster 70`, `Build Configuration`?**
-  _High betweenness centrality (0.112) - this node is a cross-community bridge._
-- **Why does `sonner` connect `NPM Dependencies` to `Community 29`?**
-  _High betweenness centrality (0.074) - this node is a cross-community bridge._
+  _High betweenness centrality (0.115) - this node is a cross-community bridge._
+- **Why does `sonner` connect `NPM Dependencies` to `Community 16`?**
+  _High betweenness centrality (0.083) - this node is a cross-community bridge._
 - **What connects `build.sh script`, `NEXT_TELEMETRY_DISABLED`, `start.sh script` to the rest of the system?**
-  _378 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `Scanner & Client Capture` be split into smaller, more focused modules?**
-  _Cohesion score 0.09782608695652174 - nodes in this community are weakly interconnected._
+  _381 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `NPM Dependencies` be split into smaller, more focused modules?**
   _Cohesion score 0.029850746268656716 - nodes in this community are weakly interconnected._
 - **Should `Legal Terms & Layout` be split into smaller, more focused modules?**
   _Cohesion score 0.06105457909343201 - nodes in this community are weakly interconnected._
+- **Should `UI: Sheet & Overlays` be split into smaller, more focused modules?**
+  _Cohesion score 0.054693877551020405 - nodes in this community are weakly interconnected._
