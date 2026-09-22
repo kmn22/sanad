@@ -10,8 +10,8 @@ import { toast } from 'sonner'
 
 export default function LoginPage() {
   const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState('ahmed@sanad.sa')
+  const [password, setPassword] = useState('admin123')
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
 
@@ -25,6 +25,7 @@ export default function LoginPage() {
         email: email.trim(),
         password,
         redirect: false,
+        callbackUrl: '/',
       })
 
       if (res?.error) {
@@ -36,8 +37,7 @@ export default function LoginPage() {
       }
 
       toast.success('تم تسجيل الدخول بنجاح')
-      router.push('/')
-      router.refresh()
+      window.location.href = '/'
     } catch {
       const msg = 'حدث خطأ غير متوقع أثناء تسجيل الدخول'
       setErrorMsg(msg)
@@ -146,6 +146,36 @@ export default function LoginPage() {
                   <ArrowLeft className="w-5 h-5" />
                 </div>
               )}
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              disabled={loading}
+              onClick={async () => {
+                setLoading(true)
+                try {
+                  const res = await signIn('credentials', {
+                    email: 'ahmed@sanad.sa',
+                    password: 'admin',
+                    redirect: false,
+                    callbackUrl: '/',
+                  })
+                  if (res?.ok) {
+                    toast.success('تم تسجيل الدخول بنجاح كـ أحمد القحطاني')
+                    window.location.href = '/'
+                  } else {
+                    toast.error('تعذر تسجيل الدخول')
+                    setLoading(false)
+                  }
+                } catch {
+                  toast.error('تعذر تسجيل الدخول')
+                  setLoading(false)
+                }
+              }}
+              className="w-full h-11 border-slate-700 bg-slate-800/40 hover:bg-slate-800 text-slate-300 text-sm font-medium transition-all"
+            >
+              دخول تجريبي سريع (أحمد القحطاني - محامٍ)
             </Button>
           </form>
 
