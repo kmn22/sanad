@@ -22,13 +22,29 @@ export default function RegisterPage() {
     setLoading(true)
 
     try {
-      // Simulate registration delay
-      await new Promise((resolve) => setTimeout(resolve, 800))
-      
-      // Auto-login after registration
-      await signIn('credentials', {
-        email: email.trim() || 'ahmed@sanad.sa',
-        password: password || 'admin',
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim(),
+          password,
+          persona,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        toast.error(data.error || 'تعذر إتمام التسجيل. يرجى مراجعة البيانات.')
+        setLoading(false)
+        return
+      }
+
+      // Auto-login after successful registration
+      const loginRes = await signIn('credentials', {
+        email: email.trim(),
+        password: password,
         redirect: false,
       })
 
@@ -36,9 +52,10 @@ export default function RegisterPage() {
         localStorage.setItem('sanad.persona', persona)
       }
 
-      toast.success('تم إنشاء الحساب بنجاح')
+      toast.success(data.message || 'تم إنشاء الحساب بنجاح!')
       window.location.href = '/dashboard'
     } catch (e) {
+      console.error('Registration failed:', e)
       toast.error('تعذر إنشاء الحساب. حاول مجدداً.')
       setLoading(false)
     }

@@ -15,29 +15,24 @@ export const authOptions: NextAuthOptions = {
 
         const cleanEmail = credentials.email.toLowerCase().trim()
 
-        // 1. Check user in database
+        // 1. Check user in database by exact email
         const dbUser = await db.user.findFirst({
-          where: {
-            OR: [
-              { email: cleanEmail },
-              { email: 'ahmed@sanad.sa' },
-            ]
-          }
+          where: { email: cleanEmail }
         })
 
         if (dbUser) {
           if (credentials.password === 'admin' || credentials.password.length >= 3) {
             return {
               id: dbUser.id,
-              name: dbUser.name || 'أحمد القحطاني',
+              name: dbUser.name || cleanEmail.split('@')[0],
               email: dbUser.email,
               role: dbUser.role || 'lawyer',
             }
           }
         }
 
-        // 2. Demo fallback for sandbox testing
-        if (credentials.password === 'admin' || credentials.password.length >= 3) {
+        // 2. Demo fallback for sandbox testing (ahmed@sanad.sa or admin)
+        if (cleanEmail === 'ahmed@sanad.sa' || cleanEmail === 'admin@sanad.sa' || credentials.password === 'admin') {
           return {
             id: "demo-user-1",
             name: "أحمد القحطاني",
