@@ -21,17 +21,23 @@ export default function LoginPage() {
     setErrorMsg('')
 
     try {
-      await signIn('credentials', {
+      const result = await signIn('credentials', {
         email: email.trim() || 'ahmed@sanad.sa',
         password: password || 'admin',
         redirect: false,
       })
+
+      if (result?.error) {
+        setErrorMsg('البريد الإلكتروني أو كلمة المرور غير صحيحة. حاول مجدداً.')
+        setLoading(false)
+        return
+      }
     } catch (e) {
       console.warn('NextAuth sign in notice:', e)
     }
 
     toast.success('تم تسجيل الدخول بنجاح')
-    window.location.href = '/'
+    window.location.href = '/dashboard'
   }
 
   return (
@@ -139,7 +145,9 @@ export default function LoginPage() {
             <Button
               type="button"
               variant="outline"
+              disabled={loading}
               onClick={async () => {
+                setLoading(true)
                 try {
                   await signIn('credentials', {
                     email: 'ahmed@sanad.sa',
@@ -148,15 +156,21 @@ export default function LoginPage() {
                   })
                 } catch {}
                 toast.success('تم الانتقال إلى مساحة العمل')
-                window.location.href = '/'
+                window.location.href = '/dashboard'
               }}
-              className="w-full h-11 border-slate-700 bg-slate-800/40 hover:bg-slate-800 text-slate-300 text-sm font-medium transition-all"
+              className="w-full h-11 border-slate-700 bg-slate-800/40 hover:bg-slate-800 text-slate-300 text-sm font-medium transition-all disabled:opacity-60"
             >
               دخول مباشر كـ أحمد القحطاني (محامٍ)
             </Button>
           </form>
 
           <div className="mt-8 pt-8 border-t border-slate-800 text-center">
+            <p className="text-sm text-slate-400 mb-4">
+              ليس لديك حساب؟{' '}
+              <a href="/register" className="text-emerald-400 hover:text-emerald-300 transition-colors font-medium">
+                إنشاء حساب جديد
+              </a>
+            </p>
             <p className="text-sm text-slate-500">
               <span className="bg-slate-800 px-2 py-1 rounded text-emerald-400 font-mono text-xs ml-2">Demo Mode</span>
               يمكنك تسجيل الدخول باستخدام أي بيانات تجريبية.

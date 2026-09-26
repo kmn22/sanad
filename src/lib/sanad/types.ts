@@ -1,7 +1,28 @@
 // Shared Sanad types + helpers (kept in one place so client/server stay in sync)
 
-export type ComplianceCategory = 'ikama' | 'cr' | 'contract' | 'license' | 'tax' | 'gosi'
-export type CaseStage = 'drafting' | 'client_review' | 'filed' | 'closed'
+export type CaseStage =
+  | 'drafting'
+  | 'client_review'
+  | 'filed'
+  | 'closed'
+  | 'intake'
+  | 'pleading'
+  | 'hearing'
+  | 'appeal'
+  | 'enforcement'
+
+export type CaseType =
+  | 'litigation'
+  | 'contract'
+  | 'consultation'
+  | 'ip'
+  | 'corporate'
+  | 'commercial'
+  | 'labor'
+  | 'administrative'
+  | 'enforcement'
+  | 'family'
+
 export type CasePriority = 'low' | 'normal' | 'high' | 'urgent'
 export type DocStatus = 'draft' | 'sent' | 'active' | 'expiring' | 'expired'
 export type TaskStatus = 'todo' | 'in_progress' | 'done'

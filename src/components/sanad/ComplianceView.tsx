@@ -110,18 +110,18 @@ function SummaryTile({
   icon: React.ReactNode
 }) {
   const toneClasses: Record<string, string> = {
-    rose: 'bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300',
-    amber: 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-300',
-    orange: 'bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-900 text-orange-700 dark:text-orange-300',
-    emerald: 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300',
+    rose: 'bg-rose-500/10 border-rose-500/25 text-rose-700 dark:text-rose-400',
+    amber: 'bg-amber-500/10 border-amber-500/25 text-amber-700 dark:text-amber-400',
+    orange: 'bg-orange-500/10 border-orange-500/25 text-orange-700 dark:text-orange-400',
+    emerald: 'bg-emerald-500/10 border-emerald-500/25 text-emerald-700 dark:text-emerald-400',
   }
   return (
-    <div className={`rounded-lg border p-3 ${toneClasses[tone]}`}>
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-xs">{label}</span>
-        {icon}
+    <div className={`rounded-2xl border p-4 shadow-2xs glass-card-hover ${toneClasses[tone]}`}>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-semibold">{label}</span>
+        <div className="p-1 rounded-md bg-background/50">{icon}</div>
       </div>
-      <p className="text-2xl font-semibold">{value.toLocaleString('ar-EG')}</p>
+      <p className="text-2xl font-bold tracking-tight">{value.toLocaleString('ar-EG')}</p>
     </div>
   )
 }
@@ -148,38 +148,38 @@ function ComplianceCard({ item, onChange }: { item: ComplianceItem; onChange: ()
   }
 
   return (
-    <Card className={`border-s-4 ${getDaysUntilBg(days, item.notifyDays)}`}>
+    <Card className={`rounded-2xl border border-border/80 bg-card/70 hover:border-primary/50 transition-all shadow-2xs glass-card-hover border-s-4 ${getDaysUntilBg(days, item.notifyDays)}`}>
       <CardContent className="p-4 space-y-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="text-sm font-semibold truncate">{item.entityName}</p>
             <p className="text-xs text-muted-foreground">{item.title}</p>
           </div>
-          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 shrink-0 ${COMPLIANCE_COLORS[item.category] || 'bg-muted'}`}>
+          <Badge variant="outline" className={`text-[10px] px-2 py-0.5 rounded-full shrink-0 ${COMPLIANCE_COLORS[item.category] || 'bg-muted'}`}>
             {t(`cat.${item.category}`)}
           </Badge>
         </div>
 
-        <div className="space-y-1">
+        <div className="space-y-1.5 pt-1">
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">{t('comp.expiry')}</span>
-            <span className="text-xs">{formatDate(item.expiryDate, lang)}</span>
+            <span className="text-xs font-medium">{formatDate(item.expiryDate, lang)}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">{t('comp.time_remaining')}</span>
-            <span className={`text-sm font-semibold ${getDaysUntilColor(days, item.notifyDays)}`}>
+            <span className={`text-xs font-bold ${getDaysUntilColor(days, item.notifyDays)}`}>
               {days < 0 ? t('comp.days_overdue', { n: Math.abs(days) }) : t('comp.days_left', { n: days })}
             </span>
           </div>
-          <Progress value={pct} className="h-1.5" />
+          <Progress value={pct} className="h-1.5 rounded-full" />
         </div>
 
         {item.notes && (
-          <p className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1.5">{item.notes}</p>
+          <p className="text-xs text-muted-foreground bg-muted/40 rounded-xl px-2.5 py-1.5 border border-border/40">{item.notes}</p>
         )}
 
         <div className="flex gap-2 pt-1">
-          <Button size="sm" variant="outline" className="h-7 text-xs flex-1" onClick={renew}>
+          <Button size="sm" variant="outline" className="h-7 text-xs flex-1 rounded-full hover:bg-primary/10 hover:text-primary hover:border-primary/30" onClick={renew}>
             {t('comp.mark_renewed')}
           </Button>
         </div>

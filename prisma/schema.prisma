@@ -219,6 +219,27 @@ model DailyBrief {
   createdAt   DateTime @default(now())
 }
 
+// Research Hub — saved bookmarks, legal precedents, statutes and custom dossiers
+model ResearchItem {
+  id          String   @id @default(cuid())
+  title       String
+  content     String
+  type        String   @default("statute") // statute | precedent | regulation | note | doctrine
+  category    String   @default("general") // commercial | civil | labor | tax | corporate | procedural
+  source      String?  // statutory citation e.g. "نظام المعاملات المدنية - م/179"
+  tags        String?  // comma-separated tags e.g. "شرط جزائي, تعويض"
+  notes       String?  // personal study or case citation notes
+  caseId      String?  // optional link to a LegalCase
+  url         String?
+  isPinned    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([type])
+  @@index([category])
+}
+
+
 // ===== Invoicing =====
 model Invoice {
   id          String    @id @default(cuid())

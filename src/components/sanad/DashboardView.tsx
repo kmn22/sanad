@@ -673,15 +673,17 @@ function KpiCard({
   onClick?: () => void
 }) {
   return (
-    <button onClick={onClick} className="text-start w-full">
-      <Card className={`transition-colors h-full ${onClick ? 'hover:border-primary/40 hover:shadow-sm cursor-pointer' : ''}`}>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-muted-foreground">{label}</span>
-            <span className="text-muted-foreground">{icon}</span>
+    <button onClick={onClick} className="text-start w-full cursor-pointer group">
+      <Card className={`h-full rounded-2xl border border-border/80 bg-card/70 shadow-2xs glass-card-hover ${onClick ? 'hover:border-primary/50' : ''}`}>
+        <CardContent className="p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-muted-foreground group-hover:text-foreground transition-colors">{label}</span>
+            <span className="p-1.5 rounded-lg bg-muted/60 text-primary group-hover:scale-110 transition-transform">{icon}</span>
           </div>
-          <p className="text-xl font-semibold tracking-tight">{value}</p>
-          {sub && <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>}
+          <div>
+            <p className="text-2xl font-bold tracking-tight text-foreground">{value}</p>
+            {sub && <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>}
+          </div>
         </CardContent>
       </Card>
     </button>

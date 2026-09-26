@@ -1,6 +1,7 @@
 {
-  "name": "nextjs_tailwind_shadcn_ts",
-  "version": "0.2.0",
+  "name": "sanad",
+  "version": "1.0.0-alpha.1",
+  "description": "سند — منصة العمليات اليومية للامتثال والمحاماة (Sanad Legal Platform)",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3001 2>&1 | tee dev.log",
