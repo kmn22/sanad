@@ -5,7 +5,7 @@ import { Moon, Sun, RefreshCw, Languages, GraduationCap, Briefcase, Search, LogO
 import { Button } from '@/components/ui/button'
 import { useLang } from '@/lib/sanad/i18n'
 import { useTheme } from 'next-themes'
-import { signOut } from 'next-auth/react'
+import { signOut, useSession } from 'next-auth/react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,8 +32,13 @@ export function TopNav({
   setPaletteOpen,
   mounted,
 }: TopNavProps) {
+  const { data: session } = useSession()
   const { lang, t, toggle: toggleLang } = useLang()
   const { theme, setTheme } = useTheme()
+
+  const userName = session?.user?.name || (persona === 'lawyer' ? 'أحمد القحطاني' : 'طالب قانون')
+  const userEmail = session?.user?.email || (persona === 'lawyer' ? 'ahmed@sanad.sa' : 'student@sanad.sa')
+  const initialLetter = userName.trim().charAt(0) || (persona === 'lawyer' ? 'أ' : 'ط')
 
   const now = new Date()
   const timeLocale = lang === 'ar' ? 'ar-SA' : 'en-GB'
@@ -166,15 +171,15 @@ export function TopNav({
                   className="relative h-8 w-8 rounded-full bg-gradient-to-tr from-primary/20 to-primary/10 hover:from-primary/30 hover:to-primary/20 text-primary grid place-items-center text-xs font-bold transition-all focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer border border-primary/20 shadow-2xs"
                   title="الملف الشخصي"
                 >
-                  {persona === 'lawyer' ? 'أ' : 'ط'}
+                  {initialLetter}
                   <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-500 ring-1 ring-background" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 glass-panel">
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-semibold leading-none">أحمد القحطاني</p>
-                    <p className="text-xs leading-none text-muted-foreground">ahmed@sanad.sa</p>
+                    <p className="text-sm font-semibold leading-none">{userName}</p>
+                    <p className="text-xs leading-none text-muted-foreground">{userEmail}</p>
                     <div className="pt-1.5 flex items-center gap-1.5">
                       <span className="inline-block text-[10px] bg-primary/15 text-primary px-2 py-0.5 rounded-full font-medium border border-primary/20">
                         {persona === 'lawyer' ? 'محامٍ ممارس (مرخص)' : 'طالب قانون'}

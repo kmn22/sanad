@@ -155,8 +155,8 @@
     "semantic_hash": ""
   },
   "src/app/api/auth/[...nextauth]/route.ts": {
-    "mtime": 1790103051.6715794,
-    "ast_hash": "5a793428e78302a2f98717a352990190",
+    "mtime": 1790422130.1837423,
+    "ast_hash": "ca233b2ef24b4da9b573914fbbc12c64",
     "semantic_hash": ""
   },
   "src/app/api/backup/route.ts": {
@@ -345,8 +345,8 @@
     "semantic_hash": ""
   },
   "src/app/page.tsx": {
-    "mtime": 1790420696.4219294,
-    "ast_hash": "7dc4ad30ba1f8d1d1947312a86aed777",
+    "mtime": 1790422658.5500774,
+    "ast_hash": "9398b7eff50a7a5b239f699962f6e25b",
     "semantic_hash": ""
   },
   "src/app/portal/[token]/page.tsx": {
@@ -1190,8 +1190,8 @@
     "semantic_hash": ""
   },
   "src/app/register/page.tsx": {
-    "mtime": 1790107694.8390677,
-    "ast_hash": "3b4f38e613223987ed3493e1f126c283",
+    "mtime": 1790422119.1372292,
+    "ast_hash": "0373ac11f1f72e4ee26ae2fa4446fe68",
     "semantic_hash": ""
   },
   "src/components/sanad/ConflictCheckModal.tsx": {
@@ -1237,6 +1237,11 @@
   "tests/research.test.ts": {
     "mtime": 1790366687.8630052,
     "ast_hash": "8e0d2794ee587f8c5ff2867ab18ed5d7",
+    "semantic_hash": ""
+  },
+  "src/app/api/auth/register/route.ts": {
+    "mtime": 1790422107.5474942,
+    "ast_hash": "035b218150e8416f2061a8864b9c396d",
     "semantic_hash": ""
   }
 }
