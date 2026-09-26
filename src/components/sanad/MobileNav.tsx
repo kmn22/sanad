@@ -26,8 +26,8 @@ export function MobileNav({ persona, view, setView }: MobileNavProps) {
 
   if (persona === 'student') {
     return (
-      <nav className="lg:hidden border-b border-border bg-background sticky top-14 z-30">
-        <div className="flex items-center gap-1 px-4 overflow-x-auto scroll-thin">
+      <nav className="lg:hidden border-b border-border/80 bg-background/90 backdrop-blur-md sticky top-14 z-30">
+        <div className="flex items-center gap-1.5 px-3 py-2 overflow-x-auto scroll-thin">
           {STUDENT_NAV.map((item) => {
             const Icon = item.icon
             const active = view === item.key
@@ -35,14 +35,14 @@ export function MobileNav({ persona, view, setView }: MobileNavProps) {
               <button
                 key={item.key}
                 onClick={() => setView(item.key)}
-                className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
                   active
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                    ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                    : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
                 }`}
               >
                 <Icon className="h-3.5 w-3.5" />
-                {t(item.labelKey)}
+                <span>{t(item.labelKey)}</span>
               </button>
             )
           })}
@@ -52,23 +52,29 @@ export function MobileNav({ persona, view, setView }: MobileNavProps) {
   }
 
   return (
-    <nav className="lg:hidden border-b border-border bg-background sticky top-14 z-30">
-      <div className="flex items-center gap-1 px-4 overflow-x-auto scroll-thin">
+    <nav className="lg:hidden border-b border-border/80 bg-background/90 backdrop-blur-md sticky top-14 z-30">
+      <div className="flex items-center gap-1.5 px-3 py-2 overflow-x-auto scroll-thin">
         {NAV_KEYS.map((v) => {
           const Icon = NAV_ICONS[v]
           if (!Icon) return null
+          const active = view === v
           return (
             <button
               key={v}
               onClick={() => setView(v)}
-              className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
-                view === v
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
+                active
+                  ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                  : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
             >
               <Icon className="h-3.5 w-3.5" />
-              {t(`nav.${v}`)}
+              <span>{t(`nav.${v}`)}</span>
+              {v === 'documents' && (
+                <span className={`text-[9px] px-1 rounded-full ${active ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'}`}>
+                  AI
+                </span>
+              )}
             </button>
           )
         })}

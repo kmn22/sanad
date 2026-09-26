@@ -19,6 +19,7 @@ import {
   ArrowLeft,
   Brain,
   Sparkles,
+  Bookmark,
 } from 'lucide-react'
 import { useLang } from '@/lib/sanad/i18n'
 import {
@@ -33,6 +34,7 @@ import { DeadlinesPanel } from './student/DeadlinesPanel'
 import { TermsPanel } from './student/TermsPanel'
 import { CasebookPanel } from './student/CasebookPanel'
 import { ReviewPanel } from './student/ReviewPanel'
+import { ResearchHubView } from './ResearchHubView'
 
 interface Props {
   data: StudentDashboardData
@@ -58,7 +60,7 @@ export function StudentView({ data, onChange, activeTab, onTabChange }: Props) {
       </div>
 
       <Tabs value={tab} onValueChange={setTab} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 h-auto" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-7 h-auto" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
           <TabsTrigger value="overview" className="text-xs gap-1.5">
             <GraduationCap className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">{t('student.morning')}</span>
@@ -89,6 +91,10 @@ export function StudentView({ data, onChange, activeTab, onTabChange }: Props) {
             <Brain className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">{t('review.title')}</span>
           </TabsTrigger>
+          <TabsTrigger value="research" className="text-xs gap-1.5">
+            <Bookmark className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">{lang === 'ar' ? 'مركز الأبحاث' : 'Research Hub'}</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6 space-y-6">
@@ -117,6 +123,10 @@ export function StudentView({ data, onChange, activeTab, onTabChange }: Props) {
 
         <TabsContent value="review" className="mt-6">
           <ReviewPanel courses={data.courses} onSessionComplete={onChange} />
+        </TabsContent>
+
+        <TabsContent value="research" className="mt-6">
+          <ResearchHubView />
         </TabsContent>
       </Tabs>
     </div>
@@ -186,26 +196,53 @@ function OverviewPanel({ data, onNavigate }: { data: StudentDashboardData; onNav
         <KpiCard label={t('student.casebook')} value={stats.cases} icon={<Scale className="h-4 w-4" />} onClick={() => onNavigate('casebook')} />
       </div>
 
-      {/* Smart review CTA */}
-      <button
-        onClick={() => onNavigate('review')}
-        className="w-full text-start rounded-xl border-2 border-primary/30 bg-gradient-to-l from-primary/5 to-primary/10 hover:border-primary hover:shadow-md transition-all p-5 flex items-center gap-4"
-      >
-        <div className="h-12 w-12 rounded-lg bg-primary text-primary-foreground grid place-items-center shrink-0">
-          <Brain className="h-6 w-6" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <p className="text-base font-semibold">{t('review.title')}</p>
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-primary/15 text-primary border-primary/30">
-              <Sparkles className="h-2.5 w-2.5 me-1" />
-              {t('review.start')}
-            </Badge>
+      {/* Action Pathways: Smart Review & SBA Bar Exam */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <button
+          onClick={() => onNavigate('review')}
+          className="text-start rounded-xl border-2 border-primary/30 bg-gradient-to-l from-primary/5 to-primary/10 hover:border-primary hover:shadow-md transition-all p-5 flex items-center gap-4"
+        >
+          <div className="h-12 w-12 rounded-lg bg-primary text-primary-foreground grid place-items-center shrink-0">
+            <Brain className="h-6 w-6" />
           </div>
-          <p className="text-xs text-muted-foreground">{t('review.subtitle')}</p>
-        </div>
-        <Brain className="h-5 w-5 text-primary shrink-0" />
-      </button>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <p className="text-base font-semibold">{t('review.title')}</p>
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-primary/15 text-primary border-primary/30">
+                <Sparkles className="h-2.5 w-2.5 me-1" />
+                {t('review.start')}
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">{t('review.subtitle')}</p>
+          </div>
+          <Brain className="h-5 w-5 text-primary shrink-0" />
+        </button>
+
+        <button
+          onClick={() => onNavigate('review')}
+          className="text-start rounded-xl border-2 border-blue-500/30 bg-gradient-to-l from-blue-500/5 to-blue-500/10 hover:border-blue-500 hover:shadow-md transition-all p-5 flex items-center gap-4"
+        >
+          <div className="h-12 w-12 rounded-lg bg-blue-600 text-white grid place-items-center shrink-0">
+            <GraduationCap className="h-6 w-6" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <p className="text-base font-semibold">
+                {lang === 'ar' ? 'اختبار رخصة المحاماة (SBA)' : 'SBA Bar Exam Prep'}
+              </p>
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border-blue-300">
+                {lang === 'ar' ? 'الأنظمة الحديثة' : 'Saudi Laws'}
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {lang === 'ar'
+                ? 'أسئلة تأهيلية مطابقة للأنظمة: المعاملات المدنية، الإثبات، المرافعات الشرعية'
+                : 'Licensing prep questions based on current Saudi Civil, Evidence & Procedure codes'}
+            </p>
+          </div>
+          <Scale className="h-5 w-5 text-blue-500 shrink-0" />
+        </button>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         {/* Left: upcoming deadlines */}

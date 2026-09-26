@@ -60,6 +60,8 @@ import {
 } from '@/lib/sanad/types'
 import { CaseDetailDrawer } from './CaseDetailDrawer'
 import { DraftingHub } from './DraftingHub'
+import { ConflictCheckModal } from './ConflictCheckModal'
+import { ShieldAlert } from 'lucide-react'
 
 interface Props {
   cases: LegalCase[]
@@ -67,8 +69,19 @@ interface Props {
   onChange: () => void
 }
 
-const STAGES: string[] = ['drafting', 'client_review', 'filed', 'closed']
-const CASE_TYPES = ['litigation', 'contract', 'consultation', 'ip', 'corporate']
+const STAGES: string[] = ['drafting', 'client_review', 'pleading', 'filed', 'closed']
+const CASE_TYPES = [
+  'commercial',
+  'labor',
+  'administrative',
+  'litigation',
+  'corporate',
+  'enforcement',
+  'family',
+  'contract',
+  'consultation',
+  'ip',
+]
 const PRIORITIES = ['low', 'normal', 'high', 'urgent']
 
 export function CasesView({ cases, clients = [], onChange }: Props) {
@@ -80,6 +93,8 @@ export function CasesView({ cases, clients = [], onChange }: Props) {
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null)
   const [editingCase, setEditingCase] = useState<LegalCase | null>(null)
   const [view, setView] = useState<'kanban' | 'timeline'>('kanban')
+  const [caseSearch, setCaseSearch] = useState('')
+  const [conflictModalOpen, setConflictModalOpen] = useState(false)
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
 
@@ -115,7 +130,19 @@ export function CasesView({ cases, clients = [], onChange }: Props) {
     }
   }
 
-  const byStage = (stage: string) => cases.filter((c) => c.stage === stage)
+  const filteredCases = cases.filter((c) => {
+    if (!caseSearch.trim()) return true
+    const q = caseSearch.toLowerCase()
+    return (
+      c.title.toLowerCase().includes(q) ||
+      (c.client?.name && c.client.name.toLowerCase().includes(q)) ||
+      (c.clientName && c.clientName.toLowerCase().includes(q)) ||
+      (c.caseNumber && c.caseNumber.toLowerCase().includes(q)) ||
+      (c.notes && c.notes.toLowerCase().includes(q))
+    )
+  })
+
+  const byStage = (stage: string) => filteredCases.filter((c) => c.stage === stage)
   const activeCount = cases.filter(c => c.stage !== 'closed').length
 
   return (
@@ -125,37 +152,73 @@ export function CasesView({ cases, clients = [], onChange }: Props) {
           <h2 className="text-xl font-semibold tracking-tight">{t('cases.title')}</h2>
           <p className="text-sm text-muted-foreground">{t('cases.subtitle', { n: activeCount })}</p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="bg-muted p-1 rounded-md flex items-center">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Quick search input */}
+          <div className="relative w-44 sm:w-56">
+            <Input
+              value={caseSearch}
+              onChange={(e) => setCaseSearch(e.target.value)}
+              placeholder={lang === 'ar' ? 'بحث في القضايا والعملاء...' : 'Search cases...'}
+              className="h-8 text-xs rounded-full pe-7"
+            />
+            {caseSearch && (
+              <button
+                onClick={() => setCaseSearch('')}
+                className="absolute end-2 top-2 text-muted-foreground hover:text-foreground text-xs"
+              >
+                ×
+              </button>
+            )}
+          </div>
+
+          <div className="bg-muted p-0.5 rounded-full flex items-center border border-border/60">
             <Button 
               variant={view === 'kanban' ? 'secondary' : 'ghost'} 
               size="sm" 
-              className="h-7 px-2" 
+              className="h-7 px-2.5 rounded-full text-xs" 
               onClick={() => setView('kanban')}
             >
-              <Kanban className="size-4" />
+              <Kanban className="size-3.5 me-1" />
+              <span>{lang === 'ar' ? 'كانبان' : 'Board'}</span>
             </Button>
             <Button 
               variant={view === 'timeline' ? 'secondary' : 'ghost'} 
               size="sm" 
-              className="h-7 px-2" 
+              className="h-7 px-2.5 rounded-full text-xs" 
               onClick={() => setView('timeline')}
             >
-              <CalendarRange className="size-4" />
+              <CalendarRange className="size-3.5 me-1" />
+              <span>{lang === 'ar' ? 'الجدول' : 'Timeline'}</span>
             </Button>
           </div>
           <Button
             size="sm"
             variant="outline"
-            onClick={() => setDraftingOpen(true)}
-            className="h-9 text-xs gap-1.5 border-primary/20 text-primary hover:bg-primary/5"
+            onClick={() => setConflictModalOpen(true)}
+            className="h-8 text-xs gap-1.5 border-border/80 text-foreground hover:bg-muted rounded-full cursor-pointer"
           >
-            <Scale className="h-4 w-4" />
+            <ShieldAlert className="h-3.5 w-3.5 text-primary" />
+            <span>{lang === 'ar' ? 'فحص تضارب المصالح' : 'Conflict Check'}</span>
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setDraftingOpen(true)}
+            className="h-8 text-xs gap-1.5 border-primary/30 text-primary hover:bg-primary/5 rounded-full cursor-pointer"
+          >
+            <Scale className="h-3.5 w-3.5" />
             <span>{lang === 'ar' ? 'إعداد مذكرة' : 'Draft Pleading'}</span>
           </Button>
           <AddCaseDialog open={open} onOpenChange={setOpen} clients={clients} onSaved={() => { onChange(); setOpen(false) }} />
         </div>
       </div>
+
+      <ConflictCheckModal
+        open={conflictModalOpen}
+        onOpenChange={setConflictModalOpen}
+        clients={clients}
+        cases={cases}
+      />
 
       <DraftingHub
         open={draftingOpen || !!draftingCase}
@@ -296,16 +359,20 @@ function KanbanColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`rounded-lg border-t-4 ${accent} border-x border-b border-border bg-muted/30 transition-colors ${isOver ? 'bg-primary/5 border-primary/30' : ''}`}
+      className={`rounded-2xl border-t-[3px] ${accent} border-x border-b border-border/80 bg-muted/20 transition-all shadow-2xs ${
+        isOver ? 'bg-primary/10 border-primary/40 ring-2 ring-primary/20' : ''
+      }`}
     >
-      <div className="px-3 py-2.5 flex items-center justify-between border-b border-border">
+      <div className="px-3.5 py-3 flex items-center justify-between border-b border-border/60">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold">{t(`stage.${stage}`)}</span>
-          <span className="text-xs text-muted-foreground bg-background rounded-full px-1.5 py-0.5">{cases.length}</span>
+          <span className="text-xs font-bold tracking-tight">{t(`stage.${stage}`)}</span>
+          <span className="text-[10px] font-semibold text-muted-foreground bg-background/80 rounded-full px-2 py-0.5 border border-border/60">
+            {cases.length}
+          </span>
         </div>
       </div>
-      <ScrollArea className="h-[calc(100vh-260px)] min-h-[400px] p-2 scroll-thin">
-        <div className="space-y-2">
+      <ScrollArea className="h-[calc(100vh-270px)] min-h-[420px] p-2.5 scroll-thin">
+        <div className="space-y-2.5">
           {cases.map((c) => (
             <DraggableCase
               key={c.id}
@@ -317,7 +384,9 @@ function KanbanColumn({
             />
           ))}
           {cases.length === 0 && (
-            <div className="text-center text-xs text-muted-foreground py-8">{t('cases.drop_here')}</div>
+            <div className="text-center text-xs text-muted-foreground/60 py-12 border border-dashed border-border/60 rounded-xl m-1">
+              {t('cases.drop_here')}
+            </div>
           )}
         </div>
       </ScrollArea>
@@ -382,46 +451,50 @@ function CaseCard({
 
   return (
     <Card
-      className={`group cursor-grab active:cursor-grabbing hover:border-primary/40 transition-all relative ${dragging ? 'shadow-lg rotate-1' : ''}`}
+      className={`group cursor-grab active:cursor-grabbing hover:border-primary/50 transition-all relative rounded-xl border border-border/70 bg-card shadow-2xs glass-card-hover ${
+        dragging ? 'shadow-xl rotate-1 ring-2 ring-primary/30' : ''
+      }`}
       onClick={(e) => {
         // Only trigger click if not clicking the action menu
         if (!(e.target as HTMLElement).closest('[data-action-menu]')) onClick?.()
       }}
     >
-      <CardContent className="p-3 space-y-2">
+      <CardContent className="p-3.5 space-y-2.5">
         <div className="flex items-start justify-between gap-2">
-          <p className="text-sm font-medium leading-tight flex-1">{c.title}</p>
+          <p className="text-xs sm:text-sm font-semibold leading-tight flex-1 text-foreground group-hover:text-primary transition-colors">
+            {c.title}
+          </p>
           {onEdit && onDelete && (
             <div data-action-menu className="opacity-0 group-hover:opacity-100 transition-opacity">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                    <MoreVertical className="h-3 w-3" />
+                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full">
+                    <MoreVertical className="h-3.5 w-3.5" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="glass-panel">
                   <DropdownMenuItem onClick={onEdit}>
-                    <Edit className="h-3 w-3 me-2" />
+                    <Edit className="h-3.5 w-3.5 me-2" />
                     {t('common.edit')}
                   </DropdownMenuItem>
                   {onDraftPleading && (
                     <DropdownMenuItem onClick={onDraftPleading}>
-                      <Scale className="h-3 w-3 me-2 text-primary" />
+                      <Scale className="h-3.5 w-3.5 me-2 text-primary" />
                       {lang === 'ar' ? 'إعداد مذكرة قضائية' : 'Draft Pleading'}
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem onClick={copyPortalLink}>
-                    <Link className="h-3 w-3 me-2" />
+                    <Link className="h-3.5 w-3.5 me-2" />
                     {lang === 'ar' ? 'نسخ رابط العميل' : 'Copy Portal Link'}
                   </DropdownMenuItem>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-rose-600">
-                        <Trash2 className="h-3 w-3 me-2" />
+                      <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-rose-600 focus:text-rose-600">
+                        <Trash2 className="h-3.5 w-3.5 me-2" />
                         {t('common.delete')}
                       </DropdownMenuItem>
                     </AlertDialogTrigger>
-                    <AlertDialogContent>
+                    <AlertDialogContent className="glass-panel">
                       <AlertDialogHeader>
                         <AlertDialogTitle>{t('common.delete_confirm')}</AlertDialogTitle>
                         <AlertDialogDescription>{c.title}</AlertDialogDescription>
@@ -440,6 +513,7 @@ function CaseCard({
           )}
           {!onEdit && <GripVertical className="h-3.5 w-3.5 text-muted-foreground/40 group-hover:text-muted-foreground/70 mt-0.5" />}
         </div>
+
         <p className="text-xs text-muted-foreground flex items-center gap-1">
           <Users className="h-3 w-3" /> {c.client?.name || c.clientName}
         </p>

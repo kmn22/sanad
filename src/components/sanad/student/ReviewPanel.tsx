@@ -11,7 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Textarea } from '@/components/ui/textarea'
 import {
   Brain, Sparkles, Trophy, Clock, Target, Zap, CheckCircle2, XCircle,
-  ChevronLeft, RotateCcw, Library, Scale, BookOpen, Layers, Loader2,
+  ChevronLeft, RotateCcw, Library, Scale, BookOpen, Layers, Loader2, GraduationCap,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLang } from '@/lib/sanad/i18n'
@@ -19,7 +19,7 @@ import { formatDate, formatDuration, type Course } from '@/lib/sanad/types'
 
 interface ReviewCard {
   id: string
-  type: 'term' | 'case' | 'lecture'
+  type: 'term' | 'case' | 'lecture' | 'sba'
   front: string
   back: string
   hint?: string
@@ -373,8 +373,9 @@ export function ReviewPanel({ courses, onSessionComplete }: Props) {
             {/* Source selector */}
             <div>
               <Label className="text-sm font-semibold mb-3 block">{t('review.select_source')}</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
                 <SourcePill active={source === 'all'} onClick={() => setSource('all')} icon={<Layers className="h-3.5 w-3.5" />} label={t('review.source.all')} />
+                <SourcePill active={source === 'sba'} onClick={() => setSource('sba')} icon={<GraduationCap className="h-3.5 w-3.5 text-blue-500" />} label={lang === 'ar' ? 'اختبار الهيئة (SBA)' : 'SBA Exam'} />
                 <SourcePill active={source === 'terms'} onClick={() => setSource('terms')} icon={<Library className="h-3.5 w-3.5" />} label={t('review.source.terms')} />
                 <SourcePill active={source === 'cases'} onClick={() => setSource('cases')} icon={<Scale className="h-3.5 w-3.5" />} label={t('review.source.cases')} />
                 <SourcePill active={source === 'lectures'} onClick={() => setSource('lectures')} icon={<BookOpen className="h-3.5 w-3.5" />} label={t('review.source.lectures')} />
@@ -612,7 +613,7 @@ function SourcePill({ active, onClick, icon, label }: { active: boolean; onClick
 }
 
 function FlashcardView({ card, flipped, onFlip }: { card: ReviewCard; flipped: boolean; onFlip: () => void }) {
-  const { t } = useLang()
+  const { lang, t } = useLang()
   return (
     <div className="w-full min-h-[280px] [perspective:1000px]" onClick={onFlip}>
       <div
@@ -624,13 +625,19 @@ function FlashcardView({ card, flipped, onFlip }: { card: ReviewCard; flipped: b
         <div className="absolute inset-0 w-full h-full p-8 flex flex-col items-center justify-center rounded-2xl border-2 border-border bg-card shadow-sm hover:border-primary/40 transition-colors [backface-visibility:hidden]">
           {/* Type badge */}
           <div className="absolute top-3 end-3 z-10">
-            <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${
-              card.type === 'term' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' :
-              card.type === 'case' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' :
-              'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
-            }`}>
-              {t(`review.type.${card.type}`)}
-            </Badge>
+            {card.type === 'sba' ? (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border-blue-300 dark:border-blue-700 font-semibold">
+                {lang === 'ar' ? 'اختبار الهيئة (SBA)' : 'SBA Exam'}
+              </Badge>
+            ) : (
+              <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${
+                card.type === 'term' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' :
+                card.type === 'case' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' :
+                'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+              }`}>
+                {t(`review.type.${card.type}`)}
+              </Badge>
+            )}
           </div>
           <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-3">{t('review.session.flip')}</p>
           <p className="text-xl font-semibold text-center leading-relaxed whitespace-pre-wrap">{card.front}</p>
@@ -643,13 +650,19 @@ function FlashcardView({ card, flipped, onFlip }: { card: ReviewCard; flipped: b
         <div className="absolute inset-0 w-full h-full p-8 flex flex-col items-center justify-center rounded-2xl border-2 border-primary/20 bg-primary/5 shadow-inner [backface-visibility:hidden] [transform:rotateY(180deg)]">
           {/* Type badge */}
           <div className="absolute top-3 end-3 z-10">
-            <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${
-              card.type === 'term' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' :
-              card.type === 'case' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' :
-              'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
-            }`}>
-              {t(`review.type.${card.type}`)}
-            </Badge>
+            {card.type === 'sba' ? (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border-blue-300 dark:border-blue-700 font-semibold">
+                {lang === 'ar' ? 'اختبار الهيئة (SBA)' : 'SBA Exam'}
+              </Badge>
+            ) : (
+              <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${
+                card.type === 'term' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' :
+                card.type === 'case' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' :
+                'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+              }`}>
+                {t(`review.type.${card.type}`)}
+              </Badge>
+            )}
           </div>
           <p className="text-[10px] text-primary uppercase tracking-wide mb-3 font-semibold">{t('review.session.show_answer')}</p>
           <p className="text-lg text-center leading-relaxed whitespace-pre-wrap">{card.back}</p>
@@ -665,7 +678,7 @@ function QuizView({ card, selectedAnswer, submitted, onSelect }: {
   submitted: boolean
   onSelect: (idx: number) => void
 }) {
-  const { t } = useLang()
+  const { lang, t } = useLang()
   if (!card.options || card.correctIndex === undefined) return null
 
   return (
@@ -674,13 +687,19 @@ function QuizView({ card, selectedAnswer, submitted, onSelect }: {
       <Card className="min-h-[140px]">
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-3">
-            <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${
-              card.type === 'term' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' :
-              card.type === 'case' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' :
-              'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
-            }`}>
-              {t(`review.type.${card.type}`)}
-            </Badge>
+            {card.type === 'sba' ? (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border-blue-300 dark:border-blue-700 font-semibold">
+                {lang === 'ar' ? 'اختبار الهيئة (SBA)' : 'SBA Exam'}
+              </Badge>
+            ) : (
+              <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${
+                card.type === 'term' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' :
+                card.type === 'case' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' :
+                'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+              }`}>
+                {t(`review.type.${card.type}`)}
+              </Badge>
+            )}
             <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-muted">
               {card.questionType === 'tf' ? 'صح/خطأ' : 'اختيار من متعدد'}
             </Badge>
@@ -725,14 +744,21 @@ function QuizView({ card, selectedAnswer, submitted, onSelect }: {
       {submitted && (
         <div className={`rounded-lg p-3 text-sm ${
           selectedAnswer === card.correctIndex
-            ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300'
-            : 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300'
+            ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+            : 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800'
         }`}>
           {selectedAnswer === card.correctIndex ? (
-            <p className="font-medium flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4" />
-              {t('review.session.result.correct')}
-            </p>
+            <div className="space-y-1">
+              <p className="font-medium flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4" />
+                {t('review.session.result.correct')}
+              </p>
+              {card.hint && (
+                <p className="text-xs text-emerald-800 dark:text-emerald-200 mt-1.5 pt-1.5 border-t border-emerald-200 dark:border-emerald-800/50 leading-relaxed font-normal">
+                  {card.hint}
+                </p>
+              )}
+            </div>
           ) : (
             <div>
               <p className="font-medium flex items-center gap-2 mb-1">
@@ -740,7 +766,12 @@ function QuizView({ card, selectedAnswer, submitted, onSelect }: {
                 {t('review.session.result.wrong')}
               </p>
               <p className="text-xs">{t('review.session.result.correct_answer')}</p>
-              <p className="text-sm mt-0.5">{card.options[card.correctIndex]}</p>
+              <p className="text-sm mt-0.5 font-semibold">{card.options[card.correctIndex]}</p>
+              {card.hint && (
+                <p className="text-xs text-rose-800 dark:text-rose-200 mt-2 pt-1.5 border-t border-rose-200 dark:border-rose-800/50 leading-relaxed font-normal">
+                  {card.hint}
+                </p>
+              )}
             </div>
           )}
         </div>

@@ -43,6 +43,8 @@ const translations = {
     'nav.scanner': 'ماسح المستندات',
     'nav.calendar': 'التقويم',
     'nav.communications': 'سجل التواصل',
+    'nav.briefs': 'النشرة وموجز الأنظمة',
+    'nav.research': 'مركز الأبحاث',
 
     // Dashboard
     'dash.start_focus': 'ابدأ تركيز',
@@ -696,6 +698,8 @@ const translations = {
     'nav.scanner': 'Document Scanner',
     'nav.calendar': 'Calendar',
     'nav.communications': 'Communications',
+    'nav.briefs': 'Legal Newsletter',
+    'nav.research': 'Research Hub',
 
     'dash.start_focus': 'Start focus',
     'dash.tasks_count': '{n} tasks',

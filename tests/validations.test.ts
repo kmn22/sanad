@@ -33,6 +33,26 @@ describe('Zod Validation Schemas', () => {
       })
       expect(parsed.dueDate).toBeInstanceOf(Date)
     })
+
+    it('accepts specialized Saudi court types and litigation stages', () => {
+      const commercialCase = createCaseSchema.parse({
+        title: 'نزاع مقاولات تجاري',
+        clientName: 'شركة الإعمار المتحدة',
+        caseType: 'commercial',
+        stage: 'pleading',
+      })
+      expect(commercialCase.caseType).toBe('commercial')
+      expect(commercialCase.stage).toBe('pleading')
+
+      const laborCase = createCaseSchema.parse({
+        title: 'دعوى عمالية - مستحقات نهاية خدمة',
+        clientName: 'أحمد المحمود',
+        caseType: 'labor',
+        stage: 'hearing',
+      })
+      expect(laborCase.caseType).toBe('labor')
+      expect(laborCase.stage).toBe('hearing')
+    })
   })
 
   describe('createClientSchema', () => {

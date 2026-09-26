@@ -55,13 +55,13 @@
     "semantic_hash": "3ba2a5fee765ca07de02ad0c3be5a437"
   },
   "next.config.ts": {
-    "mtime": 1790099711.7411299,
-    "ast_hash": "7887ba817798a8f8c620eea8a0ac3fb6",
+    "mtime": 1790103932.2420013,
+    "ast_hash": "dec69cc9dfcf9dcd8fef82fe693c662a",
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1790100529.29338,
-    "ast_hash": "6aafb6e4f74c8921c8ade72494727c7d",
+    "mtime": 1790105735.660548,
+    "ast_hash": "de18287cc9d9be97721729f7a7041062",
     "semantic_hash": ""
   },
   "postcss.config.mjs": {
@@ -155,8 +155,8 @@
     "semantic_hash": ""
   },
   "src/app/api/auth/[...nextauth]/route.ts": {
-    "mtime": 1790100359.2965448,
-    "ast_hash": "d3b12c9884d8d452196cf7fa27e4616f",
+    "mtime": 1790103051.6715794,
+    "ast_hash": "5a793428e78302a2f98717a352990190",
     "semantic_hash": ""
   },
   "src/app/api/backup/route.ts": {
@@ -300,9 +300,9 @@
     "semantic_hash": "65e851bb3a4100ae154718126c4c9544"
   },
   "src/app/api/student/review/route.ts": {
-    "mtime": 1781995996.0,
-    "ast_hash": "aa41ad0497ae13f2733a8994c8ae2106",
-    "semantic_hash": "aa41ad0497ae13f2733a8994c8ae2106"
+    "mtime": 1790329263.2738326,
+    "ast_hash": "adbbd3339a59a3d1f26f429fce6b297b",
+    "semantic_hash": ""
   },
   "src/app/api/tasks/[id]/route.ts": {
     "mtime": 1790100279.4683785,
@@ -330,9 +330,9 @@
     "semantic_hash": "08ec2844abd7018c602ddcac34e4517a"
   },
   "src/app/api/time-entries/route.ts": {
-    "mtime": 1781975953.0,
-    "ast_hash": "e79949fab93ef26708d4aaef3b97a5bb",
-    "semantic_hash": "e79949fab93ef26708d4aaef3b97a5bb"
+    "mtime": 1790178928.335406,
+    "ast_hash": "5e06f3d7a4f449b6bc4f3cc65686ba71",
+    "semantic_hash": ""
   },
   "src/app/layout.tsx": {
     "mtime": 1782786410.987372,
@@ -340,13 +340,13 @@
     "semantic_hash": ""
   },
   "src/app/login/page.tsx": {
-    "mtime": 1790100385.6580596,
-    "ast_hash": "f957a898f78687898fb41dc5ab96d1e4",
+    "mtime": 1790107714.258474,
+    "ast_hash": "72bfc68f9fccddbee6d4c8299b88131b",
     "semantic_hash": ""
   },
   "src/app/page.tsx": {
-    "mtime": 1790100857.9288216,
-    "ast_hash": "71c4c7a16967cdeab6a33899a0ea7142",
+    "mtime": 1790420696.4219294,
+    "ast_hash": "7dc4ad30ba1f8d1d1947312a86aed777",
     "semantic_hash": ""
   },
   "src/app/portal/[token]/page.tsx": {
@@ -380,8 +380,8 @@
     "semantic_hash": "3b6315fedd1709f89f9db2f38c7a70e6"
   },
   "src/components/sanad/CasesView.tsx": {
-    "mtime": 1790102169.7978952,
-    "ast_hash": "0fecbdd9833e8c1d769406ac4e1eb740",
+    "mtime": 1790328706.4412365,
+    "ast_hash": "50b9510b48ca7694c19c2af6165ddfef",
     "semantic_hash": ""
   },
   "src/components/sanad/ClientsView.tsx": {
@@ -390,18 +390,18 @@
     "semantic_hash": "a7ac034b9db49e2d69b3bc22971cb7ff"
   },
   "src/components/sanad/CommandPalette.tsx": {
-    "mtime": 1782074348.0,
-    "ast_hash": "78676cf66f7d06e8afbe4f4ee126e290",
-    "semantic_hash": "78676cf66f7d06e8afbe4f4ee126e290"
+    "mtime": 1790366662.037955,
+    "ast_hash": "62356ecdc937e987fc10dd4d42a94c70",
+    "semantic_hash": ""
   },
   "src/components/sanad/ComplianceView.tsx": {
-    "mtime": 1781992067.0,
-    "ast_hash": "f0f4ad4a8500b19193a794402fc86fdb",
-    "semantic_hash": "f0f4ad4a8500b19193a794402fc86fdb"
+    "mtime": 1790104799.7602253,
+    "ast_hash": "1904d9c46d886d33d4a004673c563131",
+    "semantic_hash": ""
   },
   "src/components/sanad/DashboardView.tsx": {
-    "mtime": 1782764120.393065,
-    "ast_hash": "e9536297a38c13229bc8a7c47076dd09",
+    "mtime": 1790104837.1983876,
+    "ast_hash": "e604c29586c8f754e3e611ac7f62b0e4",
     "semantic_hash": ""
   },
   "src/components/sanad/DeepWorkView.tsx": {
@@ -410,18 +410,18 @@
     "semantic_hash": ""
   },
   "src/components/sanad/DocumentsView.tsx": {
-    "mtime": 1790102111.9079545,
-    "ast_hash": "14d82ca980b071dbad344942a8c0fb5c",
+    "mtime": 1790104716.4000275,
+    "ast_hash": "8832b1c7e04d91b0cfa91ada3fcb145f",
     "semantic_hash": ""
   },
   "src/components/sanad/InvoicesView.tsx": {
-    "mtime": 1782322262.4221344,
-    "ast_hash": "6c4c0db329bfbeac88f687c799e80038",
-    "semantic_hash": "6c4c0db329bfbeac88f687c799e80038"
+    "mtime": 1790332037.775971,
+    "ast_hash": "9da5ae3aa8a12219abb0d8442730eb1d",
+    "semantic_hash": ""
   },
   "src/components/sanad/MobileNav.tsx": {
-    "mtime": 1790100816.003118,
-    "ast_hash": "c7afa0c1a8c49eb155aa0d353c1d3388",
+    "mtime": 1790104668.4836698,
+    "ast_hash": "67fa9e4b99d81d790bcdf06bc68271ef",
     "semantic_hash": ""
   },
   "src/components/sanad/ScannerView.tsx": {
@@ -430,8 +430,8 @@
     "semantic_hash": ""
   },
   "src/components/sanad/Sidebar.tsx": {
-    "mtime": 1790100903.6039746,
-    "ast_hash": "b54d9c365117dbb50a38f3071b138a3d",
+    "mtime": 1790366542.819103,
+    "ast_hash": "b1e671fb66b0f7de71b61f6074f5702b",
     "semantic_hash": ""
   },
   "src/components/sanad/SmartEditor.tsx": {
@@ -440,8 +440,8 @@
     "semantic_hash": "9618ff798ec22720f035544412cc8433"
   },
   "src/components/sanad/StudentView.tsx": {
-    "mtime": 1790100800.583594,
-    "ast_hash": "05c9d73df5590dde05f6d884057a4ddf",
+    "mtime": 1790366631.8564215,
+    "ast_hash": "df50ebd24ab8398fef271fc5ab939ad5",
     "semantic_hash": ""
   },
   "src/components/sanad/TasksView.tsx": {
@@ -450,13 +450,13 @@
     "semantic_hash": "f1ad90e3647dbdb15979ae66263ae2a5"
   },
   "src/components/sanad/TodayFocusView.tsx": {
-    "mtime": 1782076615.0,
-    "ast_hash": "1958f69abab4059d6f9b915a0be82007",
-    "semantic_hash": "1958f69abab4059d6f9b915a0be82007"
+    "mtime": 1790173955.493163,
+    "ast_hash": "60fe756f9940daf7192b64d60660f81f",
+    "semantic_hash": ""
   },
   "src/components/sanad/TopNav.tsx": {
-    "mtime": 1790100916.8640928,
-    "ast_hash": "eb78ecf9b9d62ef948e4baa3a0012d67",
+    "mtime": 1790104512.870005,
+    "ast_hash": "1e2193a6e22ac90ea6963a256e140a81",
     "semantic_hash": ""
   },
   "src/components/sanad/student/CasebookPanel.tsx": {
@@ -475,9 +475,9 @@
     "semantic_hash": "53503a407beccd5f019537413ea9a744"
   },
   "src/components/sanad/student/ReviewPanel.tsx": {
-    "mtime": 1782322372.75841,
-    "ast_hash": "e612d1761c1572cea8ea72b7e9f06ca8",
-    "semantic_hash": "e612d1761c1572cea8ea72b7e9f06ca8"
+    "mtime": 1790330237.0927484,
+    "ast_hash": "e63397e4542575511d5d4873837052b8",
+    "semantic_hash": ""
   },
   "src/components/sanad/student/TermsPanel.tsx": {
     "mtime": 1782325697.1970189,
@@ -750,19 +750,19 @@
     "semantic_hash": ""
   },
   "src/lib/sanad/constants.tsx": {
-    "mtime": 1782782227.9455945,
-    "ast_hash": "0389c9f689334d291f9296de063116f7",
+    "mtime": 1790366510.7577126,
+    "ast_hash": "63f0d6f412108d411b91b3d5ab17aa53",
     "semantic_hash": ""
   },
   "src/lib/sanad/i18n.tsx": {
-    "mtime": 1782831597.3492103,
-    "ast_hash": "6d8df3e23963710f1e87870321365b6e",
+    "mtime": 1790366530.505259,
+    "ast_hash": "82373660c2e71d04bf352d0530e45aa2",
     "semantic_hash": ""
   },
   "src/lib/sanad/types.ts": {
-    "mtime": 1782754865.3930695,
-    "ast_hash": "9f2cce0f0c405581998f23acd214c18b",
-    "semantic_hash": "9f2cce0f0c405581998f23acd214c18b"
+    "mtime": 1790328607.9873729,
+    "ast_hash": "75e44a6267a7fa16da57298d18d2f719",
+    "semantic_hash": ""
   },
   "src/lib/utils.ts": {
     "mtime": 1778580366.0,
@@ -1130,8 +1130,8 @@
     "semantic_hash": ""
   },
   "src/lib/validations/index.ts": {
-    "mtime": 1790100555.6357853,
-    "ast_hash": "1f2458d1afc0e0beb7b266226f4b6379",
+    "mtime": 1790332075.7878122,
+    "ast_hash": "b16fb0ce0f3cf26515480003d0108324",
     "semantic_hash": ""
   },
   "tests/date-logic.test.ts": {
@@ -1140,8 +1140,8 @@
     "semantic_hash": ""
   },
   "tests/validations.test.ts": {
-    "mtime": 1790100509.7635214,
-    "ast_hash": "68a5a9796243c001115adf3286089086",
+    "mtime": 1790332094.2793617,
+    "ast_hash": "372b31c7e46e9045f1b4a10ea2e01786",
     "semantic_hash": ""
   },
   "tests/zatca.test.ts": {
@@ -1149,14 +1149,9 @@
     "ast_hash": "0c7795d8ae1b6b7f0abccdb240aabcbc",
     "semantic_hash": ""
   },
-  "src/middleware.ts": {
-    "mtime": 1790101304.3664753,
-    "ast_hash": "ca57c88ae504f0c8994e31f8c2ba912f",
-    "semantic_hash": ""
-  },
   "src/components/sanad/DraftingHub.tsx": {
-    "mtime": 1790102237.0799155,
-    "ast_hash": "22dc1323ce71fc97d794c1f3d0e7b42d",
+    "mtime": 1790104779.8295596,
+    "ast_hash": "c391d6d7b00971be728e6b206e0c2894",
     "semantic_hash": ""
   },
   "src/lib/sanad/drafting/regulatorySafeguards.ts": {
@@ -1177,6 +1172,71 @@
   "tests/drafting.test.ts": {
     "mtime": 1790102269.743111,
     "ast_hash": "410df4b2c443ba30b65a3ee79448aae0",
+    "semantic_hash": ""
+  },
+  "src/proxy.ts": {
+    "mtime": 1790103926.3109238,
+    "ast_hash": "ead6a7d531bc922a288d49e506001cbd",
+    "semantic_hash": ""
+  },
+  "src/app/api/sync/regulations/route.ts": {
+    "mtime": 1790173979.672182,
+    "ast_hash": "33de9a1fdfe9d22e7a9d5f11b83aaed0",
+    "semantic_hash": ""
+  },
+  "src/app/dashboard/page.tsx": {
+    "mtime": 1790366598.472526,
+    "ast_hash": "cb2080468341419f868d676aaaa347e2",
+    "semantic_hash": ""
+  },
+  "src/app/register/page.tsx": {
+    "mtime": 1790107694.8390677,
+    "ast_hash": "3b4f38e613223987ed3493e1f126c283",
+    "semantic_hash": ""
+  },
+  "src/components/sanad/ConflictCheckModal.tsx": {
+    "mtime": 1790328627.4667597,
+    "ast_hash": "e3543801f23ef1f6f1eb3a2c14bfa651",
+    "semantic_hash": ""
+  },
+  "src/components/sanad/DailyBriefView.tsx": {
+    "mtime": 1790366498.3926127,
+    "ast_hash": "46ece5c9aacc191079353b456e21ba2c",
+    "semantic_hash": ""
+  },
+  "src/lib/sanad/student/sbaQuestionBank.ts": {
+    "mtime": 1790332130.3997214,
+    "ast_hash": "be1bb070552b796ce912436da78e1aa4",
+    "semantic_hash": ""
+  },
+  "tests/sba.test.ts": {
+    "mtime": 1790332106.1454608,
+    "ast_hash": "9c9964c37a271c4a7b6647de09601077",
+    "semantic_hash": ""
+  },
+  "src/app/api/research/[id]/route.ts": {
+    "mtime": 1790366388.3188848,
+    "ast_hash": "8f2fabf0ff8c5abe8cf493062b62e948",
+    "semantic_hash": ""
+  },
+  "src/app/api/research/route.ts": {
+    "mtime": 1790366381.5301902,
+    "ast_hash": "523867930820eb6a0d5ded2c5dc31ea1",
+    "semantic_hash": ""
+  },
+  "src/components/sanad/ResearchHubView.tsx": {
+    "mtime": 1790366460.5896316,
+    "ast_hash": "12137d133cfac7c0d9006107a123ff51",
+    "semantic_hash": ""
+  },
+  "src/lib/sanad/research/seedData.ts": {
+    "mtime": 1790366371.3489516,
+    "ast_hash": "83cc78c1e31abb3dca38db44be6c519a",
+    "semantic_hash": ""
+  },
+  "tests/research.test.ts": {
+    "mtime": 1790366687.8630052,
+    "ast_hash": "8e0d2794ee587f8c5ff2867ab18ed5d7",
     "semantic_hash": ""
   }
 }

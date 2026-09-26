@@ -232,19 +232,19 @@ ${JSON.stringify(answers, null, 2)}
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[92vh] flex flex-col p-6 overflow-hidden">
+      <DialogContent className="sm:max-w-4xl max-h-[92vh] flex flex-col p-6 overflow-hidden glass-panel border border-border/80 shadow-2xl rounded-2xl">
         {/* Header */}
-        <DialogHeader className="border-b pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-lg bg-primary/10 text-primary">
+        <DialogHeader className="border-b border-border/80 pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 text-primary border border-primary/20 shadow-2xs">
                 {category === 'contract' ? <FileText className="h-5 w-5" /> : <Scale className="h-5 w-5" />}
               </div>
-              <div>
-                <DialogTitle className="text-lg font-bold">
+              <div className="text-start">
+                <DialogTitle className="text-base sm:text-lg font-bold">
                   {isAr ? 'محرك أتمتة العقود والمذكرات القضائية' : 'Contract & Pleading Automation Hub'}
                 </DialogTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="text-[11px] text-muted-foreground mt-0.5">
                   {isAr
                     ? 'صياغة نظامية فورية متوافقة مع نظام المعاملات المدنية، نظام العمل، وتصنيفات منصة ناجز'
                     : 'Instant legal drafting compliant with Saudi civil, labor, and judicial procedural laws'}
@@ -253,18 +253,27 @@ ${JSON.stringify(answers, null, 2)}
             </div>
 
             {/* Stepper Indicator */}
-            <div className="flex items-center gap-1.5 text-xs font-medium">
-              <span className={`px-2 py-0.5 rounded-full ${step === 1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                1. {isAr ? 'النموذج' : 'Template'}
-              </span>
-              <span className="text-muted-foreground">→</span>
-              <span className={`px-2 py-0.5 rounded-full ${step === 2 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                2. {isAr ? 'البيانات' : 'Details'}
-              </span>
-              <span className="text-muted-foreground">→</span>
-              <span className={`px-2 py-0.5 rounded-full ${step === 3 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                3. {isAr ? 'المراجعة والاعتماد' : 'Review'}
-              </span>
+            <div className="flex items-center gap-1.5 text-xs font-semibold">
+              <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full transition-all ${
+                step === 1 ? 'bg-primary text-primary-foreground shadow-xs ring-2 ring-primary/20' : 'bg-muted/70 text-muted-foreground'
+              }`}>
+                <span className="h-4 w-4 rounded-full bg-background/20 grid place-items-center text-[10px]">1</span>
+                <span>{isAr ? 'نوع المستند' : 'Template'}</span>
+              </div>
+              <span className="text-muted-foreground/40 font-mono">→</span>
+              <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full transition-all ${
+                step === 2 ? 'bg-primary text-primary-foreground shadow-xs ring-2 ring-primary/20' : 'bg-muted/70 text-muted-foreground'
+              }`}>
+                <span className="h-4 w-4 rounded-full bg-background/20 grid place-items-center text-[10px]">2</span>
+                <span>{isAr ? 'البيانات والأطراف' : 'Details'}</span>
+              </div>
+              <span className="text-muted-foreground/40 font-mono">→</span>
+              <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full transition-all ${
+                step === 3 ? 'bg-primary text-primary-foreground shadow-xs ring-2 ring-primary/20' : 'bg-muted/70 text-muted-foreground'
+              }`}>
+                <span className="h-4 w-4 rounded-full bg-background/20 grid place-items-center text-[10px]">3</span>
+                <span>{isAr ? 'المراجعة والاعتماد' : 'Review'}</span>
+              </div>
             </div>
           </div>
         </DialogHeader>
@@ -287,31 +296,31 @@ ${JSON.stringify(answers, null, 2)}
                 </TabsList>
 
                 <TabsContent value="contract" className="mt-0 space-y-3">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                     {Object.values(TEMPLATES)
                       .filter((t) => t.category === 'contract')
                       .map((tmpl) => (
                         <div
                           key={tmpl.id}
                           onClick={() => handleSelectTemplate(tmpl.id)}
-                          className="border rounded-xl p-4 hover:border-primary hover:bg-primary/5 transition-all cursor-pointer flex flex-col justify-between group"
+                          className="rounded-2xl border border-border/80 bg-card/60 p-4 hover:border-primary/60 hover:bg-primary/5 transition-all cursor-pointer flex flex-col justify-between group shadow-2xs glass-card-hover"
                         >
-                          <div className="space-y-1.5">
+                          <div className="space-y-2">
                             <div className="flex items-center justify-between">
                               <h4 className="font-semibold text-sm group-hover:text-primary transition-colors">
                                 {isAr ? tmpl.titleAr : tmpl.titleEn}
                               </h4>
-                              <Badge variant="outline" className="text-[10px]">
+                              <Badge variant="outline" className="text-[10px] bg-muted/60">
                                 {tmpl.fields.length} {isAr ? 'حقول' : 'fields'}
                               </Badge>
                             </div>
-                            <p className="text-xs text-muted-foreground line-clamp-2">
+                            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
                               {isAr ? tmpl.descriptionAr : tmpl.descriptionEn}
                             </p>
                           </div>
-                          <div className="mt-4 pt-2 border-t flex items-center justify-between text-xs text-primary font-medium">
+                          <div className="mt-4 pt-2.5 border-t border-border/60 flex items-center justify-between text-xs text-primary font-semibold">
                             <span>{isAr ? 'بدء الصياغة' : 'Start Drafting'}</span>
-                            <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" />
+                            <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180 transition-transform group-hover:translate-x-[-2px] rtl:group-hover:translate-x-[2px]" />
                           </div>
                         </div>
                       ))}
@@ -319,14 +328,14 @@ ${JSON.stringify(answers, null, 2)}
                 </TabsContent>
 
                 <TabsContent value="pleading" className="mt-0 space-y-3">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                     {Object.values(TEMPLATES)
                       .filter((t) => t.category === 'pleading')
                       .map((tmpl) => (
                         <div
                           key={tmpl.id}
                           onClick={() => handleSelectTemplate(tmpl.id)}
-                          className="border rounded-xl p-4 hover:border-primary hover:bg-primary/5 transition-all cursor-pointer flex flex-col justify-between group"
+                          className="rounded-2xl border border-border/80 bg-card/60 p-4 hover:border-primary/60 hover:bg-primary/5 transition-all cursor-pointer flex flex-col justify-between group shadow-2xs glass-card-hover"
                         >
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between">

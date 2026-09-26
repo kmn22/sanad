@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -113,6 +113,7 @@ function defaultDueDate(): string {
 export function InvoicesView({ invoices, clients, cases, timeEntries, stats, onChange }: Props) {
   const { lang, t } = useLang()
   const [open, setOpen] = useState(false)
+  const [selectAllOnOpen, setSelectAllOnOpen] = useState(false)
   const [filter, setFilter] = useState<string>('all')
   const [activeInvoice, setActiveInvoice] = useState<Invoice | null>(null)
   const [previewOpen, setPreviewOpen] = useState(false)
@@ -169,13 +170,18 @@ export function InvoicesView({ invoices, clients, cases, timeEntries, stats, onC
         </div>
         <CreateInvoiceDialog
           open={open}
-          onOpenChange={setOpen}
+          onOpenChange={(v) => {
+            setOpen(v)
+            if (!v) setSelectAllOnOpen(false)
+          }}
+          initialSelectAll={selectAllOnOpen}
           clients={clients}
           cases={cases}
           timeEntries={timeEntries}
           onSaved={() => {
             onChange()
             setOpen(false)
+            setSelectAllOnOpen(false)
           }}
         />
       </div>
@@ -209,6 +215,38 @@ export function InvoicesView({ invoices, clients, cases, timeEntries, stats, onC
           icon={<FileText className="h-4 w-4" />}
         />
       </div>
+
+      {/* Uninvoiced hours conversion banner */}
+      {stats.uninvoicedSAR > 0 && (
+        <div className="rounded-lg border border-amber-200 dark:border-amber-900/60 bg-amber-50/50 dark:bg-amber-950/20 p-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 grid place-items-center shrink-0">
+              <Clock className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-amber-950 dark:text-amber-200">
+                {lang === 'ar' ? 'ساعات عمل قانونية جاهزة للفوترة' : 'Unbilled Billable Hours Available'}
+              </p>
+              <p className="text-[11px] text-amber-800/80 dark:text-amber-400/80 mt-0.5">
+                {lang === 'ar'
+                  ? `يوجد ${formatDuration(stats.uninvoicedSec, lang)} بقيمة ${formatSAR(stats.uninvoicedSAR, lang)} مسجلة بالنظام يمكن إصدار فاتورة ضريبية إلكترونية فورية لها بموجب متطلبات هيئة الزكاة (ZATCA)`
+                  : `${formatDuration(stats.uninvoicedSec, lang)} totaling ${formatSAR(stats.uninvoicedSAR, lang)} can be converted into a ZATCA tax invoice in one click`}
+              </p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => {
+              setSelectAllOnOpen(true)
+              setOpen(true)
+            }}
+            className="bg-amber-600 hover:bg-amber-700 text-white shrink-0 self-start sm:self-auto gap-1 text-xs"
+          >
+            <Plus className="mx-1 h-3.5 w-3.5" />
+            {lang === 'ar' ? 'إصدار فاتورة بالساعات الآن' : 'Bill All Uninvoiced Hours'}
+          </Button>
+        </div>
+      )}
 
       {/* Filter pills */}
       <div className="flex items-center gap-2 flex-wrap">
@@ -602,6 +640,7 @@ function CreateInvoiceDialog({
   clients,
   cases,
   timeEntries,
+  initialSelectAll = false,
   onSaved,
 }: {
   open: boolean
@@ -609,6 +648,7 @@ function CreateInvoiceDialog({
   clients: Client[]
   cases: LegalCase[]
   timeEntries: TimeEntry[]
+  initialSelectAll?: boolean
   onSaved: () => void
 }) {
   const { lang, t } = useLang()
@@ -619,13 +659,49 @@ function CreateInvoiceDialog({
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
 
+  // Auto-select when opened via "Bill Uninvoiced Hours" shortcut
+  useEffect(() => {
+    if (open && initialSelectAll && timeEntries.length > 0) {
+      const allIds = new Set(timeEntries.map((e) => e.id))
+      setSelected(allIds)
+      const firstWithClient = timeEntries.find((e) => e.case?.clientId)
+      if (firstWithClient?.case) {
+        if (firstWithClient.case.clientId) setClientId(firstWithClient.case.clientId)
+        if (firstWithClient.caseId) setCaseId(firstWithClient.caseId)
+      }
+    }
+  }, [open, initialSelectAll, timeEntries])
+
   const toggle = (id: string) => {
     setSelected((prev) => {
       const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+        // Auto-detect client & case from time entry if not set
+        const entry = timeEntries.find((e) => e.id === id)
+        if (entry?.case) {
+          if (!clientId && entry.case.clientId) setClientId(entry.case.clientId)
+          if (!caseId && entry.caseId) setCaseId(entry.caseId)
+        }
+      }
       return next
     })
+  }
+
+  const selectAll = () => {
+    const allIds = new Set(timeEntries.map((e) => e.id))
+    setSelected(allIds)
+    const firstWithClient = timeEntries.find((e) => e.case?.clientId)
+    if (firstWithClient?.case) {
+      if (!clientId && firstWithClient.case.clientId) setClientId(firstWithClient.case.clientId)
+      if (!caseId && firstWithClient.caseId) setCaseId(firstWithClient.caseId)
+    }
+  }
+
+  const clearAll = () => {
+    setSelected(new Set())
   }
 
   const selectedEntries = timeEntries.filter((e) => selected.has(e.id))
@@ -700,7 +776,33 @@ function CreateInvoiceDialog({
         <div className="space-y-4">
           {/* Time entries list */}
           <div className="space-y-2">
-            <Label className="text-xs">{t('invoices.select_time')}</Label>
+            <div className="flex items-center justify-between">
+              <Label className="text-xs">{t('invoices.select_time')}</Label>
+              {timeEntries.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-[11px] text-primary hover:text-primary px-2"
+                    onClick={selectAll}
+                  >
+                    {lang === 'ar' ? 'تحديد الكل' : 'Select All'}
+                  </Button>
+                  {selected.size > 0 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 text-[11px] text-muted-foreground px-2"
+                      onClick={clearAll}
+                    >
+                      {lang === 'ar' ? 'إلغاء التحديد' : 'Clear'}
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
 
             {timeEntries.length === 0 ? (
               <div className="rounded-md border border-dashed p-6 text-center text-xs text-muted-foreground">

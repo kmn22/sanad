@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { SBA_EXAM_QUESTIONS } from '@/lib/sanad/student/sbaQuestionBank'
 
-// GET /api/student/review?source=all|terms|cases|lectures|course:{id}|subject:{value}&mode=flashcards|quiz
+// GET /api/student/review?source=all|terms|cases|lectures|sba|course:{id}|subject:{value}&mode=flashcards|quiz
 // Generates a deck of review cards from the user's library.
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest) {
 
   interface Card {
     id: string
-    type: 'term' | 'case' | 'lecture'
+    type: 'term' | 'case' | 'lecture' | 'sba'
     front: string
     back: string
     hint?: string
@@ -188,6 +189,35 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // ---- SBA Exam questions ----
+  const includeSba = source === 'all' || source === 'sba'
+  if (includeSba) {
+    for (const q of SBA_EXAM_QUESTIONS) {
+      if (mode === 'flashcards') {
+        cards.push({
+          id: `sba-${q.id}`,
+          type: 'sba',
+          front: `${q.question}\n\n[الموضوع: ${q.subjectAr}]`,
+          back: `الإجابة الصحيحة:\n${q.options[q.correctIndex]}\n\nالسند النظامي:\n${q.lawReference}\n\nالشرح الإيضاحي:\n${q.explanationAr}`,
+          hint: `${q.lawReference}`,
+          source: 'اختبار رخصة المحاماة (SBA)',
+        })
+      } else {
+        cards.push({
+          id: `sba-${q.id}`,
+          type: 'sba',
+          front: `${q.question}\n\n[الموضوع: ${q.subjectAr}]`,
+          back: q.options[q.correctIndex],
+          hint: `${q.lawReference}: ${q.explanationAr}`,
+          options: q.options,
+          correctIndex: q.correctIndex,
+          questionType: 'mcq',
+          source: 'اختبار رخصة المحاماة (SBA)',
+        })
+      }
+    }
+  }
+
   // Shuffle for variety
   cards.sort(() => Math.random() - 0.5)
 
@@ -196,6 +226,7 @@ export async function GET(req: NextRequest) {
   if (source === 'terms') sourceLabel = 'بنك المصطلحات'
   else if (source === 'cases') sourceLabel = 'بنك القضايا'
   else if (source === 'lectures') sourceLabel = 'المحاضرات'
+  else if (source === 'sba') sourceLabel = 'اختبار رخصة المحاماة (SBA)'
   else if (source.startsWith('course:')) {
     const courseId = source.split(':')[1]
     const course = await db.course.findUnique({ where: { id: courseId } })
