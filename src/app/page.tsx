@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -37,6 +37,8 @@ import {
   FileCheck,
   Bookmark,
   Newspaper,
+  X,
+  Shield,
 } from 'lucide-react'
 
 export default function LandingPage() {
@@ -55,6 +57,26 @@ export default function LandingPage() {
 
   // FAQ Accordion Open States
   const [openFaq, setOpenFaq] = useState<number | null>(0)
+
+  // Privacy Policy Modal & Cookie Banner (Saudi PDPL)
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false)
+  const [cookieConsentDismissed, setCookieConsentDismissed] = useState(true)
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('sanad_cookie_consent')
+      if (!saved) {
+        setCookieConsentDismissed(false)
+      }
+    } catch {}
+  }, [])
+
+  const acceptCookies = () => {
+    try {
+      localStorage.setItem('sanad_cookie_consent', 'true')
+    } catch {}
+    setCookieConsentDismissed(true)
+  }
 
   const toggleFaq = (idx: number) => {
     setOpenFaq(openFaq === idx ? null : idx)
@@ -1050,8 +1072,35 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-500 text-xs text-center sm:text-right">
+          {/* SBA Regulatory Notice */}
+          <div className="my-6 p-4 rounded-2xl bg-slate-900/80 border border-white/10 text-xs text-slate-400 leading-relaxed flex items-start gap-3">
+            <span className="p-1 px-2 rounded-lg bg-emerald-500/10 text-emerald-400 font-bold shrink-0">إشعار تنظيمي</span>
+            <p>
+              منظومة <strong>سَنَد (SANAD Legal OS)</strong> هي برمجية سحابية تشغيلية وحلول ذكاء اصطناعي مساندة لإدارة العمليات القانونية ومساعدة الممارسين القانونيين والشركات وطلاب القانون. لا تُعد المنظومة مكتب محاماة ولا تقدم خدمات الترافع المباشر أو الاستشارات الموجهة للأفراد دون محامٍ مرخص من الهيئة السعودية للمحامين.
+            </p>
+          </div>
+
+          <div className="pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-500 text-xs text-center sm:text-right">
             <p>© {new Date().getFullYear()} سَنَد للتقنية القانونية. صُمم للمملكة العربية السعودية وفق رؤية 2030.</p>
+            
+            <div className="flex items-center gap-4 text-xs text-slate-400">
+              <button
+                type="button"
+                onClick={() => setShowPrivacyModal(true)}
+                className="hover:text-emerald-400 underline underline-offset-4 transition-colors cursor-pointer"
+              >
+                سياسة الخصوصية وحماية البيانات (PDPL)
+              </button>
+              <span>•</span>
+              <button
+                type="button"
+                onClick={() => setShowPrivacyModal(true)}
+                className="hover:text-emerald-400 underline underline-offset-4 transition-colors cursor-pointer"
+              >
+                شروط الاستخدام
+              </button>
+            </div>
+
             <p className="flex items-center gap-1.5 justify-center">
               <ShieldCheck className="w-4 h-4 text-emerald-500" />
               تشفير محلي سيادي يحمي خصوصية الموكلين
@@ -1059,6 +1108,90 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Saudi PDPL Privacy Policy Modal */}
+      {showPrivacyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in" dir="rtl">
+          <div className="bg-slate-900 border border-white/10 rounded-3xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+            <div className="p-6 border-b border-white/10 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                  <Shield className="w-4 h-4" />
+                </div>
+                <h3 className="text-base sm:text-lg font-bold text-white">سياسة الخصوصية والامتثال لنظام حماية البيانات الشخصية (PDPL)</h3>
+              </div>
+              <button
+                onClick={() => setShowPrivacyModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-4 text-xs sm:text-sm text-slate-300 leading-relaxed">
+              <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs">
+                تلتزم منصة سَنَد بنظام حماية البيانات الشخصية السعودي الصادر بالمرسوم الملكي رقم (م/19) وتعديلاته وقرارات الهيئة السعودية للبيانات والذكاء الاصطناعي (سدايا).
+              </div>
+
+              <h4 className="text-white font-bold text-sm pt-2">1. السيادة المكانية للبيانات وتوطين الاستضافة</h4>
+              <p className="text-slate-400 text-xs">
+                تُحفظ كافة ملفات القضايا، المستندات، ومذكرات الموكلين محلياً داخل حدود المملكة العربية السعودية، ولا يتم نقل أي بيانات سرية أو شخصية إلى خوادم خارجية غير مرخصة.
+              </p>
+
+              <h4 className="text-white font-bold text-sm pt-2">2. عدم استخدام بيانات الموكلين لتدريب الذكاء الاصطناعي</h4>
+              <p className="text-slate-400 text-xs">
+                نلتزم التزاماً صارماً بموجب ميثاق سرية المحاماة بعدم استخدام نصوص العقود أو مستندات الموكلين لتدريب أي نماذج ذكاء اصطناعي عامة. كافة عمليات التحليل والصياغة تتم محلياً وبشكل معزول تماماً لكل مكتب.
+              </p>
+
+              <h4 className="text-white font-bold text-sm pt-2">3. حقوق أصحاب البيانات الشخصية</h4>
+              <p className="text-slate-400 text-xs">
+                يحق للمستخدم في أي وقت طلب تصدير نسخته الاحتياطية، أو تصحيح بياناته، أو إتلاف وحذف حسابه وجميع سجلاته بصورة نهائية من قاعدة البيانات.
+              </p>
+
+              <h4 className="text-white font-bold text-sm pt-2">4. الفوترة الضريبية وحماية المعلومات المالية</h4>
+              <p className="text-slate-400 text-xs">
+                تخضع المعاملات المالية لضوابط هيئة الزكاة والضريبة والجمارك (ZATCA)، ويتم تشفير أختام الفواتير بمعايير TLV التشفيرية المعتمدة نظامياً.
+              </p>
+            </div>
+
+            <div className="p-4 border-t border-white/10 bg-slate-950/60 flex justify-end">
+              <Button
+                onClick={() => setShowPrivacyModal(false)}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 cursor-pointer"
+              >
+                إغلاق وفهمت الشروط
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Privacy & Cookie Notice Banner */}
+      {!cookieConsentDismissed && (
+        <div className="fixed bottom-4 left-4 right-4 sm:right-auto sm:max-w-md z-40 p-4 rounded-2xl bg-slate-900/95 border border-emerald-500/30 backdrop-blur-xl shadow-2xl flex flex-col gap-3 animate-fade-in" dir="rtl">
+          <div className="flex items-start gap-2.5">
+            <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+            <p className="text-xs text-slate-300 leading-relaxed">
+              نحن نستخدم ملفات تعريف ارتباط محلية وتقنيات مشفرة لتحسين تجربتك وتأمين جلسة المحاماة وفق نظام حماية البيانات الشخصية السعودي (PDPL).
+            </p>
+          </div>
+          <div className="flex items-center justify-between gap-3 pt-1 border-t border-white/5">
+            <button
+              onClick={() => setShowPrivacyModal(true)}
+              className="text-[11px] text-emerald-400 hover:underline cursor-pointer"
+            >
+              الاطلاع على السياسة
+            </button>
+            <Button
+              size="sm"
+              onClick={acceptCookies}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 h-8 cursor-pointer"
+            >
+              موافق ومتابعة
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
