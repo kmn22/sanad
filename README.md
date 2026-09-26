@@ -52,7 +52,7 @@ bun run seed
 ./deploy.sh restart
 ```
 
-Sanad is now live at `http://localhost:3000`
+Sanad is now live at `http://localhost:3001`
 
 ---
 
@@ -119,7 +119,7 @@ ExecStart=/usr/bin/bun /home/your-username/sanad/.next/standalone/server.js
 Restart=on-failure
 RestartSec=5
 Environment=NODE_ENV=production
-Environment=PORT=3000
+Environment=PORT=3001
 Environment=DATABASE_URL=file:/home/your-username/sanad/db/custom.db
 
 [Install]
@@ -146,7 +146,7 @@ Caddy is already configured in `Caddyfile`. To expose Sanad publicly with HTTPS:
 
 ```caddy
 sanad.yourdomain.com {
-    reverse_proxy localhost:3000
+    reverse_proxy localhost:3001
 }
 ```
 
@@ -170,7 +170,7 @@ Create `/etc/nginx/sites-available/sanad`:
 server {
     server_name sanad.yourdomain.com;
     location / {
-        proxy_pass http://localhost:3000;
+        proxy_pass http://localhost:3001;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -300,7 +300,7 @@ pm2 reload sanad
 ### Health check endpoint
 
 ```bash
-curl http://localhost:3000/api/dashboard
+curl http://localhost:3001/api/dashboard
 # Returns 200 + JSON = healthy
 ```
 
@@ -370,11 +370,11 @@ bun run db:reset
 bun run seed
 ```
 
-### Port 3000 already in use
+### Port 3001 already in use
 
 ```bash
 # Find and kill process
-lsof -i :3000
+lsof -i :3001
 kill -9 <PID>
 
 # Or change port in .env

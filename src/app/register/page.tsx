@@ -48,6 +48,12 @@ export default function RegisterPage() {
         redirect: false,
       })
 
+      if (loginRes?.error || !loginRes?.ok) {
+        toast.success(data.message || 'تم إنشاء الحساب بنجاح!')
+        router.push('/login?registered=1')
+        return
+      }
+
       if (typeof window !== 'undefined') {
         localStorage.setItem('sanad.persona', persona)
       }

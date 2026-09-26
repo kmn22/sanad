@@ -33,34 +33,36 @@ export async function POST(req: Request) {
     // 2. Hash password cryptographically
     const hashedPassword = hashPassword(password)
 
-    // 3. Create new Workspace for this user
-    const workspaceDomain = cleanEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, '') + '-' + Math.random().toString(36).substring(2, 6)
-    const workspace = await db.workspace.create({
-      data: {
-        name: `مكتب ${cleanName}`,
-        domain: workspaceDomain,
-      }
-    })
+    // Keep account creation atomic so a failed signup cannot leave orphaned data.
+    const { workspace, newUser } = await db.$transaction(async (tx) => {
+      const workspaceDomain = cleanEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, '') + '-' + Math.random().toString(36).substring(2, 6)
+      const workspace = await tx.workspace.create({
+        data: {
+          name: `مكتب ${cleanName}`,
+          domain: workspaceDomain,
+        }
+      })
 
-    // 4. Create the User record attached to the new Workspace with hashed password
-    const newUser = await db.user.create({
-      data: {
-        email: cleanEmail,
-        name: cleanName,
-        password: hashedPassword,
-        role: role,
-        workspaceId: workspace.id,
-      }
-    })
+      const newUser = await tx.user.create({
+        data: {
+          email: cleanEmail,
+          name: cleanName,
+          password: hashedPassword,
+          role,
+          workspaceId: workspace.id,
+        }
+      })
 
-    // 4. Create initial welcome notification
-    await db.notification.create({
-      data: {
-        userId: newUser.id,
-        title: 'مرحباً بك في منصة سَنَد',
-        message: 'تم تفعيل مساحة العمل الخاصة بك بنجاح. يمكنك الآن بدء إدارة القضايا وتوليد العقود.',
-        link: '/dashboard'
-      }
+      await tx.notification.create({
+        data: {
+          userId: newUser.id,
+          title: 'مرحباً بك في منصة سَنَد',
+          message: 'تم تفعيل مساحة العمل الخاصة بك بنجاح. يمكنك الآن بدء إدارة القضايا وتوليد العقود.',
+          link: '/dashboard'
+        }
+      })
+
+      return { workspace, newUser }
     })
 
     return NextResponse.json({
