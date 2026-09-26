@@ -1,6 +1,7 @@
 import NextAuth, { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { db } from "@/lib/db"
+import { verifyPassword } from "@/lib/auth/password"
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -21,18 +22,29 @@ export const authOptions: NextAuthOptions = {
         })
 
         if (dbUser) {
-          if (credentials.password === 'admin' || credentials.password.length >= 3) {
-            return {
-              id: dbUser.id,
-              name: dbUser.name || cleanEmail.split('@')[0],
-              email: dbUser.email,
-              role: dbUser.role || 'lawyer',
+          // If user has a cryptographically hashed password, verify it
+          if (dbUser.password) {
+            const isValid = verifyPassword(credentials.password, dbUser.password)
+            if (!isValid) {
+              return null
             }
+          } else {
+            // Legacy / seed user without password: allow demo password
+            if (credentials.password !== 'admin' && credentials.password !== 'admin123') {
+              return null
+            }
+          }
+
+          return {
+            id: dbUser.id,
+            name: dbUser.name || cleanEmail.split('@')[0],
+            email: dbUser.email,
+            role: dbUser.role || 'lawyer',
           }
         }
 
-        // 2. Demo fallback for sandbox testing (ahmed@sanad.sa or admin)
-        if (cleanEmail === 'ahmed@sanad.sa' || cleanEmail === 'admin@sanad.sa' || credentials.password === 'admin') {
+        // 2. Demo fallback strictly for ahmed@sanad.sa sandbox demo account
+        if (cleanEmail === 'ahmed@sanad.sa' && (credentials.password === 'admin' || credentials.password === 'admin123')) {
           return {
             id: "demo-user-1",
             name: "أحمد القحطاني",
@@ -41,6 +53,7 @@ export const authOptions: NextAuthOptions = {
           }
         }
 
+        // Any other non-existent user or wrong password is rejected
         return null
       }
     })

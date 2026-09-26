@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { hashPassword } from '@/lib/auth/password'
 
 export async function POST(req: Request) {
   try {
@@ -10,8 +11,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'البريد الإلكتروني غير صالح' }, { status: 400 })
     }
 
-    if (!password || password.length < 4) {
-      return NextResponse.json({ error: 'كلمة المرور يجب أن لا تقل عن 4 خانات' }, { status: 400 })
+    if (!password || password.length < 6) {
+      return NextResponse.json({ error: 'كلمة المرور يجب أن لا تقل عن 6 خانات' }, { status: 400 })
     }
 
     const cleanEmail = email.toLowerCase().trim()
@@ -25,14 +26,14 @@ export async function POST(req: Request) {
 
     if (existingUser) {
       return NextResponse.json({ 
-        success: true, 
-        message: 'الحساب موجود بالفعل، يمكنك المتابعة لتسجيل الدخول',
-        userId: existingUser.id,
-        isExisting: true
-      })
+        error: 'هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول أو استخدام بريد آخر.'
+      }, { status: 409 })
     }
 
-    // 2. Create new Workspace for this user
+    // 2. Hash password cryptographically
+    const hashedPassword = hashPassword(password)
+
+    // 3. Create new Workspace for this user
     const workspaceDomain = cleanEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, '') + '-' + Math.random().toString(36).substring(2, 6)
     const workspace = await db.workspace.create({
       data: {
@@ -41,11 +42,12 @@ export async function POST(req: Request) {
       }
     })
 
-    // 3. Create the User record attached to the new Workspace
+    // 4. Create the User record attached to the new Workspace with hashed password
     const newUser = await db.user.create({
       data: {
         email: cleanEmail,
         name: cleanName,
+        password: hashedPassword,
         role: role,
         workspaceId: workspace.id,
       }

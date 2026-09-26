@@ -10,8 +10,8 @@ import { toast } from 'sonner'
 
 export default function LoginPage() {
   const router = useRouter()
-  const [email, setEmail] = useState('ahmed@sanad.sa')
-  const [password, setPassword] = useState('admin123')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
 
@@ -20,24 +20,33 @@ export default function LoginPage() {
     setLoading(true)
     setErrorMsg('')
 
+    if (!email.trim() || !password) {
+      setErrorMsg('يرجى إدخال البريد الإلكتروني وكلمة المرور')
+      setLoading(false)
+      return
+    }
+
     try {
       const result = await signIn('credentials', {
-        email: email.trim() || 'ahmed@sanad.sa',
-        password: password || 'admin',
+        email: email.trim(),
+        password: password,
         redirect: false,
       })
 
       if (result?.error) {
-        setErrorMsg('البريد الإلكتروني أو كلمة المرور غير صحيحة. حاول مجدداً.')
+        setErrorMsg('بيانات الدخول غير صحيحة. تأكد من البريد وكلمة المرور.')
+        toast.error('بيانات الدخول غير صحيحة')
         setLoading(false)
         return
       }
-    } catch (e) {
-      console.warn('NextAuth sign in notice:', e)
-    }
 
-    toast.success('تم تسجيل الدخول بنجاح')
-    window.location.href = '/dashboard'
+      toast.success('تم تسجيل الدخول بنجاح')
+      window.location.href = '/dashboard'
+    } catch (e) {
+      console.warn('NextAuth sign in error:', e)
+      setErrorMsg('حدث خطأ أثناء تسجيل الدخول. حاول مجدداً.')
+      setLoading(false)
+    }
   }
 
   return (
@@ -155,25 +164,21 @@ export default function LoginPage() {
                     redirect: false,
                   })
                 } catch {}
-                toast.success('تم الانتقال إلى مساحة العمل')
+                toast.success('تم الانتقال إلى مساحة العمل التجريبية')
                 window.location.href = '/dashboard'
               }}
-              className="w-full h-11 border-slate-700 bg-slate-800/40 hover:bg-slate-800 text-slate-300 text-sm font-medium transition-all disabled:opacity-60"
+              className="w-full h-11 border-slate-700 bg-slate-800/40 hover:bg-slate-800 text-slate-300 text-sm font-medium transition-all disabled:opacity-60 cursor-pointer"
             >
-              دخول مباشر كـ أحمد القحطاني (محامٍ)
+              استعراض سريع للمنصة (حساب تجريبي)
             </Button>
           </form>
 
           <div className="mt-8 pt-8 border-t border-slate-800 text-center">
-            <p className="text-sm text-slate-400 mb-4">
+            <p className="text-sm text-slate-400">
               ليس لديك حساب؟{' '}
               <a href="/register" className="text-emerald-400 hover:text-emerald-300 transition-colors font-medium">
                 إنشاء حساب جديد
               </a>
-            </p>
-            <p className="text-sm text-slate-500">
-              <span className="bg-slate-800 px-2 py-1 rounded text-emerald-400 font-mono text-xs ml-2">Demo Mode</span>
-              يمكنك تسجيل الدخول باستخدام أي بيانات تجريبية.
             </p>
           </div>
         </div>
