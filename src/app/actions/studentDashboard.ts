@@ -1,8 +1,37 @@
 'use server'
 
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth/options'
 import { db } from '@/lib/db'
 
 export async function getStudentDashboard() {
+  const session = await getServerSession(authOptions)
+  if (!session?.user) {
+    return {
+      stats: {
+        courses: 0,
+        upcomingDeadlines: 0,
+        overdueDeadlines: 0,
+        dueThisWeek: 0,
+        dueThisMonth: 0,
+        recentLectures: 0,
+        draftLectures: 0,
+        terms: 0,
+        masteredTerms: 0,
+        learningTerms: 0,
+        familiarTerms: 0,
+        cases: 0,
+        totalWeight: 0,
+      },
+      courses: [],
+      lectures: [],
+      deadlines: { upcoming: [], overdue: [], dueThisWeek: [], dueThisMonth: [], all: [] },
+      terms: [],
+      cases: [],
+      briefs: [],
+    }
+  }
+
   const now = new Date()
   const in7 = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
   const in30 = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)

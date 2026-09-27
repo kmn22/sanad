@@ -1,17 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { createCaseSchema } from '@/lib/validations'
+import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
 
 export async function GET() {
-  const cases = await db.legalCase.findMany({ orderBy: { updatedAt: 'desc' }, include: { timeEntries: true } })
+  const workspaceId = await getSessionWorkspaceId()
+  if (!workspaceId) return unauthorizedJson()
+  const cases = await db.legalCase.findMany({ where: { workspaceId }, orderBy: { updatedAt: 'desc' }, include: { timeEntries: true } })
   return NextResponse.json(cases)
 }
 
 export async function POST(req: NextRequest) {
   try {
+    const workspaceId = await getSessionWorkspaceId()
+    if (!workspaceId) return unauthorizedJson()
     const rawBody = await req.json()
     const parsed = createCaseSchema.parse(rawBody)
-    const c = await db.legalCase.create({ data: parsed })
+    const c = await db.legalCase.create({ data: { ...parsed, workspaceId } })
     return NextResponse.json(c)
   } catch (err: any) {
     if (err?.name === 'ZodError') {

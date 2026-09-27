@@ -4,7 +4,7 @@
 *Daily operations dashboard for Saudi lawyers and law students*
 
 > 🟢 **Live demo:** https://sanad.tail963524.ts.net
-> 🔑 **Demo login:** any email · password `admin`
+> 🔑 Create an account at `/register`, or after `bun run seed` log in as `ahmed@sanad.sa` / `admin`
 
 ---
 
@@ -300,8 +300,8 @@ pm2 reload sanad
 ### Health check endpoint
 
 ```bash
-curl http://localhost:3001/api/dashboard
-# Returns 200 + JSON = healthy
+curl http://localhost:3001/api/health
+# Returns 200 + {"status":"ok"} = healthy
 ```
 
 ### Logs
