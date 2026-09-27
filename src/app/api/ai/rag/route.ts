@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ollamaChat } from '@/lib/ai/ollama';
 import { db } from '@/lib/db';
+import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace';
 
 export async function POST(req: NextRequest) {
   try {
+    const workspaceId = await getSessionWorkspaceId();
+    if (!workspaceId) return unauthorizedJson();
     const body = await req.json();
     const { prompt } = body;
 
@@ -13,6 +16,7 @@ export async function POST(req: NextRequest) {
 
     // Poor-man's RAG: Fetch recent cases to use as context
     const cases = await db.legalCase.findMany({
+      where: { workspaceId },
       take: 10,
       orderBy: { updatedAt: 'desc' },
       select: {

@@ -36,9 +36,9 @@ export function TopNav({
   const { lang, t, toggle: toggleLang } = useLang()
   const { theme, setTheme } = useTheme()
 
-  const userName = session?.user?.name || (persona === 'lawyer' ? 'أحمد القحطاني' : 'طالب قانون')
-  const userEmail = session?.user?.email || (persona === 'lawyer' ? 'ahmed@sanad.sa' : 'student@sanad.sa')
-  const initialLetter = userName.trim().charAt(0) || (persona === 'lawyer' ? 'أ' : 'ط')
+  const userName = session?.user?.name || (persona === 'lawyer' ? 'المحامي الممارس' : 'طالب قانون')
+  const userEmail = session?.user?.email || (persona === 'lawyer' ? 'lawyer@sanad.sa' : 'student@sanad.sa')
+  const initialLetter = userName.trim().charAt(0) || (persona === 'lawyer' ? 'م' : 'ط')
 
   const now = new Date()
   const timeLocale = lang === 'ar' ? 'ar-SA' : 'en-GB'

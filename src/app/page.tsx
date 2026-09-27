@@ -184,8 +184,8 @@ export default function LandingPage() {
             </Link>
             <Link href="/login" className="w-full sm:w-auto">
               <Button size="lg" variant="outline" className="w-full sm:w-auto h-14 px-8 border-slate-700 bg-slate-900/60 hover:bg-slate-800/90 text-slate-200 text-lg font-semibold transition-all cursor-pointer">
-                <span>دخول حساب تجريبي (Sandbox)</span>
-                <ArrowUpRight className="w-5 h-5 mr-2 text-slate-400" />
+                <span>تسجيل الدخول</span>
+                <ArrowLeft className="w-5 h-5 mr-2 text-slate-400" />
               </Button>
             </Link>
           </div>
@@ -820,7 +820,7 @@ export default function LandingPage() {
                 </div>
                 <div className="bg-slate-950/80 p-6 rounded-2xl border border-white/5 space-y-4">
                   <div className="flex items-center justify-between text-xs text-slate-400 pb-2 border-b border-white/5">
-                    <span>مكتب المحامي / أحمد القحطاني</span>
+                    <span>مكتب المحاماة والاستشارات القانونية</span>
                     <span className="text-emerald-400">لوحة الممارس نشطة</span>
                   </div>
                   <div className="space-y-2">
