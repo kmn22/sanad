@@ -1,7 +1,7 @@
 #!/bin/bash
 # Sanad — Database Backup Script
 # Add to crontab for automated backups:
-#   0 2 * * * /home/z/my-project/scripts/backup-db.sh
+#   0 3 * * * $HOME/sanad/scripts/backup-db.sh >> $HOME/sanad/logs/backup.log 2>&1
 #
 # Keeps last 30 days of backups.
 
@@ -26,6 +26,8 @@ fi
 # Falls back to file copy if sqlite3 CLI is not available
 if command -v sqlite3 &>/dev/null; then
   sqlite3 "$DB_FILE" ".backup '$BACKUP_FILE'"
+elif command -v python3 &>/dev/null; then
+  python3 -c 'import sqlite3,sys; s=sqlite3.connect(sys.argv[1]); d=sqlite3.connect(sys.argv[2]); s.backup(d); d.close(); s.close()' "$DB_FILE" "$BACKUP_FILE"
 else
   cp "$DB_FILE" "$BACKUP_FILE"
 fi
