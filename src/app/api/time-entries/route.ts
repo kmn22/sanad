@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
 
 export async function GET() {
+  const workspaceId = await getSessionWorkspaceId()
+  if (!workspaceId) return unauthorizedJson()
   const entries = await db.timeEntry.findMany({
+    where: { workspaceId },
     orderBy: { date: 'desc' },
     take: 50,
     include: { case: true },
@@ -12,8 +16,10 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const workspaceId = await getSessionWorkspaceId()
+    if (!workspaceId) return unauthorizedJson()
     const body = await req.json()
-    const { caseId, description, durationSec, billable, hourlyRate, invoiced, invoiceId, sessionType, date, workspaceId } = body
+    const { caseId, description, durationSec, billable, hourlyRate, invoiced, invoiceId, sessionType, date } = body
     const te = await db.timeEntry.create({
       data: {
         description: description || 'جلسة عمل',
@@ -25,7 +31,7 @@ export async function POST(req: NextRequest) {
         invoiceId: invoiceId || null,
         sessionType: sessionType || 'focus',
         date: date ? new Date(date) : new Date(),
-        workspaceId: workspaceId || null,
+        workspaceId,
       },
     })
     return NextResponse.json(te)

@@ -1,17 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { createDocumentSchema } from '@/lib/validations'
+import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
 
 export async function GET() {
-  const docs = await db.legalDocument.findMany({ orderBy: { updatedAt: 'desc' } })
+  const workspaceId = await getSessionWorkspaceId()
+  if (!workspaceId) return unauthorizedJson()
+  const docs = await db.legalDocument.findMany({ where: { workspaceId }, orderBy: { updatedAt: 'desc' } })
   return NextResponse.json(docs)
 }
 
 export async function POST(req: NextRequest) {
   try {
+    const workspaceId = await getSessionWorkspaceId()
+    if (!workspaceId) return unauthorizedJson()
     const rawBody = await req.json()
     const parsed = createDocumentSchema.parse(rawBody)
-    const doc = await db.legalDocument.create({ data: parsed })
+    const doc = await db.legalDocument.create({ data: { ...parsed, workspaceId } })
     // Auto-generate follow-up task when a doc is created
   if (doc.docType === 'nda' && doc.status === 'sent') {
     const due = new Date()
@@ -25,6 +30,7 @@ export async function POST(req: NextRequest) {
         dueDate: due,
         relatedDoc: doc.title,
         autoGen: true,
+        workspaceId,
       },
     })
   }
@@ -41,6 +47,7 @@ export async function POST(req: NextRequest) {
           dueDate: due,
           relatedDoc: doc.title,
           autoGen: true,
+          workspaceId,
         },
       })
     }
