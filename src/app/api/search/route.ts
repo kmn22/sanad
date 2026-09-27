@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { communicationWorkspaceWhere, getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
 
 // GET /api/search?q=query — global search across all entities
 export async function GET(req: NextRequest) {
+  const workspaceId = await getSessionWorkspaceId()
+  if (!workspaceId) return unauthorizedJson()
   const { searchParams } = new URL(req.url)
   const q = searchParams.get('q')?.trim() || ''
 
@@ -13,6 +16,7 @@ export async function GET(req: NextRequest) {
   const [clients, cases, documents, invoices, communications, tasks, compliance, terms, casebook] = await Promise.all([
     db.client.findMany({
       where: {
+        workspaceId,
         OR: [
           { name: { contains: q } },
           { phone: { contains: q } },
@@ -26,6 +30,7 @@ export async function GET(req: NextRequest) {
     }),
     db.legalCase.findMany({
       where: {
+        workspaceId,
         OR: [
           { title: { contains: q } },
           { clientName: { contains: q } },
@@ -40,6 +45,7 @@ export async function GET(req: NextRequest) {
     }),
     db.legalDocument.findMany({
       where: {
+        workspaceId,
         OR: [
           { title: { contains: q } },
           { parties: { contains: q } },
@@ -50,6 +56,7 @@ export async function GET(req: NextRequest) {
     }),
     db.invoice.findMany({
       where: {
+        workspaceId,
         OR: [
           { number: { contains: q } },
           { notes: { contains: q } },
@@ -61,10 +68,15 @@ export async function GET(req: NextRequest) {
     }),
     db.communication.findMany({
       where: {
-        OR: [
-          { subject: { contains: q } },
-          { body: { contains: q } },
-          { client: { name: { contains: q } } },
+        AND: [
+          communicationWorkspaceWhere(workspaceId),
+          {
+            OR: [
+              { subject: { contains: q } },
+              { body: { contains: q } },
+              { client: { name: { contains: q } } },
+            ],
+          },
         ],
       },
       take: 5,
@@ -72,6 +84,7 @@ export async function GET(req: NextRequest) {
     }),
     db.task.findMany({
       where: {
+        workspaceId,
         OR: [
           { title: { contains: q } },
           { description: { contains: q } },
@@ -81,6 +94,7 @@ export async function GET(req: NextRequest) {
     }),
     db.complianceItem.findMany({
       where: {
+        workspaceId,
         OR: [
           { title: { contains: q } },
           { entityName: { contains: q } },
