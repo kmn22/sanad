@@ -18,6 +18,9 @@ export async function POST(req: Request) {
   try {
     const rawBody = await req.text()
     const secret = process.env.STRIPE_WEBHOOK_SECRET
+    if (!secret && process.env.NODE_ENV === 'production') {
+      return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 })
+    }
     if (secret) {
       const signature = req.headers.get('stripe-signature')
       if (!isValidSignature(rawBody, signature, secret)) {

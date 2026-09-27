@@ -13,6 +13,6 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /app/.next/standalone ./
 RUN mkdir -p /app/db
-ENV PORT=3001 NODE_ENV=production
+ENV PORT=3001 HOSTNAME="0.0.0.0" NODE_ENV=production
 EXPOSE 3001
 CMD ["node", "server.js"]

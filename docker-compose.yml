@@ -26,3 +26,8 @@ services:
       start_period: 40s
     volumes:
       - ./prisma/db:/app/db
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
