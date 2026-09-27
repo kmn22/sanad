@@ -33,34 +33,109 @@ export async function POST(req: Request) {
     // 2. Hash password cryptographically
     const hashedPassword = hashPassword(password)
 
-    // 3. Create new Workspace for this user
-    const workspaceDomain = cleanEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, '') + '-' + Math.random().toString(36).substring(2, 6)
-    const workspace = await db.workspace.create({
-      data: {
-        name: `مكتب ${cleanName}`,
-        domain: workspaceDomain,
-      }
-    })
+    // Keep account creation atomic so a failed signup cannot leave orphaned data.
+    const { workspace, newUser } = await db.$transaction(async (tx) => {
+      const workspaceDomain = cleanEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, '') + '-' + Math.random().toString(36).substring(2, 6)
+      const workspace = await tx.workspace.create({
+        data: {
+          name: `مكتب ${cleanName}`,
+          domain: workspaceDomain,
+        }
+      })
 
-    // 4. Create the User record attached to the new Workspace with hashed password
-    const newUser = await db.user.create({
-      data: {
-        email: cleanEmail,
-        name: cleanName,
-        password: hashedPassword,
-        role: role,
-        workspaceId: workspace.id,
-      }
-    })
+      const newUser = await tx.user.create({
+        data: {
+          email: cleanEmail,
+          name: cleanName,
+          password: hashedPassword,
+          role,
+          workspaceId: workspace.id,
+        }
+      })
 
-    // 4. Create initial welcome notification
-    await db.notification.create({
-      data: {
-        userId: newUser.id,
-        title: 'مرحباً بك في منصة سَنَد',
-        message: 'تم تفعيل مساحة العمل الخاصة بك بنجاح. يمكنك الآن بدء إدارة القضايا وتوليد العقود.',
-        link: '/dashboard'
-      }
+      await tx.notification.create({
+        data: {
+          userId: newUser.id,
+          title: 'مرحباً بك في منصة سَنَد',
+          message: 'تم تفعيل مساحة العمل الخاصة بك بنجاح. يمكنك الآن بدء إدارة القضايا وتوليد العقود.',
+          link: '/dashboard'
+        }
+      })
+
+      const now = new Date()
+      const in180 = new Date(now.getTime() + 180 * 24 * 60 * 60 * 1000)
+      const in15 = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000)
+      const past180 = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000)
+      const past30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+
+      // Seed starter compliance items with user's actual firm name
+      await tx.complianceItem.createMany({
+        data: [
+          {
+            title: 'السجل التجاري للمنشأة',
+            category: 'cr',
+            entityName: `مكتب ${cleanName}`,
+            issueDate: past180,
+            expiryDate: in180,
+            status: 'active',
+            notes: 'تجديد سنوي عبر المركز السعودي للأعمال',
+            notifyDays: 30,
+            workspaceId: workspace.id,
+          },
+          {
+            title: 'اشتراك التأمينات الاجتماعية (GOSI)',
+            category: 'gosi',
+            entityName: `مكتب ${cleanName}`,
+            issueDate: past30,
+            expiryDate: in15,
+            status: 'expiring',
+            notes: 'سداد الاشتراك الشهري عبر نظام سداد',
+            notifyDays: 15,
+            workspaceId: workspace.id,
+          },
+        ]
+      })
+
+      // Seed initial client and case for the new workspace
+      const starterClient = await tx.client.create({
+        data: {
+          name: 'شركة التطوير الرقمي الحديثة',
+          type: 'corporate',
+          company: 'شركة التطوير الرقمي الحديثة',
+          phone: '+966500000000',
+          email: `client@${workspaceDomain}.sa`,
+          address: 'الرياض — طريق الملك فهد',
+          notes: 'عميل جديد — مسجل عبر المنصة',
+          workspaceId: workspace.id,
+        }
+      })
+
+      await tx.legalCase.create({
+        data: {
+          title: 'إعداد ومراجعة اتفاقية توريد وتراخيص برمجية',
+          clientId: starterClient.id,
+          clientName: starterClient.name,
+          caseType: 'contract',
+          stage: 'drafting',
+          priority: 'high',
+          value: 15000,
+          dueDate: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
+          notes: 'مراجعة شروط عدم الإفصاح والملكية الفكرية وفق الأنظمة السعودية',
+          workspaceId: workspace.id,
+        }
+      })
+
+      await tx.task.create({
+        data: {
+          title: 'استكمال إعداد بيانات المنشأة وبدء صياغة أول مستند',
+          status: 'todo',
+          priority: 'high',
+          dueDate: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000),
+          workspaceId: workspace.id,
+        }
+      })
+
+      return { workspace, newUser }
     })
 
     return NextResponse.json({

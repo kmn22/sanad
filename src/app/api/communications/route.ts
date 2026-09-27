@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { communicationWorkspaceWhere, getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
 
 export async function GET(req: NextRequest) {
+  const workspaceId = await getSessionWorkspaceId()
+  if (!workspaceId) return unauthorizedJson()
   const { searchParams } = new URL(req.url)
   const clientId = searchParams.get('clientId')
   const caseId = searchParams.get('caseId')
 
-  const where: any = {}
-  if (clientId) where.clientId = clientId
-  if (caseId) where.caseId = caseId
+  const where: any = { AND: [communicationWorkspaceWhere(workspaceId)] }
+  if (clientId) where.AND.push({ clientId })
+  if (caseId) where.AND.push({ caseId })
 
   const communications = await db.communication.findMany({
     where,
@@ -23,6 +26,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const workspaceId = await getSessionWorkspaceId()
+  if (!workspaceId) return unauthorizedJson()
   const body = await req.json()
   const c = await db.communication.create({
     data: {

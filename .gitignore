@@ -38,6 +38,10 @@ yarn-error.log*
 ts-state/
 ts-config/
 
+# Turbopack generated agent docs
+AGENTS.md
+CLAUDE.md
+
 # vercel
 .vercel
 
@@ -64,6 +68,7 @@ backups/
 *.tar.gz
 
 # Database
+/db/
 *.db-journal
 *.db-wal
 *.db-shm

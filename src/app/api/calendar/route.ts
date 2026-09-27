@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { communicationWorkspaceWhere, getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
 
 // GET /api/calendar — unified calendar view of all dated events
 export async function GET() {
+  const workspaceId = await getSessionWorkspaceId()
+  if (!workspaceId) return unauthorizedJson()
   const now = new Date()
   const in60 = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000)
   const ago30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
@@ -10,6 +13,7 @@ export async function GET() {
   const [cases, deadlines, complianceItems, communications] = await Promise.all([
     db.legalCase.findMany({
       where: {
+        workspaceId,
         OR: [
           { dueDate: { gte: ago30, lte: in60 } },
           { hearingDate: { gte: ago30, lte: in60 } },
@@ -18,13 +22,15 @@ export async function GET() {
       include: { client: { select: { name: true } } },
     }),
     db.task.findMany({
-      where: { dueDate: { gte: ago30, lte: in60 } },
+      where: { workspaceId, dueDate: { gte: ago30, lte: in60 } },
     }),
     db.complianceItem.findMany({
-      where: { expiryDate: { gte: ago30, lte: in60 } },
+      where: { workspaceId, expiryDate: { gte: ago30, lte: in60 } },
     }),
     db.communication.findMany({
-      where: { date: { gte: ago30, lte: in60 } },
+      where: {
+        AND: [communicationWorkspaceWhere(workspaceId), { date: { gte: ago30, lte: in60 } }],
+      },
       include: { client: { select: { name: true } } },
       take: 50,
     }),

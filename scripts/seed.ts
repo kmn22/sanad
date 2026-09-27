@@ -2,6 +2,7 @@
 // Generates a lived-in dataset: clients, cases, documents, invoices,
 // compliance, tasks, time entries, communications, and daily briefs.
 import { PrismaClient } from '@prisma/client'
+import { hashPassword } from '../src/lib/auth/password'
 
 const db = new PrismaClient()
 
@@ -14,6 +15,7 @@ function daysFromNow(days: number, hour = 0): Date {
 
 async function main() {
   // Wipe in dependency order
+  await db.notification.deleteMany()
   await db.communication.deleteMany()
   await db.timeEntry.deleteMany()
   await db.invoice.deleteMany()
@@ -24,9 +26,21 @@ async function main() {
   await db.complianceItem.deleteMany()
   await db.client.deleteMany()
   await db.user.deleteMany()
+  await db.workspace.deleteMany()
+
+  const workspace = await db.workspace.create({
+    data: { name: 'مكتب أحمد القحطاني للمحاماة', domain: 'sanad-demo' },
+  })
+  const ws = { workspaceId: workspace.id }
 
   await db.user.create({
-    data: { email: 'ahmed@sanad.sa', name: 'أحمد القحطاني', role: 'lawyer' },
+    data: {
+      email: 'ahmed@sanad.sa',
+      name: 'أحمد القحطاني',
+      role: 'lawyer',
+      password: hashPassword('admin'),
+      ...ws,
+    },
   })
 
   // ─── Clients (15: mix of individuals + corporates) ────────────────
@@ -47,7 +61,7 @@ async function main() {
     { name: 'مؤسسة النخيل للمقاولات', type: 'corporate', company: 'مؤسسة النخيل للمقاولات', nationalId: '4030998877', phone: '+966114556677', email: 'projects@palmcontracting.sa', address: 'الرياض، الصناعية الثانية', notes: 'مطالبات مالية مع مقاول من الباطن' },
     { name: 'خالد العتيبي', type: 'individual', nationalId: '1067891234', phone: '+966554567123', email: 'khaled.utibi@gmail.com', address: 'الرياض', notes: 'سائق المكتب — عقد عمل' },
   ]
-  const clients = await Promise.all(clientSeeds.map((c) => db.client.create({ data: c })))
+  const clients = await Promise.all(clientSeeds.map((c) => db.client.create({ data: { ...c, ...ws } })))
   const C = Object.fromEntries(clients.map((c, i) => [clientSeeds[i].name, c.id]))
 
   // ─── Compliance items (12: varied expiry windows) ────────────────
@@ -65,7 +79,7 @@ async function main() {
     { title: 'تأمين طبي للموظفين', category: 'license', entityName: 'مكتب أحمد القحطاني للمحاماة', issueDate: daysFromNow(-180), expiryDate: daysFromNow(185), status: 'active', notifyDays: 45 },
     { title: 'تجديد جواز سفر', category: 'license', entityName: 'أحمد القحطاني', issueDate: daysFromNow(-1800), expiryDate: daysFromNow(-10), status: 'expired', notes: 'انتهى — للتجديد فوراً', notifyDays: 60 },
   ]
-  for (const c of complianceItems) await db.complianceItem.create({ data: c })
+  for (const c of complianceItems) await db.complianceItem.create({ data: { ...c, ...ws } })
 
   // ─── Cases (18: across all stages, with court details) ───────────
   const caseSeeds: Array<any> = [
@@ -88,7 +102,7 @@ async function main() {
     { title: 'تعديل عقد تأسيس — الخليج التقنية', clientId: C['منشأة الخليج التقنية'], clientName: 'منشأة الخليج التقنية', caseType: 'corporate', stage: 'drafting', priority: 'normal', dueDate: daysFromNow(40), value: 9000, notes: 'تعديل نسب الملكية' },
     { title: 'استشارة عقد عمل — الدوسري', clientId: C['نورة الدوسري'], clientName: 'نورة الدوسري', caseType: 'consultation', stage: 'closed', priority: 'low', value: 0, notes: 'مراجعة عقد التسويق' },
   ]
-  const createdCases = await Promise.all(caseSeeds.map((c) => db.legalCase.create({ data: c })))
+  const createdCases = await Promise.all(caseSeeds.map((c) => db.legalCase.create({ data: { ...c, ...ws } })))
 
   // ─── Documents (14: varied types & statuses) ─────────────────────
   const docs = [
@@ -107,7 +121,7 @@ async function main() {
     { title: 'عقود التوريد — أرامكو (دفعة 1)', docType: 'msa', status: 'active', parties: 'أرامكو ↔ 4 موردين', signedDate: daysFromNow(-60), expiryDate: daysFromNow(305), caseId: createdCases[7].id, clientId: C['شركة أرامكو السعودية للخدمات'] },
     { title: 'اتفاقية موزعين — برايتسعود (مسودة)', docType: 'contract_draft', status: 'draft', parties: 'برايتسعود ↔ موزعون 3 مدن', caseId: createdCases[13].id, clientId: C['برايتسعود التجارية'] },
   ]
-  for (const d of docs) await db.legalDocument.create({ data: d })
+  for (const d of docs) await db.legalDocument.create({ data: { ...d, ...ws } })
 
   // ─── Tasks (22) ──────────────────────────────────────────────────
   const tasks = [
@@ -134,7 +148,7 @@ async function main() {
     { title: 'تحضير لقاء الفيصلية', description: 'لقاء الأسبوع المقبل — تحضير ملخص قضايا', status: 'todo', priority: 'normal', dueDate: daysFromNow(5) },
     { title: 'أرشفة قضية الحارثي', description: 'مغلقة — أرشفة في النظام', status: 'done', priority: 'low', dueDate: daysFromNow(-5), caseId: createdCases[8].id },
   ]
-  for (const t of tasks) await db.task.create({ data: t })
+  for (const t of tasks) await db.task.create({ data: { ...t, ...ws } })
 
   // ─── Time entries (35: spread across last 14 days) ───────────────
   const timeEntries: Array<any> = []
@@ -171,7 +185,7 @@ async function main() {
       })
     }
   }
-  for (const te of timeEntries) await db.timeEntry.create({ data: te })
+  for (const te of timeEntries) await db.timeEntry.create({ data: { ...te, ...ws } })
 
   // ─── Invoices (12: draft/sent/paid/overdue) ──────────────────────
   function inv(n: number, opts: any) {
@@ -199,7 +213,7 @@ async function main() {
     inv(11, { clientId: C['مؤسسة النخيل للمقاولات'], caseId: createdCases[11].id, status: 'sent', subtotal: 28000, issueDate: daysFromNow(-5), dueDate: daysFromNow(25) }),
     inv(12, { clientId: C['سارة بنت فهد'], caseId: createdCases[10].id, status: 'paid', subtotal: 1500, issueDate: daysFromNow(-20), dueDate: daysFromNow(-5), paidAt: daysFromNow(-3), paidAmount: 1725 }),
   ]
-  for (const i of invoices) await db.invoice.create({ data: i })
+  for (const i of invoices) await db.invoice.create({ data: { ...i, ...ws } })
 
   // ─── Communications (24) ─────────────────────────────────────────
   const comms: Array<any> = [

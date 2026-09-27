@@ -150,27 +150,6 @@ export default function LoginPage() {
                 </div>
               )}
             </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              disabled={loading}
-              onClick={async () => {
-                setLoading(true)
-                try {
-                  await signIn('credentials', {
-                    email: 'ahmed@sanad.sa',
-                    password: 'admin',
-                    redirect: false,
-                  })
-                } catch {}
-                toast.success('تم الانتقال إلى مساحة العمل التجريبية')
-                window.location.href = '/dashboard'
-              }}
-              className="w-full h-11 border-slate-700 bg-slate-800/40 hover:bg-slate-800 text-slate-300 text-sm font-medium transition-all disabled:opacity-60 cursor-pointer"
-            >
-              استعراض سريع للمنصة (حساب تجريبي)
-            </Button>
           </form>
 
           <div className="mt-8 pt-8 border-t border-slate-800 text-center">
