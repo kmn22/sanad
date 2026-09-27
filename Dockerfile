@@ -1,54 +1,18 @@
-FROM node:20-alpine AS base
-
-# Install dependencies only when needed
-FROM base AS deps
-RUN apk add --no-cache libc6-compat
+FROM node:20-slim AS builder
 WORKDIR /app
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json ./
-RUN npm ci
-
-# Rebuild the source code only when needed
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+COPY prisma ./prisma
+RUN npm ci --legacy-peer-deps || npm install --legacy-peer-deps
 COPY . .
+RUN npx prisma generate && npm run build
+RUN cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/
 
-# Environment variables must be present at build time for Next.js
-ENV NEXT_TELEMETRY_DISABLED 1
-
-# Generate Prisma Client
-RUN npx prisma generate
-
-RUN npm run build
-
-# Production image, copy all the files and run next
-FROM base AS runner
+FROM node:20-slim
 WORKDIR /app
-
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
-
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-# Copy Prisma schema and generated client if necessary, or just run from standalone
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/prisma ./prisma
-
-# Set the correct permission for prerender cache
-RUN mkdir .next
-RUN chown nextjs:nodejs .next
-
-# Automatically leverage output traces to reduce image size
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-USER nextjs
-
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /app/.next/standalone ./
+RUN mkdir -p /app/db
+ENV PORT=3001 NODE_ENV=production
 EXPOSE 3001
-
-ENV PORT 3001
-ENV HOSTNAME "0.0.0.0"
-
-# server.js is created by next build from the standalone output
 CMD ["node", "server.js"]

@@ -13,10 +13,10 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3001
-      - DATABASE_URL=file:./db/custom.db
-      - NEXTAUTH_URL=${NEXTAUTH_URL:-https://sanad.tail963524.ts.net}
+      - DATABASE_URL=file:/app/db/custom.db
+      - NEXTAUTH_URL=https://sanad.tail963524.ts.net
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:?NEXTAUTH_SECRET must be set}
       - OLLAMA_URL=${OLLAMA_URL:-http://host.docker.internal:11434}
       - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5:14b}
     volumes:
-      - ./prisma/db:/app/prisma/db
+      - ./prisma/db:/app/db
