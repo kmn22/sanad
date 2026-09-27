@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { OLLAMA_URL, OLLAMA_MODEL } from '@/lib/ai/ollama'
 import { db } from '@/lib/db'
 
 // Verified repository of recent official gazette (Umm Al-Qura) and ministerial updates
@@ -53,12 +54,12 @@ async function summarizeWithAi(rawText: string, title: string): Promise<string> 
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 4000)
 
-    const response = await fetch('http://127.0.0.1:11434/api/generate', {
+    const response = await fetch(`${OLLAMA_URL}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: controller.signal,
       body: JSON.stringify({
-        model: 'qwen2.5:14b',
+        model: OLLAMA_MODEL,
         prompt: `أنت مستشار قانوني سعودي. لخص القرار النظامي التالي في نقطتين موجزتين توضحان الأثر العملي على المحامين والمنشآت السعودية:\n\nالعنوان: ${title}\nالنص:\n${rawText}`,
         stream: false,
       }),
