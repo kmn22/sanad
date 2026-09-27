@@ -12,7 +12,8 @@ export async function proxy(req: NextRequest) {
     pathname === '/api' ||
     pathname === '/api/health' ||
     pathname === '/api/auth/register' ||
-    pathname.startsWith('/api/auth/')
+    pathname.startsWith('/api/auth/') ||
+    pathname.startsWith('/api/billing/webhook')
 
   if (pathname.startsWith('/api/') && !publicApiPath) {
     const token = await getToken({
