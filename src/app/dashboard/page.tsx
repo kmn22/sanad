@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Toaster as SonnerToaster } from '@/components/ui/sonner'
 import { useLang } from '@/lib/sanad/i18n'
@@ -34,6 +36,8 @@ type Persona = 'lawyer' | 'student'
 const PERSONA_STORAGE_KEY = 'sanad.persona'
 
 export default function Home() {
+  const router = useRouter()
+  const { data: session, status } = useSession()
   const { lang, t } = useLang()
   const [persona, setPersona] = useState<Persona>('lawyer')
   const [view, setView] = useState<string>('today')
@@ -41,13 +45,19 @@ export default function Home() {
   const [mounted, setMounted] = useState(false)
   const [paletteOpen, setPaletteOpen] = useState(false)
 
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.replace('/login')
+    }
+  }, [status, router])
+
   const { data: dashboardData, isLoading: isLoadingLawyer, refetch: refetchLawyer, isRefetching: isRefetchingLawyer } = useQuery<DashboardData>({
     queryKey: ['dashboard', 'lawyer'],
     queryFn: async () => {
       // Use Server Action instead of fetch
       return await getLawyerDashboard() as unknown as DashboardData
     },
-    enabled: persona === 'lawyer',
+    enabled: status === 'authenticated' && persona === 'lawyer',
   })
 
   const { data: studentDashboardData, isLoading: isLoadingStudent, refetch: refetchStudent, isRefetching: isRefetchingStudent } = useQuery<StudentDashboardData>({
@@ -56,7 +66,7 @@ export default function Home() {
       // Use Server Action instead of fetch
       return await getStudentDashboard() as unknown as StudentDashboardData
     },
-    enabled: persona === 'student',
+    enabled: status === 'authenticated' && persona === 'student',
   })
 
   const data = dashboardData || null
@@ -125,7 +135,18 @@ export default function Home() {
   const now = new Date()
   const timeLocale = lang === 'ar' ? 'ar-SA' : 'en-GB'
   const timeStr = now.toLocaleTimeString(timeLocale, { hour: '2-digit', minute: '2-digit' })
-  const dateStr = now.toLocaleDateString(timeLocale, { weekday: 'short', day: 'numeric', month: 'short' })
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background" dir="rtl">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 rounded-2xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center animate-pulse">
+            <span className="text-2xl font-bold text-emerald-400">س</span>
+          </div>
+          <p className="text-sm text-muted-foreground animate-pulse">جاري التحقق من مساحة العمل...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background relative overflow-hidden" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
