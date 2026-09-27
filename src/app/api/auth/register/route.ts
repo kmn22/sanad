@@ -14,9 +14,11 @@ function getClientIp(req: Request): string {
 export async function POST(req: Request) {
   try {
     const ip = getClientIp(req)
-    const { success } = rateLimit(`register:${ip}`, 5, 15 * 60 * 1000)
-    if (!success) {
-      return NextResponse.json({ error: 'Too many registration attempts. Please try again later.' }, { status: 429 })
+    if (ip !== 'unknown') {
+      const ipLimit = rateLimit(`register:ip:${ip}`, 10, 15 * 60 * 1000)
+      if (!ipLimit.success) {
+        return NextResponse.json({ error: 'Too many registration attempts. Please try again later.' }, { status: 429 })
+      }
     }
 
     const body = await req.json()
@@ -26,11 +28,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'البريد الإلكتروني غير صالح' }, { status: 400 })
     }
 
+    const cleanEmail = email.toLowerCase().trim()
+    const emailLimit = rateLimit(`register:email:${cleanEmail}`, 3, 60 * 60 * 1000)
+    if (!emailLimit.success) {
+      return NextResponse.json({ error: 'Too many registration attempts for this email. Please try again later.' }, { status: 429 })
+    }
+
     if (!password || password.length < 6) {
       return NextResponse.json({ error: 'كلمة المرور يجب أن لا تقل عن 6 خانات' }, { status: 400 })
     }
 
-    const cleanEmail = email.toLowerCase().trim()
     const cleanName = name?.trim() || cleanEmail.split('@')[0]
     const role = persona === 'student' ? 'student' : 'lawyer'
 
