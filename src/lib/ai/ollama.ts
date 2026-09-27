@@ -1,5 +1,5 @@
-const OLLAMA_URL = process.env.OLLAMA_URL || 'http://host.docker.internal:11434'
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:14b'
+export const OLLAMA_URL = process.env.OLLAMA_URL || 'http://host.docker.internal:11434'
+export const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:14b'
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant'

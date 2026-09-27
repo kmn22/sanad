@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { OLLAMA_URL, OLLAMA_MODEL } from '@/lib/ai/ollama'
 
 export async function POST(req: Request) {
   try {
@@ -22,13 +23,13 @@ export async function POST(req: Request) {
     }
 
     // Call local Ollama Qwen 2.5 14B model
-    const response = await fetch('http://127.0.0.1:11434/api/generate', {
+    const response = await fetch(`${OLLAMA_URL}/api/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'qwen2.5:14b', // Using the recommended model for Sanad
+        model: OLLAMA_MODEL,
         prompt: `System: ${systemPrompt}\n\nDocument Text:\n${documentText}`,
         stream: false,
       }),
