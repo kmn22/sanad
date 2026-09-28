@@ -1,3 +1,5 @@
+FROM postgres:16-bookworm AS postgres-tools
+
 FROM node:22-slim AS builder
 WORKDIR /app
 RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
@@ -10,7 +12,8 @@ RUN cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/
 
 FROM node:22-slim
 WORKDIR /app
-RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y openssl libpq5 libzstd1 liblz4-1 && rm -rf /var/lib/apt/lists/*
+COPY --from=postgres-tools /usr/lib/postgresql/16/bin/pg_dump /usr/local/bin/pg_dump
 COPY --from=builder /app/.next/standalone ./
 RUN mkdir -p /app/db
 ENV PORT=3001 HOSTNAME="0.0.0.0" NODE_ENV=production

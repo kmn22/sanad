@@ -66,12 +66,15 @@ services:
       - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5:14b}
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
+      - BACKUP_ENCRYPTION_KEY=${BACKUP_ENCRYPTION_KEY:?BACKUP_ENCRYPTION_KEY must be set}
     healthcheck:
       test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3001/api/health').then(r=>{if(!r.ok)throw new Error(r.status)}).catch(()=>process.exit(1))\""]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    volumes:
+      - ./backups:/app/backups
     logging:
       driver: json-file
       options:
