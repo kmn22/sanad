@@ -3,10 +3,14 @@
   "version": "1.0.0-alpha.1",
   "description": "سند — منصة العمليات اليومية للامتثال والمحاماة (Sanad Legal Platform)",
   "private": true,
+  "packageManager": "npm@10.9.4",
+  "engines": {
+    "node": ">=22.12 <23"
+  },
   "scripts": {
     "dev": "next dev -p 3001 2>&1 | tee dev.log",
     "build": "next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/ && mkdir -p .next/standalone/prisma && cp -r prisma/. .next/standalone/prisma/",
-    "start": "NODE_ENV=production bun .next/standalone/server.js 2>&1 | tee server.log",
+    "start": "NODE_ENV=production node .next/standalone/server.js 2>&1 | tee server.log",
     "start:pm2": "NODE_ENV=production pm2 start .next/standalone/server.js --name sanad --update-env",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
@@ -89,6 +93,13 @@
     "vaul": "^1.1.2",
     "zod": "^4.0.2",
     "zustand": "^5.0.6"
+  },
+  "overrides": {
+    "deepmerge-ts": "8.0.2",
+    "js-yaml": "5.4.2",
+    "nanoid": "6.0.1",
+    "postcss": "8.5.28",
+    "prismjs": "1.30.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
