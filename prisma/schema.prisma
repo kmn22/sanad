@@ -12,14 +12,18 @@ datasource db {
 }
 
 model User {
-  id          String   @id @default(cuid())
-  email       String   @unique
-  name        String?
-  password    String?
-  role        String   @default("lawyer") // lawyer | sme_owner | hr | freelancer | student
-  workspaceId String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                  String    @id @default(cuid())
+  email               String    @unique
+  name                String?
+  password            String?
+  role                String    @default("lawyer") // admin | workspace_owner | lawyer | staff | student | auditor
+  workspaceId         String?
+  emailVerified       DateTime?
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+  passwordChangedAt   DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   workspace Workspace? @relation(fields: [workspaceId], references: [id])
 
@@ -34,15 +38,24 @@ model Workspace {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  users        User[]
-  clients      Client[]
-  cases        LegalCase[]
-  documents    LegalDocument[]
-  tasks        Task[]
-  invoices     Invoice[]
-  compliance   ComplianceItem[]
-  timeEntries  TimeEntry[]
-  subscription Subscription?    @relation(fields: [subscriptionId], references: [id])
+  users          User[]
+  clients        Client[]
+  cases          LegalCase[]
+  documents      LegalDocument[]
+  tasks          Task[]
+  invoices       Invoice[]
+  compliance     ComplianceItem[]
+  timeEntries    TimeEntry[]
+  courses        Course[]
+  lectures       Lecture[]
+  deadlines      AcademicDeadline[]
+  legalTerms     LegalTerm[]
+  caseEntries    CaseEntry[]
+  reviewSessions ReviewSession[]
+  researchItems  ResearchItem[]
+  invitations    Invitation[]
+  auditLogs      AuditLog[]
+  subscription   Subscription?      @relation(fields: [subscriptionId], references: [id])
 }
 
 model Notification {
@@ -223,23 +236,26 @@ model DailyBrief {
 // Research Hub — saved bookmarks, legal precedents, statutes and custom dossiers
 model ResearchItem {
   id          String   @id @default(cuid())
+  workspaceId String?
   title       String
   content     String
   type        String   @default("statute") // statute | precedent | regulation | note | doctrine
   category    String   @default("general") // commercial | civil | labor | tax | corporate | procedural
-  source      String?  // statutory citation e.g. "نظام المعاملات المدنية - م/179"
-  tags        String?  // comma-separated tags e.g. "شرط جزائي, تعويض"
-  notes       String?  // personal study or case citation notes
-  caseId      String?  // optional link to a LegalCase
+  source      String? // statutory citation e.g. "نظام المعاملات المدنية - م/179"
+  tags        String? // comma-separated tags e.g. "شرط جزائي, تعويض"
+  notes       String? // personal study or case citation notes
+  caseId      String? // optional link to a LegalCase
   url         String?
   isPinned    Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  workspace Workspace? @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
   @@index([type])
   @@index([category])
 }
-
 
 // ===== Invoicing =====
 model Invoice {
@@ -300,23 +316,28 @@ model Communication {
 // ===== Student mode tables =====
 
 model Course {
-  id         String   @id @default(cuid())
-  title      String
-  code       String?
-  instructor String?
-  semester   String?
-  credits    Int?
-  color      String   @default("#0F5132")
-  notes      String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          String   @id @default(cuid())
+  workspaceId String?
+  title       String
+  code        String?
+  instructor  String?
+  semester    String?
+  credits     Int?
+  color       String   @default("#0F5132")
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
+  workspace Workspace?         @relation(fields: [workspaceId], references: [id])
   lectures  Lecture[]
   deadlines AcademicDeadline[]
+
+  @@index([workspaceId])
 }
 
 model Lecture {
   id          String   @id @default(cuid())
+  workspaceId String?
   courseId    String
   title       String
   lectureDate DateTime
@@ -327,44 +348,56 @@ model Lecture {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id])
+  course    Course     @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
+  @@index([workspaceId])
   @@index([courseId])
 }
 
 model AcademicDeadline {
-  id        String   @id @default(cuid())
-  courseId  String?
-  title     String
-  type      String
-  dueDate   DateTime
-  status    String   @default("todo")
-  priority  String   @default("normal")
-  weight    Float?
-  notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  workspaceId String?
+  courseId    String?
+  title       String
+  type        String
+  dueDate     DateTime
+  status      String   @default("todo")
+  priority    String   @default("normal")
+  weight      Float?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  course Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id])
+  course    Course?    @relation(fields: [courseId], references: [id], onDelete: SetNull)
 
+  @@index([workspaceId])
   @@index([courseId])
   @@index([dueDate])
 }
 
 model LegalTerm {
-  id         String   @id @default(cuid())
-  term       String   @unique
-  definition String
-  category   String   @default("general")
-  origin     String?
-  example    String?
-  mastery    String   @default("learning")
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          String   @id @default(cuid())
+  workspaceId String?
+  term        String
+  definition  String
+  category    String   @default("general")
+  origin      String?
+  example     String?
+  mastery     String   @default("learning")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace? @relation(fields: [workspaceId], references: [id])
+
+  @@unique([workspaceId, term])
+  @@index([workspaceId])
 }
 
 model CaseEntry {
   id           String   @id @default(cuid())
+  workspaceId  String?
   caseName     String
   citation     String?
   court        String?
@@ -375,10 +408,15 @@ model CaseEntry {
   rating       Int      @default(3)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  workspace Workspace? @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
 }
 
 model ReviewSession {
   id            String   @id @default(cuid())
+  workspaceId   String?
   mode          String
   sourceType    String
   sourceLabel   String
@@ -389,6 +427,78 @@ model ReviewSession {
   score         Float?
   date          DateTime @default(now())
   createdAt     DateTime @default(now())
+
+  workspace Workspace? @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
+}
+
+model Invitation {
+  id          String    @id @default(cuid())
+  tokenHash   String    @unique
+  email       String
+  role        String    @default("staff")
+  workspaceId String
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdById String
+  createdAt   DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([email])
+  @@index([expiresAt])
+}
+
+model VerificationToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  email     String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([expiresAt])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  email     String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([email])
+  @@index([expiresAt])
+}
+
+model AuthRateLimit {
+  id           String    @id @default(cuid())
+  key          String    @unique
+  attempts     Int       @default(0)
+  windowStart  DateTime  @default(now())
+  blockedUntil DateTime?
+  updatedAt    DateTime  @updatedAt
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  workspaceId String?
+  userId      String?
+  action      String
+  entityType  String?
+  entityId    String?
+  ipAddress   String?
+  metadata    String?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([createdAt])
 }
 
 // ===== Phase 3: SaaS & Digital Signatures =====

@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ollamaChat, SAUDI_PROMPTS } from '@/lib/ai/ollama';
 import { db } from '@/lib/db';
+import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace';
 
 export async function POST(req: NextRequest) {
   try {
+    const workspaceId = await getSessionWorkspaceId();
+    if (!workspaceId) return unauthorizedJson();
     const body = await req.json();
     const { notes, category = 'general' } = body;
 
@@ -60,7 +63,7 @@ export async function POST(req: NextRequest) {
       if (!item.term || !item.definition) continue;
       
       const termRecord = await db.legalTerm.upsert({
-        where: { term: item.term.trim() },
+        where: { workspaceId_term: { workspaceId, term: item.term.trim() } },
         update: {
           definition: item.definition.trim(),
           category: item.category || category,
@@ -69,6 +72,7 @@ export async function POST(req: NextRequest) {
           mastery: 'learning'
         },
         create: {
+          workspaceId,
           term: item.term.trim(),
           definition: item.definition.trim(),
           category: item.category || category,

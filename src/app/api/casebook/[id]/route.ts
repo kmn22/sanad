@@ -1,15 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { getSessionWorkspaceId, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const workspaceId = await getSessionWorkspaceId()
+  if (!workspaceId) return unauthorizedJson()
   const { id } = await params
+  const existing = await db.caseEntry.findFirst({ where: { id, workspaceId }, select: { id: true } })
+  if (!existing) return notFoundJson()
   const body = await req.json()
-  const updated = await db.caseEntry.update({ where: { id }, data: body })
+  const updated = await db.caseEntry.update({ where: { id }, data: { ...body, id: undefined, workspaceId: undefined } })
   return NextResponse.json(updated)
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const workspaceId = await getSessionWorkspaceId()
+  if (!workspaceId) return unauthorizedJson()
   const { id } = await params
-  await db.caseEntry.delete({ where: { id } })
+  const result = await db.caseEntry.deleteMany({ where: { id, workspaceId } })
+  if (!result.count) return notFoundJson()
   return NextResponse.json({ ok: true })
 }

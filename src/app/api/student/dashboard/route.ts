@@ -1,18 +1,21 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
 
 // GET /api/student/dashboard — single payload for the student morning view
 export async function GET() {
+  const workspaceId = await getSessionWorkspaceId()
+  if (!workspaceId) return unauthorizedJson()
   const now = new Date()
   const in7 = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
   const in30 = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
 
   const [courses, lectures, deadlines, terms, cases, briefs] = await Promise.all([
-    db.course.findMany({ include: { lectures: { orderBy: { lectureDate: 'desc' }, take: 3 }, deadlines: true }, orderBy: { createdAt: 'asc' } }),
-    db.lecture.findMany({ orderBy: { lectureDate: 'desc' }, take: 20, include: { course: true } }),
-    db.academicDeadline.findMany({ orderBy: { dueDate: 'asc' }, include: { course: true } }),
-    db.legalTerm.findMany({ orderBy: { createdAt: 'desc' } }),
-    db.caseEntry.findMany({ orderBy: { rating: 'desc' } }),
+    db.course.findMany({ where: { workspaceId }, include: { lectures: { where: { workspaceId }, orderBy: { lectureDate: 'desc' }, take: 3 }, deadlines: { where: { workspaceId } } }, orderBy: { createdAt: 'asc' } }),
+    db.lecture.findMany({ where: { workspaceId }, orderBy: { lectureDate: 'desc' }, take: 20, include: { course: true } }),
+    db.academicDeadline.findMany({ where: { workspaceId }, orderBy: { dueDate: 'asc' }, include: { course: true } }),
+    db.legalTerm.findMany({ where: { workspaceId }, orderBy: { createdAt: 'desc' } }),
+    db.caseEntry.findMany({ where: { workspaceId }, orderBy: { rating: 'desc' } }),
     db.dailyBrief.findMany({ orderBy: { publishedAt: 'desc' }, take: 5 }),
   ])
 

@@ -1,21 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { INITIAL_RESEARCH_ITEMS } from '@/lib/sanad/research/seedData'
+import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
 
 // GET /api/research?q=...&category=...&type=...
 export async function GET(req: NextRequest) {
   try {
+    const workspaceId = await getSessionWorkspaceId()
+    if (!workspaceId) return unauthorizedJson()
     const { searchParams } = new URL(req.url)
     const q = searchParams.get('q') || ''
     const category = searchParams.get('category') || ''
     const type = searchParams.get('type') || ''
 
     // Check count and seed if empty
-    const count = await db.researchItem.count()
+    const count = await db.researchItem.count({ where: { workspaceId } })
     if (count === 0) {
       for (const item of INITIAL_RESEARCH_ITEMS) {
         await db.researchItem.create({
           data: {
+            workspaceId,
             title: item.title,
             content: item.content,
             type: item.type,
@@ -29,7 +33,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const where: any = {}
+    const where: any = { workspaceId }
     if (category && category !== 'all') {
       where.category = category
     }
@@ -68,6 +72,8 @@ export async function GET(req: NextRequest) {
 // POST /api/research - Save a new research item or bookmark
 export async function POST(req: NextRequest) {
   try {
+    const workspaceId = await getSessionWorkspaceId()
+    if (!workspaceId) return unauthorizedJson()
     const body = await req.json()
     const { title, content, type = 'note', category = 'general', source, tags, notes, caseId, url, isPinned = false } = body
 
@@ -77,6 +83,7 @@ export async function POST(req: NextRequest) {
 
     const item = await db.researchItem.create({
       data: {
+        workspaceId,
         title: title.trim(),
         content: content.trim(),
         type,
