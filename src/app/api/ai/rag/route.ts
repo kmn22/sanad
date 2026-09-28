@@ -2,16 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ollamaChat } from '@/lib/ai/ollama';
 import { db } from '@/lib/db';
 import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace';
+import { readJsonLimited, safeErrorResponse } from '@/lib/http';
 
 export async function POST(req: NextRequest) {
   try {
     const workspaceId = await getSessionWorkspaceId();
     if (!workspaceId) return unauthorizedJson();
-    const body = await req.json();
-    const { prompt } = body;
+    const { prompt } = await readJsonLimited<{ prompt?: unknown }>(req, 16 * 1024);
 
-    if (!prompt || !prompt.trim()) {
-      return NextResponse.json({ error: 'Prompt content is required' }, { status: 400 });
+    if (typeof prompt !== 'string' || !prompt.trim() || prompt.length > 8000) {
+      return NextResponse.json({ error: 'Prompt must be between 1 and 8000 characters' }, { status: 400 });
     }
 
     // Poor-man's RAG: Fetch recent cases to use as context
@@ -59,8 +59,8 @@ ${contextStr}
     }
 
     return NextResponse.json({ success: true, reply: replyContent });
-  } catch (error: any) {
+  } catch (error) {
     console.error("AI RAG Route failed:", error);
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    return safeErrorResponse(error);
   }
 }

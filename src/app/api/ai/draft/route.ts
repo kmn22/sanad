@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ollamaChat, ollamaChatStream, SAUDI_PROMPTS } from '@/lib/ai/ollama';
+import { readJsonLimited, safeErrorResponse } from '@/lib/http';
 
 export async function POST(req: NextRequest) {
   const stream = req.nextUrl.searchParams.get('stream') === '1';
 
   try {
-    const body = await req.json();
-    const { prompt } = body;
+    const { prompt } = await readJsonLimited<{ prompt?: unknown }>(req, 32 * 1024);
 
-    if (!prompt || !prompt.trim()) {
-      return NextResponse.json({ error: 'Prompt content is required' }, { status: 400 });
+    if (typeof prompt !== 'string' || !prompt.trim() || prompt.length > 20_000) {
+      return NextResponse.json({ error: 'Prompt must be between 1 and 20000 characters' }, { status: 400 });
     }
 
     const messages = [
@@ -55,9 +55,9 @@ export async function POST(req: NextRequest) {
       draftContent = simulateDraft(prompt);
     }
     return NextResponse.json({ success: true, draft: draftContent });
-  } catch (error: any) {
+  } catch (error) {
     console.error('AI Draft Route failed:', error);
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    return safeErrorResponse(error);
   }
 }
 

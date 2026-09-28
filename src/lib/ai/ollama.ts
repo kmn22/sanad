@@ -39,7 +39,7 @@ export async function ollamaChat(messages: ChatMessage[], opts: { json?: boolean
     signal: AbortSignal.timeout(120_000),
   })
   if (!res.ok) {
-    throw new Error(`Ollama ${res.status}: ${await res.text()}`)
+    throw new Error(`Ollama request failed with status ${res.status}`)
   }
   const data = await res.json()
   return data.choices?.[0]?.message?.content ?? ''
@@ -61,7 +61,7 @@ export async function* ollamaChatStream(messages: ChatMessage[]): AsyncGenerator
     signal: AbortSignal.timeout(180_000),
   })
   if (!res.ok || !res.body) {
-    throw new Error(`Ollama stream ${res.status}: ${await res.text().catch(() => '')}`)
+    throw new Error(`Ollama stream failed with status ${res.status}`)
   }
   const reader = res.body.getReader()
   const decoder = new TextDecoder()

@@ -1,12 +1,21 @@
 import { NextResponse } from 'next/server'
 import { OLLAMA_URL, OLLAMA_MODEL } from '@/lib/ai/ollama'
+import { readJsonLimited, safeErrorResponse } from '@/lib/http'
+import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
+
+const ANALYSIS_TYPES = new Set(['ocr_id', 'summarize_judgment', 'legal_analysis'])
 
 export async function POST(req: Request) {
   try {
-    const { documentText, type } = await req.json()
+    const workspaceId = await getSessionWorkspaceId()
+    if (!workspaceId) return unauthorizedJson()
+    const { documentText, type = 'legal_analysis' } = await readJsonLimited<{ documentText?: unknown; type?: string }>(req, 128 * 1024)
 
-    if (!documentText) {
-      return NextResponse.json({ error: 'documentText is required' }, { status: 400 })
+    if (typeof documentText !== 'string' || !documentText.trim() || documentText.length > 100_000) {
+      return NextResponse.json({ error: 'documentText must be between 1 and 100000 characters' }, { status: 400 })
+    }
+    if (!ANALYSIS_TYPES.has(type)) {
+      return NextResponse.json({ error: 'Invalid analysis type' }, { status: 400 })
     }
 
     let systemPrompt = ''
@@ -33,6 +42,7 @@ export async function POST(req: Request) {
         prompt: `System: ${systemPrompt}\n\nDocument Text:\n${documentText}`,
         stream: false,
       }),
+      signal: AbortSignal.timeout(120_000),
     })
 
     if (!response.ok) {
@@ -42,11 +52,8 @@ export async function POST(req: Request) {
     const data = await response.json()
     
     return NextResponse.json({ result: data.response })
-  } catch (error: any) {
+  } catch (error) {
     console.error('AI Analysis Error:', error)
-    return NextResponse.json(
-      { error: 'Failed to process document analysis', details: error.message },
-      { status: 500 }
-    )
+    return safeErrorResponse(error)
   }
 }
