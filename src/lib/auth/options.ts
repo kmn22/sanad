@@ -20,7 +20,7 @@ export const authOptions: NextAuthOptions = {
         if (!(await rateLimit(limitKey, 5, 15 * 60 * 1000, 30 * 60 * 1000)).success) return null
         const dbUser = await db.user.findUnique({ where: { email: cleanEmail } })
 
-        if (!dbUser?.password || (dbUser.lockedUntil && dbUser.lockedUntil > new Date())) return null
+        if (!dbUser?.password || dbUser.disabledAt || (dbUser.lockedUntil && dbUser.lockedUntil > new Date())) return null
         if (!verifyPassword(credentials.password, dbUser.password)) {
           const attempts = dbUser.failedLoginAttempts + 1
           await db.user.update({
@@ -43,6 +43,7 @@ export const authOptions: NextAuthOptions = {
           email: dbUser.email,
           role: dbUser.role || 'lawyer',
           workspaceId: dbUser.workspaceId,
+          sessionVersion: dbUser.sessionVersion,
         }
       },
     }),
@@ -60,6 +61,22 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id
         token.role = (user as { role?: string }).role || 'lawyer'
         token.workspaceId = (user as { workspaceId?: string }).workspaceId
+        token.sessionVersion = (user as { sessionVersion?: number }).sessionVersion || 0
+        return token
+      }
+      if (token.id) {
+        const current = await db.user.findUnique({
+          where: { id: token.id as string },
+          select: { sessionVersion: true, disabledAt: true, role: true, workspaceId: true },
+        })
+        if (!current || current.disabledAt || current.sessionVersion !== token.sessionVersion) {
+          delete token.id
+          delete token.workspaceId
+          delete token.role
+        } else {
+          token.role = current.role
+          token.workspaceId = current.workspaceId
+        }
       }
       return token
     },

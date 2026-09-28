@@ -31,6 +31,14 @@ export function forbiddenJson() {
   return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 }
 
+export function hasRole(auth: AuthContext, roles: string[]) {
+  return roles.includes(auth.role)
+}
+
+export function canManageUsers(auth: AuthContext) {
+  return hasRole(auth, ['admin', 'workspace_owner'])
+}
+
 export function communicationWorkspaceWhere(workspaceId: string) {
   return {
     OR: [
