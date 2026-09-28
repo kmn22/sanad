@@ -521,8 +521,8 @@ model Subscription {
   planId               String
   status               String   @default("active") // active | past_due | canceled
   currentPeriodEnd     DateTime
-  stripeCustomerId     String?
-  stripeSubscriptionId String?
+  stripeCustomerId     String?  @unique
+  stripeSubscriptionId String?  @unique
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
@@ -532,6 +532,20 @@ model Subscription {
   @@index([planId])
   @@index([stripeCustomerId])
   @@index([stripeSubscriptionId])
+}
+
+model BillingWebhookEvent {
+  id          String    @id
+  type        String
+  livemode    Boolean
+  status      String    @default("processing")
+  error       String?
+  processedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([createdAt])
+  @@index([status])
 }
 
 model DocumentSignature {
