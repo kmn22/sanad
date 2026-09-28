@@ -6,20 +6,21 @@ cd "$ROOT"
 
 echo "=== [SANAD] Starting Safe Automated Docker Deploy ==="
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-DB_FILE="$ROOT/prisma/db/custom.db"
+set -a
+source "$ROOT/.env"
+set +a
 
 # 1. Validate required environment
-if [ -z "${NEXTAUTH_SECRET:-}" ]; then
-  echo "ERROR: NEXTAUTH_SECRET is not set in the environment." >&2
+if [ -z "${NEXTAUTH_SECRET:-}" ] || [ -z "${POSTGRES_PASSWORD:-}" ]; then
+  echo "ERROR: NEXTAUTH_SECRET and POSTGRES_PASSWORD must be set." >&2
   exit 1
 fi
 
 # 2. Take safety backup of database
 mkdir -p "$ROOT/../sanad_backups"
-if [ -f "$DB_FILE" ]; then
-  cp "$DB_FILE" "$ROOT/../sanad_backups/custom_${TIMESTAMP}.db"
-  echo "✓ Database backup saved to $ROOT/../sanad_backups/custom_${TIMESTAMP}.db"
-fi
+docker compose up -d db
+docker exec sanad-postgres pg_dump -U sanad -d sanad -Fc > "$ROOT/../sanad_backups/sanad_${TIMESTAMP}.dump"
+echo "✓ Database backup saved to $ROOT/../sanad_backups/sanad_${TIMESTAMP}.dump"
 
 # 3. Pull latest code from GitHub (abort if the working tree is dirty)
 if [ -n "$(git status --porcelain)" ]; then
@@ -29,8 +30,8 @@ if [ -n "$(git status --porcelain)" ]; then
 fi
 git pull origin main
 
-# 4. Migrate database schema safely (DATABASE_URL relative to prisma/)
-DATABASE_URL="file:./db/custom.db" npx prisma db push
+# 4. Migrate database schema safely
+DATABASE_URL="postgresql://sanad:${POSTGRES_PASSWORD}@127.0.0.1:5432/sanad" npx prisma migrate deploy
 
 # 5. Validate Compose config and rebuild
 docker compose config -q

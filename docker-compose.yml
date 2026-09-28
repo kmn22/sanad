@@ -1,4 +1,27 @@
 services:
+  db:
+    image: postgres:16-bookworm
+    container_name: sanad-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sanad
+      POSTGRES_USER: sanad
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+    volumes:
+      - sanad-postgres-data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sanad -d sanad"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+
   app:
     build:
       context: .
@@ -6,6 +29,9 @@ services:
     image: sanad-app:latest
     container_name: sanad-web
     restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
     ports:
       - "3001:3001"
     extra_hosts:
@@ -13,7 +39,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3001
-      - DATABASE_URL=file:/app/db/custom.db
+      - DATABASE_URL=postgresql://sanad:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/sanad
       - NEXTAUTH_URL=https://sanad.tail963524.ts.net
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:?NEXTAUTH_SECRET must be set}
       - OLLAMA_URL=${OLLAMA_URL:-http://host.docker.internal:11434}
@@ -26,10 +52,11 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    volumes:
-      - ./prisma/db:/app/db
     logging:
       driver: json-file
       options:
         max-size: "50m"
         max-file: "3"
+
+volumes:
+  sanad-postgres-data:
