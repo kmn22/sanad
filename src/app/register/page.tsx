@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { signIn } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Scale, ArrowLeft, ShieldCheck, Mail, Lock, User, Briefcase, GraduationCap } from 'lucide-react'
@@ -29,7 +28,7 @@ export default function RegisterPage() {
           name: name.trim(),
           email: email.trim(),
           password,
-          persona,
+          inviteToken: new URLSearchParams(window.location.search).get('invite'),
         }),
       })
 
@@ -41,25 +40,8 @@ export default function RegisterPage() {
         return
       }
 
-      // Auto-login after successful registration
-      const loginRes = await signIn('credentials', {
-        email: email.trim(),
-        password: password,
-        redirect: false,
-      })
-
-      if (loginRes?.error || !loginRes?.ok) {
-        toast.success(data.message || 'تم إنشاء الحساب بنجاح!')
-        router.push('/login?registered=1')
-        return
-      }
-
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('sanad.persona', persona)
-      }
-
       toast.success(data.message || 'تم إنشاء الحساب بنجاح!')
-      window.location.href = '/dashboard'
+      router.push('/login?verificationRequired=1')
     } catch (e) {
       console.error('Registration failed:', e)
       toast.error('تعذر إنشاء الحساب. حاول مجدداً.')

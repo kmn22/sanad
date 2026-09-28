@@ -2,6 +2,7 @@ import { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { db } from '@/lib/db'
 import { verifyPassword } from '@/lib/auth/password'
+import { clearRateLimit, rateLimit } from '@/lib/rate-limit'
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -15,12 +16,26 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) return null
 
         const cleanEmail = credentials.email.toLowerCase().trim()
-        const dbUser = await db.user.findFirst({
-          where: { email: cleanEmail },
-        })
+        const limitKey = `login:email:${cleanEmail}`
+        if (!(await rateLimit(limitKey, 5, 15 * 60 * 1000, 30 * 60 * 1000)).success) return null
+        const dbUser = await db.user.findUnique({ where: { email: cleanEmail } })
 
-        if (!dbUser?.password) return null
-        if (!verifyPassword(credentials.password, dbUser.password)) return null
+        if (!dbUser?.password || (dbUser.lockedUntil && dbUser.lockedUntil > new Date())) return null
+        if (!verifyPassword(credentials.password, dbUser.password)) {
+          const attempts = dbUser.failedLoginAttempts + 1
+          await db.user.update({
+            where: { id: dbUser.id },
+            data: { failedLoginAttempts: attempts, lockedUntil: attempts >= 5 ? new Date(Date.now() + 30 * 60 * 1000) : null },
+          })
+          return null
+        }
+        if (!dbUser.emailVerified) return null
+
+        await db.$transaction([
+          db.user.update({ where: { id: dbUser.id }, data: { failedLoginAttempts: 0, lockedUntil: null } }),
+          db.auditLog.create({ data: { workspaceId: dbUser.workspaceId, userId: dbUser.id, action: 'auth.login' } }),
+        ])
+        await clearRateLimit(limitKey)
 
         return {
           id: dbUser.id,

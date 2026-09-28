@@ -1,20 +1,39 @@
-type LimitEntry = { count: number; resetAt: number }
-const store = new Map<string, LimitEntry>()
+import { db } from '@/lib/db'
 
-export function rateLimit(
+export async function rateLimit(
   key: string,
   limit: number,
-  windowMs: number
-): { success: boolean; remaining: number; resetAt: number } {
-  const now = Date.now()
-  const entry = store.get(key)
-  if (!entry || now > entry.resetAt) {
-    store.set(key, { count: 1, resetAt: now + windowMs })
-    return { success: true, remaining: limit - 1, resetAt: now + windowMs }
+  windowMs: number,
+  blockMs = windowMs
+): Promise<{ success: boolean; remaining: number; resetAt: Date }> {
+  const now = new Date()
+  const entry = await db.authRateLimit.findUnique({ where: { key } })
+
+  if (entry?.blockedUntil && entry.blockedUntil > now) {
+    return { success: false, remaining: 0, resetAt: entry.blockedUntil }
   }
-  if (entry.count >= limit) {
-    return { success: false, remaining: 0, resetAt: entry.resetAt }
+
+  if (!entry || now.getTime() - entry.windowStart.getTime() >= windowMs) {
+    const resetAt = new Date(now.getTime() + windowMs)
+    await db.authRateLimit.upsert({
+      where: { key },
+      create: { key, attempts: 1, windowStart: now },
+      update: { attempts: 1, windowStart: now, blockedUntil: null },
+    })
+    return { success: true, remaining: limit - 1, resetAt }
   }
-  entry.count++
-  return { success: true, remaining: limit - entry.count, resetAt: entry.resetAt }
+
+  const attempts = entry.attempts + 1
+  const blockedUntil = attempts > limit ? new Date(now.getTime() + blockMs) : null
+  await db.authRateLimit.update({ where: { key }, data: { attempts, blockedUntil } })
+
+  return {
+    success: !blockedUntil,
+    remaining: Math.max(0, limit - attempts),
+    resetAt: blockedUntil || new Date(entry.windowStart.getTime() + windowMs),
+  }
+}
+
+export async function clearRateLimit(key: string) {
+  await db.authRateLimit.deleteMany({ where: { key } })
 }

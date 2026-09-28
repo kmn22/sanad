@@ -1,181 +1,74 @@
+import { createHash, randomBytes } from 'crypto'
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { hashPassword } from '@/lib/auth/password'
 import { rateLimit } from '@/lib/rate-limit'
 
+const hashToken = (token: string) => createHash('sha256').update(token).digest('hex')
+
 function getClientIp(req: Request): string {
-  const forwarded = req.headers.get('x-forwarded-for')
-  if (forwarded) return forwarded.split(',')[0].trim()
-  const realIp = req.headers.get('x-real-ip')
-  if (realIp) return realIp.trim()
-  return 'unknown'
+  return req.headers.get('x-forwarded-for')?.split(',')[0].trim() || req.headers.get('x-real-ip')?.trim() || 'unknown'
 }
 
 export async function POST(req: Request) {
   try {
     const ip = getClientIp(req)
-    if (ip !== 'unknown') {
-      const ipLimit = rateLimit(`register:ip:${ip}`, 10, 15 * 60 * 1000)
-      if (!ipLimit.success) {
-        return NextResponse.json({ error: 'Too many registration attempts. Please try again later.' }, { status: 429 })
-      }
+    if (ip !== 'unknown' && !(await rateLimit(`register:ip:${ip}`, 10, 15 * 60 * 1000)).success) {
+      return NextResponse.json({ error: 'Too many registration attempts. Please try again later.' }, { status: 429 })
     }
 
-    const body = await req.json()
-    const { name, email, password, persona } = body
-
-    if (!email || !email.includes('@')) {
+    const { name, email, password, inviteToken } = await req.json()
+    if (typeof email !== 'string' || !email.includes('@')) {
       return NextResponse.json({ error: 'البريد الإلكتروني غير صالح' }, { status: 400 })
     }
-
     const cleanEmail = email.toLowerCase().trim()
-    const emailLimit = rateLimit(`register:email:${cleanEmail}`, 3, 60 * 60 * 1000)
-    if (!emailLimit.success) {
+    if (!(await rateLimit(`register:email:${cleanEmail}`, 3, 60 * 60 * 1000)).success) {
       return NextResponse.json({ error: 'Too many registration attempts for this email. Please try again later.' }, { status: 429 })
     }
-
-    if (!password || password.length < 6) {
-      return NextResponse.json({ error: 'كلمة المرور يجب أن لا تقل عن 6 خانات' }, { status: 400 })
+    if (typeof password !== 'string' || password.length < 12 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      return NextResponse.json({ error: 'كلمة المرور يجب أن تكون 12 خانة على الأقل وتحتوي على حروف وأرقام' }, { status: 400 })
+    }
+    if (typeof inviteToken !== 'string') {
+      return NextResponse.json({ error: 'A valid invitation is required' }, { status: 403 })
     }
 
-    const cleanName = name?.trim() || cleanEmail.split('@')[0]
-    const role = persona === 'student' ? 'student' : 'lawyer'
-
-    // 1. Check if user already exists
-    const existingUser = await db.user.findFirst({
-      where: { email: cleanEmail }
-    })
-
-    if (existingUser) {
-      return NextResponse.json({ 
-        error: 'هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول أو استخدام بريد آخر.'
-      }, { status: 409 })
+    const invitation = await db.invitation.findUnique({ where: { tokenHash: hashToken(inviteToken) } })
+    if (!invitation || invitation.email.toLowerCase() !== cleanEmail || invitation.acceptedAt || invitation.expiresAt <= new Date()) {
+      return NextResponse.json({ error: 'Invitation is invalid or expired' }, { status: 403 })
+    }
+    if (await db.user.findUnique({ where: { email: cleanEmail }, select: { id: true } })) {
+      return NextResponse.json({ error: 'هذا البريد الإلكتروني مسجل بالفعل.' }, { status: 409 })
     }
 
-    // 2. Hash password cryptographically
-    const hashedPassword = hashPassword(password)
-
-    // Keep account creation atomic so a failed signup cannot leave orphaned data.
-    const { workspace, newUser } = await db.$transaction(async (tx) => {
-      const workspaceDomain = cleanEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, '') + '-' + Math.random().toString(36).substring(2, 6)
-      const workspace = await tx.workspace.create({
-        data: {
-          name: `مكتب ${cleanName}`,
-          domain: workspaceDomain,
-        }
-      })
-
-      const newUser = await tx.user.create({
+    const verificationToken = randomBytes(32).toString('hex')
+    const newUser = await db.$transaction(async (tx) => {
+      const user = await tx.user.create({
         data: {
           email: cleanEmail,
-          name: cleanName,
-          password: hashedPassword,
-          role,
-          workspaceId: workspace.id,
-        }
+          name: typeof name === 'string' ? name.trim().slice(0, 100) : cleanEmail.split('@')[0],
+          password: hashPassword(password),
+          role: invitation.role,
+          workspaceId: invitation.workspaceId,
+        },
       })
-
-      await tx.notification.create({
-        data: {
-          userId: newUser.id,
-          title: 'مرحباً بك في منصة سَنَد',
-          message: 'تم تفعيل مساحة العمل الخاصة بك بنجاح. يمكنك الآن بدء إدارة القضايا وتوليد العقود.',
-          link: '/dashboard'
-        }
+      await tx.invitation.update({ where: { id: invitation.id }, data: { acceptedAt: new Date() } })
+      await tx.verificationToken.create({
+        data: { tokenHash: hashToken(verificationToken), email: cleanEmail, expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
       })
-
-      const now = new Date()
-      const in180 = new Date(now.getTime() + 180 * 24 * 60 * 60 * 1000)
-      const in15 = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000)
-      const past180 = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000)
-      const past30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-
-      // Seed starter compliance items with user's actual firm name
-      await tx.complianceItem.createMany({
-        data: [
-          {
-            title: 'السجل التجاري للمنشأة',
-            category: 'cr',
-            entityName: `مكتب ${cleanName}`,
-            issueDate: past180,
-            expiryDate: in180,
-            status: 'active',
-            notes: 'تجديد سنوي عبر المركز السعودي للأعمال',
-            notifyDays: 30,
-            workspaceId: workspace.id,
-          },
-          {
-            title: 'اشتراك التأمينات الاجتماعية (GOSI)',
-            category: 'gosi',
-            entityName: `مكتب ${cleanName}`,
-            issueDate: past30,
-            expiryDate: in15,
-            status: 'expiring',
-            notes: 'سداد الاشتراك الشهري عبر نظام سداد',
-            notifyDays: 15,
-            workspaceId: workspace.id,
-          },
-        ]
+      await tx.auditLog.create({
+        data: { workspaceId: invitation.workspaceId, userId: user.id, action: 'auth.register', entityType: 'User', entityId: user.id, ipAddress: ip },
       })
-
-      // Seed initial client and case for the new workspace
-      const starterClient = await tx.client.create({
-        data: {
-          name: 'شركة التطوير الرقمي الحديثة',
-          type: 'corporate',
-          company: 'شركة التطوير الرقمي الحديثة',
-          phone: '+966500000000',
-          email: `client@${workspaceDomain}.sa`,
-          address: 'الرياض — طريق الملك فهد',
-          notes: 'عميل جديد — مسجل عبر المنصة',
-          workspaceId: workspace.id,
-        }
-      })
-
-      await tx.legalCase.create({
-        data: {
-          title: 'إعداد ومراجعة اتفاقية توريد وتراخيص برمجية',
-          clientId: starterClient.id,
-          clientName: starterClient.name,
-          caseType: 'contract',
-          stage: 'drafting',
-          priority: 'high',
-          value: 15000,
-          dueDate: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
-          notes: 'مراجعة شروط عدم الإفصاح والملكية الفكرية وفق الأنظمة السعودية',
-          workspaceId: workspace.id,
-        }
-      })
-
-      await tx.task.create({
-        data: {
-          title: 'استكمال إعداد بيانات المنشأة وبدء صياغة أول مستند',
-          status: 'todo',
-          priority: 'high',
-          dueDate: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000),
-          workspaceId: workspace.id,
-        }
-      })
-
-      return { workspace, newUser }
+      return user
     })
 
     return NextResponse.json({
       success: true,
-      message: 'تم إنشاء الحساب ومساحة العمل بنجاح',
-      user: {
-        id: newUser.id,
-        email: newUser.email,
-        name: newUser.name,
-        role: newUser.role,
-        workspaceId: workspace.id
-      }
+      message: 'تم إنشاء الحساب. يجب التحقق من البريد الإلكتروني قبل تسجيل الدخول.',
+      emailVerificationRequired: true,
+      user: { id: newUser.id, email: newUser.email, name: newUser.name, role: newUser.role, workspaceId: newUser.workspaceId },
     }, { status: 201 })
-
-  } catch (error: any) {
+  } catch (error) {
     console.error('Registration error:', error)
-    return NextResponse.json({ 
-      error: 'تعذر إتمام التسجيل في الوقت الحالي. يرجى المحاولة لاحقاً.' 
-    }, { status: 500 })
+    return NextResponse.json({ error: 'تعذر إتمام التسجيل في الوقت الحالي. يرجى المحاولة لاحقاً.' }, { status: 500 })
   }
 }
