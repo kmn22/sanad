@@ -2,14 +2,33 @@ import { getServerSession } from 'next-auth'
 import { NextResponse } from 'next/server'
 import { authOptions } from '@/lib/auth/options'
 
-export async function getSessionWorkspaceId(): Promise<string | null> {
+export type AuthContext = {
+  userId: string
+  workspaceId: string
+  role: string
+}
+
+export async function getAuthContext(): Promise<AuthContext | null> {
   const session = await getServerSession(authOptions)
-  const workspaceId = (session?.user as { workspaceId?: string } | undefined)?.workspaceId
-  return workspaceId || null
+  const user = session?.user as { id?: string; workspaceId?: string; role?: string } | undefined
+  if (!user?.id || !user.workspaceId) return null
+  return { userId: user.id, workspaceId: user.workspaceId, role: user.role || 'lawyer' }
+}
+
+export async function getSessionWorkspaceId(): Promise<string | null> {
+  return (await getAuthContext())?.workspaceId || null
 }
 
 export function unauthorizedJson() {
   return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+}
+
+export function notFoundJson() {
+  return NextResponse.json({ error: 'Not found' }, { status: 404 })
+}
+
+export function forbiddenJson() {
+  return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 }
 
 export function communicationWorkspaceWhere(workspaceId: string) {
