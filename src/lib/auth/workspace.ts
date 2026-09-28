@@ -6,13 +6,14 @@ export type AuthContext = {
   userId: string
   workspaceId: string
   role: string
+  mfaEnabled: boolean
 }
 
 export async function getAuthContext(): Promise<AuthContext | null> {
   const session = await getServerSession(authOptions)
-  const user = session?.user as { id?: string; workspaceId?: string; role?: string } | undefined
+  const user = session?.user as { id?: string; workspaceId?: string; role?: string; mfaEnabled?: boolean } | undefined
   if (!user?.id || !user.workspaceId) return null
-  return { userId: user.id, workspaceId: user.workspaceId, role: user.role || 'lawyer' }
+  return { userId: user.id, workspaceId: user.workspaceId, role: user.role || 'lawyer', mfaEnabled: Boolean(user.mfaEnabled) }
 }
 
 export async function getSessionWorkspaceId(): Promise<string | null> {
@@ -36,7 +37,7 @@ export function hasRole(auth: AuthContext, roles: string[]) {
 }
 
 export function canManageUsers(auth: AuthContext) {
-  return hasRole(auth, ['admin', 'workspace_owner'])
+  return auth.mfaEnabled && hasRole(auth, ['admin', 'workspace_owner'])
 }
 
 export function communicationWorkspaceWhere(workspaceId: string) {

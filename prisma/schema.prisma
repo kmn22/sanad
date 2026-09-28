@@ -12,20 +12,24 @@ datasource db {
 }
 
 model User {
-  id                  String    @id @default(cuid())
-  email               String    @unique
-  name                String?
-  password            String?
-  role                String    @default("lawyer") // admin | workspace_owner | lawyer | staff | student | auditor
-  workspaceId         String?
-  emailVerified       DateTime?
-  failedLoginAttempts Int       @default(0)
-  lockedUntil         DateTime?
-  passwordChangedAt   DateTime?
-  disabledAt          DateTime?
-  sessionVersion      Int       @default(0)
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  id                   String    @id @default(cuid())
+  email                String    @unique
+  name                 String?
+  password             String?
+  role                 String    @default("lawyer") // admin | workspace_owner | lawyer | staff | student | auditor
+  workspaceId          String?
+  emailVerified        DateTime?
+  failedLoginAttempts  Int       @default(0)
+  lockedUntil          DateTime?
+  passwordChangedAt    DateTime?
+  disabledAt           DateTime?
+  sessionVersion       Int       @default(0)
+  mfaEnabled           Boolean   @default(false)
+  mfaSecret            String?
+  mfaRecoveryCodes     String?
+  privacyNoticeVersion String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
   workspace Workspace? @relation(fields: [workspaceId], references: [id])
 

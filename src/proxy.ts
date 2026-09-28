@@ -29,7 +29,7 @@ export async function proxy(req: NextRequest) {
   }
 
   // Protected paths
-  if (pathname.startsWith('/dashboard')) {
+  if (pathname.startsWith('/dashboard') || pathname.startsWith('/settings') || pathname === '/privacy/accept') {
     const token = await getToken({
       req,
       secret: authSecret,
@@ -40,6 +40,9 @@ export async function proxy(req: NextRequest) {
       const loginUrl = new URL('/login', req.url)
       loginUrl.searchParams.set('callbackUrl', req.nextUrl.pathname)
       return NextResponse.redirect(loginUrl)
+    }
+    if (pathname !== '/privacy/accept' && token.privacyNoticeVersion !== '2026-09-28') {
+      return NextResponse.redirect(new URL('/privacy/accept', req.url))
     }
   }
 
@@ -60,5 +63,5 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/api/:path*', '/dashboard/:path*', '/dashboard', '/login', '/register'],
+  matcher: ['/api/:path*', '/dashboard/:path*', '/dashboard', '/settings/:path*', '/privacy/accept', '/login', '/register'],
 }

@@ -12,6 +12,7 @@ export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [otp, setOtp] = useState('')
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
 
@@ -30,6 +31,7 @@ export default function LoginPage() {
       const result = await signIn('credentials', {
         email: email.trim(),
         password: password,
+        otp: otp.trim(),
         redirect: false,
       })
 
@@ -132,6 +134,20 @@ export default function LoginPage() {
                   className="bg-slate-800/50 border-slate-700 text-white pl-4 pr-11 h-12 focus-visible:ring-emerald-500"
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-300">رمز التحقق بخطوتين (عند تفعيله)</label>
+              <Input
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                placeholder="123456 أو رمز الاسترداد"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                maxLength={16}
+                className="bg-slate-800/50 border-slate-700 text-white h-12 focus-visible:ring-emerald-500"
+              />
             </div>
 
             <Button 

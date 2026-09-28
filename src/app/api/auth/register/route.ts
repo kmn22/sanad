@@ -53,6 +53,7 @@ export async function POST(req: Request) {
           password: hashPassword(password),
           role: invitation.role,
           workspaceId: invitation.workspaceId,
+          privacyNoticeVersion: PRIVACY_NOTICE_VERSION,
         },
       })
       await tx.invitation.update({ where: { id: invitation.id }, data: { acceptedAt: new Date() } })
