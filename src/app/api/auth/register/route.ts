@@ -4,6 +4,7 @@ import { db } from '@/lib/db'
 import { hashPassword } from '@/lib/auth/password'
 import { rateLimit } from '@/lib/rate-limit'
 import { PRIVACY_NOTICE_VERSION, privacyNoticeHash } from '@/lib/compliance'
+import { emailConfigured, publicAppUrl, sendTransactionalEmail } from '@/lib/email'
 
 const hashToken = (token: string) => createHash('sha256').update(token).digest('hex')
 
@@ -13,6 +14,7 @@ function getClientIp(req: Request): string {
 
 export async function POST(req: Request) {
   try {
+    if (!emailConfigured()) return NextResponse.json({ error: 'Registration is unavailable until email delivery is configured' }, { status: 503 })
     const ip = getClientIp(req)
     if (ip !== 'unknown' && !(await rateLimit(`register:ip:${ip}`, 10, 15 * 60 * 1000)).success) {
       return NextResponse.json({ error: 'Too many registration attempts. Please try again later.' }, { status: 429 })
@@ -72,6 +74,15 @@ export async function POST(req: Request) {
         data: { workspaceId: invitation.workspaceId, userId: user.id, action: 'auth.register', entityType: 'User', entityId: user.id, ipAddress: ip },
       })
       return user
+    })
+
+    await sendTransactionalEmail({
+      to: cleanEmail,
+      subject: 'تحقق من بريدك الإلكتروني في سند',
+      heading: 'تأكيد البريد الإلكتروني',
+      text: 'أكمل التحقق خلال 24 ساعة لتفعيل تسجيل الدخول.',
+      actionUrl: publicAppUrl(`/verify-email?token=${encodeURIComponent(verificationToken)}`),
+      actionLabel: 'تأكيد البريد',
     })
 
     return NextResponse.json({

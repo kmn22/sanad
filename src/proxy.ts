@@ -29,7 +29,7 @@ export async function proxy(req: NextRequest) {
   }
 
   // Protected paths
-  if (pathname.startsWith('/dashboard') || pathname.startsWith('/settings') || pathname === '/privacy/accept') {
+  if (pathname.startsWith('/dashboard') || pathname.startsWith('/settings') || pathname.startsWith('/admin') || pathname === '/privacy/accept') {
     const token = await getToken({
       req,
       secret: authSecret,
@@ -63,5 +63,5 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/api/:path*', '/dashboard/:path*', '/dashboard', '/settings/:path*', '/privacy/accept', '/login', '/register'],
+  matcher: ['/api/:path*', '/dashboard/:path*', '/dashboard', '/settings/:path*', '/admin/:path*', '/admin', '/privacy/accept', '/login', '/register'],
 }

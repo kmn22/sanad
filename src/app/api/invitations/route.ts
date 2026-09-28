@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'crypto'
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { forbiddenJson, getAuthContext, unauthorizedJson } from '@/lib/auth/workspace'
+import { emailConfigured, publicAppUrl, sendTransactionalEmail } from '@/lib/email'
 
 const hashToken = (token: string) => createHash('sha256').update(token).digest('hex')
 const ALLOWED_ROLES = new Set(['lawyer', 'staff', 'student', 'auditor'])
@@ -11,6 +12,7 @@ export async function POST(req: Request) {
   if (!auth) return unauthorizedJson()
   if (!['admin', 'workspace_owner'].includes(auth.role)) return forbiddenJson()
 
+  if (!emailConfigured()) return NextResponse.json({ error: 'Email delivery is not configured' }, { status: 503 })
   const { email, role = 'staff' } = await req.json()
   const cleanEmail = typeof email === 'string' ? email.toLowerCase().trim() : ''
   if (!cleanEmail.includes('@') || !ALLOWED_ROLES.has(role)) {
@@ -39,9 +41,16 @@ export async function POST(req: Request) {
     return created
   })
 
+  await sendTransactionalEmail({
+    to: cleanEmail,
+    subject: 'دعوة للانضمام إلى سند',
+    heading: 'دعوة إلى مساحة عمل سند',
+    text: 'تلقيت دعوة لإنشاء حساب. تنتهي صلاحية الرابط خلال سبعة أيام.',
+    actionUrl: publicAppUrl(`/register?invite=${encodeURIComponent(token)}`),
+    actionLabel: 'قبول الدعوة',
+  })
   return NextResponse.json({
     invitation: { id: invitation.id, email: invitation.email, role: invitation.role, expiresAt: invitation.expiresAt },
-    token,
-    delivery: 'manual',
+    delivery: 'email',
   }, { status: 201 })
 }

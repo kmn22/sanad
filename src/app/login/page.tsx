@@ -121,7 +121,7 @@ export default function LoginPage() {
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <label className="text-sm font-medium text-slate-300">كلمة المرور</label>
-                <a href="#" className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors">نسيت كلمة المرور؟</a>
+                <a href="/forgot-password" className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors">نسيت كلمة المرور؟</a>
               </div>
               <div className="relative">
                 <Lock className="absolute right-3 top-3 h-5 w-5 text-slate-500" />
