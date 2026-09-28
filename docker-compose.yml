@@ -22,6 +22,26 @@ services:
         max-size: "20m"
         max-file: "3"
 
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: sanad-uptime-kuma
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3002:3001"
+    volumes:
+      - sanad-uptime-kuma-data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3001').then(r=>{if(!r.ok)throw new Error(r.status)}).catch(()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+
   app:
     build:
       context: .
@@ -60,3 +80,4 @@ services:
 
 volumes:
   sanad-postgres-data:
+  sanad-uptime-kuma-data:
