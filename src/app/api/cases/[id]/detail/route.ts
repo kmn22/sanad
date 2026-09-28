@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getSessionWorkspaceId, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
+import { getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
+import { requestIp, writeDataAccess } from '@/lib/audit'
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const workspaceId = await getSessionWorkspaceId()
-  if (!workspaceId) return unauthorizedJson()
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await getAuthContext()
+  if (!auth) return unauthorizedJson()
+  const workspaceId = auth.workspaceId
   const { id } = await params
   const caseData = await db.legalCase.findFirst({
     where: { id, workspaceId },
@@ -21,6 +23,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   })
 
   if (!caseData) return notFoundJson()
+  await writeDataAccess({ workspaceId, userId: auth.userId, action: 'view', entityType: 'LegalCase', entityId: id, ipAddress: requestIp(req) })
 
   const tasks = await db.task.findMany({
     where: { caseId: id, workspaceId },

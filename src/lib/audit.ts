@@ -24,6 +24,17 @@ export async function writeAudit(event: AuditEvent) {
   })
 }
 
+export async function writeDataAccess(event: {
+  workspaceId: string
+  userId: string
+  action: string
+  entityType: string
+  entityId: string
+  ipAddress?: string
+}) {
+  await db.dataAccessEvent.create({ data: event })
+}
+
 export function requestIp(req: Request) {
   return req.headers.get('x-forwarded-for')?.split(',')[0].trim() || req.headers.get('x-real-ip')?.trim() || undefined
 }

@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { hashPassword } from '@/lib/auth/password'
 import { rateLimit } from '@/lib/rate-limit'
+import { PRIVACY_NOTICE_VERSION, privacyNoticeHash } from '@/lib/compliance'
 
 const hashToken = (token: string) => createHash('sha256').update(token).digest('hex')
 
@@ -17,7 +18,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Too many registration attempts. Please try again later.' }, { status: 429 })
     }
 
-    const { name, email, password, inviteToken } = await req.json()
+    const { name, email, password, inviteToken, privacyNoticeVersion, acceptPrivacy } = await req.json()
     if (typeof email !== 'string' || !email.includes('@')) {
       return NextResponse.json({ error: 'البريد الإلكتروني غير صالح' }, { status: 400 })
     }
@@ -30,6 +31,9 @@ export async function POST(req: Request) {
     }
     if (typeof inviteToken !== 'string') {
       return NextResponse.json({ error: 'A valid invitation is required' }, { status: 403 })
+    }
+    if (acceptPrivacy !== true || privacyNoticeVersion !== PRIVACY_NOTICE_VERSION) {
+      return NextResponse.json({ error: 'Current privacy notice acceptance is required' }, { status: 400 })
     }
 
     const invitation = await db.invitation.findUnique({ where: { tokenHash: hashToken(inviteToken) } })
@@ -52,6 +56,14 @@ export async function POST(req: Request) {
         },
       })
       await tx.invitation.update({ where: { id: invitation.id }, data: { acceptedAt: new Date() } })
+      const notice = await tx.privacyNotice.upsert({
+        where: { version_locale: { version: PRIVACY_NOTICE_VERSION, locale: 'ar' } },
+        create: { version: PRIVACY_NOTICE_VERSION, locale: 'ar', contentHash: privacyNoticeHash('ar') },
+        update: {},
+      })
+      await tx.privacyAcceptance.create({
+        data: { userId: user.id, noticeId: notice.id, ipAddress: ip, userAgent: req.headers.get('user-agent')?.slice(0, 500) },
+      })
       await tx.verificationToken.create({
         data: { tokenHash: hashToken(verificationToken), email: cleanEmail, expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
       })

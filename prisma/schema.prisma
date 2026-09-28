@@ -534,6 +534,188 @@ model Subscription {
   @@index([stripeSubscriptionId])
 }
 
+model PrivacyNotice {
+  id          String    @id @default(cuid())
+  version     String
+  locale      String
+  contentHash String
+  publishedAt DateTime  @default(now())
+  retiredAt   DateTime?
+
+  @@unique([version, locale])
+  @@index([publishedAt])
+}
+
+model PrivacyAcceptance {
+  id         String   @id @default(cuid())
+  userId     String
+  noticeId   String
+  ipAddress  String?
+  userAgent  String?
+  acceptedAt DateTime @default(now())
+
+  @@unique([userId, noticeId])
+  @@index([userId])
+}
+
+model ConsentRecord {
+  id            String    @id @default(cuid())
+  userId        String
+  workspaceId   String?
+  purpose       String
+  status        String    @default("granted")
+  noticeVersion String
+  grantedAt     DateTime  @default(now())
+  withdrawnAt   DateTime?
+  evidence      String?
+
+  @@index([userId])
+  @@index([workspaceId])
+  @@index([purpose])
+}
+
+model DataSubjectRequest {
+  id               String    @id @default(cuid())
+  workspaceId      String?
+  userId           String?
+  requesterEmail   String
+  requestType      String
+  status           String    @default("received")
+  identityVerified Boolean   @default(false)
+  receivedAt       DateTime  @default(now())
+  dueAt            DateTime
+  extendedDueAt    DateTime?
+  completedAt      DateTime?
+  assignedToId     String?
+  responseNotes    String?
+  rejectionReason  String?
+
+  @@index([workspaceId])
+  @@index([requesterEmail])
+  @@index([status, dueAt])
+}
+
+model RetentionPolicy {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  entityType    String
+  retentionDays Int
+  legalBasis    String
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([workspaceId, entityType])
+}
+
+model LegalHold {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  entityType   String
+  entityId     String
+  reason       String
+  createdById  String
+  createdAt    DateTime  @default(now())
+  releasedAt   DateTime?
+  releasedById String?
+
+  @@index([workspaceId])
+  @@index([entityType, entityId])
+}
+
+model PrivacyIncident {
+  id                  String    @id @default(cuid())
+  workspaceId         String?
+  title               String
+  description         String
+  severity            String
+  status              String    @default("investigating")
+  detectedAt          DateTime
+  awareAt             DateTime
+  authorityDueAt      DateTime
+  authorityNotifiedAt DateTime?
+  subjectsNotifiedAt  DateTime?
+  affectedSubjects    Int?
+  dataCategories      String?
+  riskAssessment      String?
+  containmentActions  String?
+  correctiveActions   String?
+  createdById         String
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([workspaceId])
+  @@index([status, authorityDueAt])
+}
+
+model ProcessorRegister {
+  id                 String    @id @default(cuid())
+  workspaceId        String
+  name               String
+  purpose            String
+  dataCategories     String
+  processingLocation String
+  contractReference  String?
+  securityReviewAt   DateTime?
+  active             Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([workspaceId])
+}
+
+model TransferAssessment {
+  id                 String    @id @default(cuid())
+  workspaceId        String
+  processorId        String?
+  destinationCountry String
+  purpose            String
+  dataCategories     String
+  safeguard          String
+  riskAssessment     String
+  approvedById       String?
+  approvedAt         DateTime?
+  nextReviewAt       DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([workspaceId])
+}
+
+model DataProtectionImpactAssessment {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  title        String
+  processing   String
+  necessity    String
+  risks        String
+  mitigations  String
+  residualRisk String
+  status       String    @default("draft")
+  approvedById String?
+  approvedAt   DateTime?
+  nextReviewAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([workspaceId])
+}
+
+model DataAccessEvent {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  action      String
+  entityType  String
+  entityId    String
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  @@index([workspaceId])
+  @@index([entityType, entityId])
+  @@index([userId, createdAt])
+}
+
 model BillingWebhookEvent {
   id          String    @id
   type        String

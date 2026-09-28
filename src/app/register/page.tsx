@@ -14,6 +14,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [persona, setPersona] = useState<'lawyer' | 'student'>('lawyer')
+  const [acceptPrivacy, setAcceptPrivacy] = useState(false)
   const [loading, setLoading] = useState(false)
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -29,6 +30,8 @@ export default function RegisterPage() {
           email: email.trim(),
           password,
           inviteToken: new URLSearchParams(window.location.search).get('invite'),
+          acceptPrivacy,
+          privacyNoticeVersion: '2026-09-28',
         }),
       })
 
@@ -180,11 +183,24 @@ export default function RegisterPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  minLength={6}
+                  minLength={12}
                   className="bg-slate-800/50 border-slate-700 text-white pl-4 pr-11 h-12 focus-visible:ring-emerald-500"
                 />
               </div>
             </div>
+
+            <label className="flex items-start gap-3 text-sm text-slate-300">
+              <input
+                type="checkbox"
+                checked={acceptPrivacy}
+                onChange={(e) => setAcceptPrivacy(e.target.checked)}
+                required
+                className="mt-1"
+              />
+              <span>
+                أقر بقراءة وقبول <Link href="/privacy" className="text-emerald-400 underline">سياسة الخصوصية</Link> و<Link href="/terms" className="text-emerald-400 underline">شروط الاستخدام</Link>.
+              </span>
+            </label>
 
             <Button 
               type="submit" 

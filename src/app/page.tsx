@@ -93,7 +93,7 @@ export default function LandingPage() {
       {/* Top Announcement Bar */}
       <div className="relative z-30 border-b border-emerald-500/20 bg-emerald-950/70 backdrop-blur-md px-4 py-2 text-center text-xs sm:text-sm font-medium text-emerald-300 flex items-center justify-center gap-2">
         <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-        <span>🇸🇦 متوافق 100% مع نظام المعاملات المدنية، نظام العمل السعودي، ومرحلة الفوترة لـ ZATCA</span>
+        <span>🇸🇦 منصة سعودية قيد التطوير — المزايا التنظيمية والفوترة تتطلب مراجعة واعتماداً مستقلاً</span>
         <Link href="/register" className="underline underline-offset-4 hover:text-white font-bold inline-flex items-center gap-1 mr-1">
           جرّب الآن مجاناً <ArrowLeft className="w-3.5 h-3.5 inline" />
         </Link>
@@ -171,7 +171,7 @@ export default function LandingPage() {
 
           {/* Subtitle */}
           <p className="max-w-3xl mx-auto text-base sm:text-xl text-slate-300 leading-relaxed mb-10 font-normal">
-            صُمم «سَنَد» خصيصاً ليواكب البيئة التشريعية والتنظيمية في المملكة. أتمتة صياغة العقود والمذكرات مع تدقيق نظامي حي، فوترة إلكترونية معتمدة لـ ZATCA، وإدارة متقدمة لملفات القضايا والجلسات دون رفع بياناتك لخوادم طرف ثالث.
+            صُمم «سَنَد» خصيصاً ليواكب البيئة التشريعية والتنظيمية في المملكة. أتمتة صياغة العقود والمذكرات مع تدقيق نظامي حي، إدارة فواتير داخلية غير مفعّلة حالياً للتكامل مع ZATCA، وإدارة متقدمة لملفات القضايا والجلسات دون رفع بياناتك لخوادم طرف ثالث.
           </p>
 
           {/* Action Buttons */}
@@ -194,11 +194,11 @@ export default function LandingPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto pt-4 pb-2 border-t border-white/5 text-slate-300 text-xs sm:text-sm font-medium">
             <div className="flex items-center justify-center gap-2 py-2">
               <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
-              <span>خصوصية وسرية مهنية 100%</span>
+              <span>ضوابط خصوصية وسرية مهنية قابلة للتدقيق</span>
             </div>
             <div className="flex items-center justify-center gap-2 py-2">
               <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-              <span>فواتير مشفرة بختم TLV لـ ZATCA</span>
+              <span>نماذج فواتير داخلية — ليست تكاملاً معتمداً مع ZATCA</span>
             </div>
             <div className="flex items-center justify-center gap-2 py-2">
               <Scale className="w-5 h-5 text-emerald-400 shrink-0" />
@@ -246,7 +246,7 @@ export default function LandingPage() {
                 }`}
               >
                 <Receipt className="w-4 h-4 text-emerald-400" />
-                <span>فاتورة ZATCA بختم TLV</span>
+                <span>مسودة فاتورة داخلية مع رمز تجريبي</span>
               </button>
 
               <button
@@ -361,7 +361,7 @@ export default function LandingPage() {
                   {/* Generated Document Preview Column */}
                   <div className="lg:col-span-8 bg-slate-950/90 rounded-2xl border border-white/5 p-6 font-mono text-xs text-slate-300 leading-relaxed overflow-y-auto max-h-[380px] space-y-3">
                     <div className="text-center font-bold text-sm text-emerald-400 border-b border-white/5 pb-2">
-                      # عقد عمل سعودي محدد المدة (مسودة نظامية معتمدة)
+                      # عقد عمل سعودي محدد المدة (مسودة تتطلب مراجعة قانونية)
                     </div>
                     <p className="text-slate-400">
                       بعون الله تعالى، تم إبرام هذا العقد في مدينة الرياض بين الطرف الأول (صاحب العمل) والطرف الثاني (الموظف).
@@ -392,7 +392,7 @@ export default function LandingPage() {
                   <div>
                     <h3 className="text-lg font-bold text-white flex items-center gap-2">
                       <Receipt className="w-5 h-5 text-emerald-400" />
-                      محرك الفواتير الإلكترونية ZATCA (المرحلة الأولى والثانية)
+                      محرك فواتير تجريبي (غير مدمج حالياً مع منصة فاتورة)
                     </h3>
                     <p className="text-xs text-slate-400">توليد فوري للأختام المشفرة TLV وفق متطلبات هيئة الزكاة والضريبة والجمارك</p>
                   </div>
@@ -437,7 +437,7 @@ export default function LandingPage() {
                       <QrCode className="w-32 h-32 text-slate-950" />
                     </div>
                     <span className="text-xs font-mono font-bold text-emerald-300 flex items-center gap-1">
-                      <ShieldCheck className="w-4 h-4" /> رمز استجابة سريع متوافق مع زاتكا
+                      <ShieldCheck className="w-4 h-4" /> رمز استجابة سريع تجريبي غير معتمد
                     </span>
                     <p className="text-[11px] text-slate-500 mt-1 max-w-xs">
                       يحتوي الرمز على: اسم المورد، الرقم الضريبي، الطابع الزمني، إجمالي الفاتورة، ومبلغ الضريبة.
@@ -571,13 +571,13 @@ export default function LandingPage() {
                 <div className="text-3xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300 font-mono">
                   +40
                 </div>
-                <div className="text-xs sm:text-sm text-slate-400 mt-2 font-medium">نموذج ولائحة قضائية معتمدة</div>
+                <div className="text-xs sm:text-sm text-slate-400 mt-2 font-medium">نماذج أولية تتطلب مراجعة محامٍ</div>
               </div>
               <div>
                 <div className="text-3xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300 font-mono">
-                  100%
+                  تجريبي
                 </div>
-                <div className="text-xs sm:text-sm text-slate-400 mt-2 font-medium">توافق مع متطلبات هيئة الزكاة (ZATCA)</div>
+                <div className="text-xs sm:text-sm text-slate-400 mt-2 font-medium">يتطلب التحقق قبل الاستخدام الضريبي</div>
               </div>
               <div>
                 <div className="text-3xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300 font-mono">
@@ -639,11 +639,11 @@ export default function LandingPage() {
                   <Receipt className="w-6 h-6" />
                 </div>
                 <Badge className="bg-teal-500/10 text-teal-400 border-teal-500/20 text-xs mb-3">
-                  متوافق مع ZATCA
+                  جاهزية تقنية أولية للفوترة
                 </Badge>
                 <h3 className="text-xl font-bold text-white mb-3">الفوترة الضريبية الإلكترونية</h3>
                 <p className="text-slate-400 text-sm leading-relaxed mb-4">
-                  إصدار فواتير أتعاب المحاماة والاستشارات بضغطة زر واحدة. تتضمن رمز استجابة سريع TLV متوافق بالكامل مع هيئة الزكاة والضريبة والجمارك وحساب تلقائي لضريبة 15%.
+                  إصدار مسودات فواتير أتعاب وحساب ضريبة القيمة المضافة للمراجعة الداخلية. لا تمثل الميزة حلاً معتمداً أو مدمجاً مع منصة فاتورة حالياً.
                 </p>
               </div>
               <div className="text-xs text-slate-400 flex items-center gap-1.5 pt-4 border-t border-white/5">
@@ -834,7 +834,7 @@ export default function LandingPage() {
                     </div>
                     <div className="p-3 bg-white/5 rounded-xl text-xs flex justify-between items-center">
                       <span className="text-slate-200">الضمانات المطبقة في الصياغات:</span>
-                      <span className="font-mono font-bold text-emerald-400">100% متوافق</span>
+                      <span className="font-mono font-bold text-emerald-400">جاهزية أولية</span>
                     </div>
                   </div>
                 </div>
@@ -932,7 +932,7 @@ export default function LandingPage() {
                   ❌ فواتير يدوية غير مشفرة ولا تتوافق مع هيئة الزكاة
                 </div>
                 <div className="text-slate-200 pr-4 flex items-center gap-1.5 font-medium">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" /> فواتير ضريبية فورية برمز استجابة سريع TLV معتمد لـ ZATCA
+                  <Check className="w-4 h-4 text-emerald-400 shrink-0" /> مسودات فواتير داخلية تتطلب تحققاً واعتماداً قبل الاستخدام الضريبي
                 </div>
               </div>
 
@@ -941,7 +941,7 @@ export default function LandingPage() {
                   ❌ حفظ أسرار الموكلين في أدوات سحابية عامة تخرق الخصوصية
                 </div>
                 <div className="text-slate-200 pr-4 flex items-center gap-1.5 font-medium">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" /> تشغيل وتخزين محلي سيادي 100% (Local-First Privacy)
+                  <Check className="w-4 h-4 text-emerald-400 shrink-0" /> تشغيل محلي افتراضي مع ضوابط خصوصية قابلة للمراجعة
                 </div>
               </div>
             </div>
@@ -966,7 +966,7 @@ export default function LandingPage() {
               },
               {
                 q: 'كيف تتوافق الفواتير الصادرة مع متطلبات هيئة الزكاة والضريبة والجمارك (ZATCA)؟',
-                a: 'ينشئ سَنَد أختام الفوترة الإلكترونية بتشفير TLV (Tag-Length-Value) المعتمد رسمياً للمرحلة الأولى، مع حساب فوري لنسبة ضريبة القيمة المضافة (15%) وتوليد رمز الاستجابة السريع (QR Code) المتضمن للمعلومات الإلزامية الخمسة لنظام الفوترة الإلكترونية.',
+                a: 'ميزة الفوترة الحالية تجريبية للاستخدام الداخلي ولا تمثل حلاً معتمداً أو مدمجاً مع منصة فاتورة. يجب التحقق من متطلبات ZATCA بواسطة مختص قبل إصدار أي فاتورة ضريبية.',
               },
               {
                 q: 'ما المقصود بـ "الضمانات النظامية الفورية" أثناء الصياغة؟',
@@ -1058,7 +1058,7 @@ export default function LandingPage() {
               </div>
               <div>
                 <span className="text-lg font-bold text-white tracking-tight">سَنَد — Sanad Legal OS</span>
-                <p className="text-slate-500 text-xs mt-0.5">منظومة التقنية القانونية المتوافقة مع الأنظمة السعودية</p>
+                <p className="text-slate-500 text-xs mt-0.5">منظومة تقنية قانونية سعودية قيد التطوير والمراجعة</p>
               </div>
             </div>
 
@@ -1084,21 +1084,11 @@ export default function LandingPage() {
             <p>© {new Date().getFullYear()} سَنَد للتقنية القانونية. صُمم للمملكة العربية السعودية وفق رؤية 2030.</p>
             
             <div className="flex items-center gap-4 text-xs text-slate-400">
-              <button
-                type="button"
-                onClick={() => setShowPrivacyModal(true)}
-                className="hover:text-emerald-400 underline underline-offset-4 transition-colors cursor-pointer"
-              >
-                سياسة الخصوصية وحماية البيانات (PDPL)
-              </button>
+              <Link href="/privacy" className="hover:text-emerald-400 underline underline-offset-4 transition-colors">سياسة الخصوصية</Link>
               <span>•</span>
-              <button
-                type="button"
-                onClick={() => setShowPrivacyModal(true)}
-                className="hover:text-emerald-400 underline underline-offset-4 transition-colors cursor-pointer"
-              >
-                شروط الاستخدام
-              </button>
+              <Link href="/terms" className="hover:text-emerald-400 underline underline-offset-4 transition-colors">شروط الاستخدام</Link>
+              <span>•</span>
+              <Link href="/ai-disclosure" className="hover:text-emerald-400 underline underline-offset-4 transition-colors">إفصاح الذكاء الاصطناعي</Link>
             </div>
 
             <p className="flex items-center gap-1.5 justify-center">
@@ -1150,7 +1140,7 @@ export default function LandingPage() {
 
               <h4 className="text-white font-bold text-sm pt-2">4. الفوترة الضريبية وحماية المعلومات المالية</h4>
               <p className="text-slate-400 text-xs">
-                تخضع المعاملات المالية لضوابط هيئة الزكاة والضريبة والجمارك (ZATCA)، ويتم تشفير أختام الفواتير بمعايير TLV التشفيرية المعتمدة نظامياً.
+                ميزة الفواتير الحالية داخلية وتجريبية ولا تُعد تكاملاً معتمداً مع ZATCA. يتحمل المستخدم مسؤولية المراجعة الضريبية قبل الاستخدام.
               </p>
             </div>
 
