@@ -41,7 +41,8 @@ export default function LoginPage() {
       }
 
       toast.success('تم تسجيل الدخول بنجاح')
-      window.location.href = '/dashboard'
+      router.push('/dashboard')
+      router.refresh()
     } catch (e) {
       console.warn('NextAuth sign in error:', e)
       setErrorMsg('حدث خطأ أثناء تسجيل الدخول. حاول مجدداً.')
