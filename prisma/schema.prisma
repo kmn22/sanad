@@ -760,6 +760,7 @@ model DataSubjectRequest {
   userId           String?
   requesterEmail   String
   requestType      String
+  details          String?
   status           String    @default("received")
   identityVerified Boolean   @default(false)
   receivedAt       DateTime  @default(now())

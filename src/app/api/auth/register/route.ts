@@ -1,7 +1,7 @@
 import { createHash } from 'crypto'
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { hashPassword } from '@/lib/auth/password'
+import { hashPassword, isStrongPassword } from '@/lib/auth/password'
 import { rateLimit } from '@/lib/rate-limit'
 import { PRIVACY_NOTICE_VERSION, privacyNoticeHash } from '@/lib/compliance'
 
@@ -26,7 +26,8 @@ export async function POST(req: Request) {
     if (!(await rateLimit(`register:email:${cleanEmail}`, 3, 60 * 60 * 1000)).success) {
       return NextResponse.json({ error: 'Too many registration attempts for this email. Please try again later.' }, { status: 429 })
     }
-    if (typeof password !== 'string' || password.length < 12 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+    // Delegated so the policy lives in exactly one place (@/lib/auth/password).
+    if (typeof password !== 'string' || !isStrongPassword(password)) {
       return NextResponse.json({ error: 'كلمة المرور يجب أن تكون 12 خانة على الأقل وتحتوي على حروف وأرقام' }, { status: 400 })
     }
     if (typeof inviteToken !== 'string' || !/^[a-f0-9]{64}$/i.test(inviteToken)) {

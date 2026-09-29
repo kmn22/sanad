@@ -9,60 +9,59 @@ const authSecret = process.env.NEXTAUTH_SECRET
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl
 
-  const publicApiPath =
+  // Exact matches only — a prefix match would open every path sharing the
+  // prefix (e.g. /api/billing/webhook-admin) to unauthenticated access.
+  const isPublicApi =
     pathname === '/api' ||
     pathname === '/api/health' ||
     pathname === '/api/auth/register' ||
     pathname.startsWith('/api/auth/') ||
-    pathname.startsWith('/api/billing/webhook') ||
+    pathname === '/api/billing/webhook' ||
     pathname === '/api/privacy/requests' ||
     pathname === '/api/invitations/preview' ||
     pathname.startsWith('/api/portal/')
 
-  if (pathname.startsWith('/api/') && !publicApiPath) {
-    const token = await getToken({
-      req,
-      secret: authSecret,
-      secureCookie,
-    })
+  const isApi = pathname.startsWith('/api/')
+  const isProtectedPage =
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/settings') ||
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/workflow') ||
+    pathname === '/privacy/accept'
+  const isAuthPage = pathname === '/login' || pathname === '/register'
 
+  if (!isApi && !isProtectedPage && !isAuthPage) return NextResponse.next()
+
+  // Resolve the token once and reuse it for every branch below.
+  const token = await getToken({ req, secret: authSecret, secureCookie })
+
+  if (isApi) {
+    if (isPublicApi) return NextResponse.next()
     if (!token) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
-    if (pathname !== '/api/privacy/accept' && token.privacyNoticeVersion !== PRIVACY_NOTICE_VERSION) {
+    if (token.privacyNoticeVersion !== PRIVACY_NOTICE_VERSION) {
       return NextResponse.json({ error: 'Current privacy notice acceptance is required', code: 'PRIVACY_NOTICE_REQUIRED' }, { status: 403 })
     }
+    return NextResponse.next()
   }
 
-  // Protected paths
-  if (pathname.startsWith('/dashboard') || pathname.startsWith('/settings') || pathname.startsWith('/admin') || pathname.startsWith('/workflow') || pathname === '/privacy/accept') {
-    const token = await getToken({
-      req,
-      secret: authSecret,
-      secureCookie,
-    })
-
+  if (isProtectedPage) {
     if (!token) {
       const loginUrl = new URL('/login', req.url)
-      loginUrl.searchParams.set('callbackUrl', req.nextUrl.pathname)
+      // Preserve the query string so deep links survive the login round trip.
+      loginUrl.searchParams.set('callbackUrl', pathname + req.nextUrl.search)
       return NextResponse.redirect(loginUrl)
     }
     if (pathname !== '/privacy/accept' && token.privacyNoticeVersion !== PRIVACY_NOTICE_VERSION) {
       return NextResponse.redirect(new URL('/privacy/accept', req.url))
     }
+    return NextResponse.next()
   }
 
-  // If already authenticated, redirect away from /login and /register to /dashboard
-  if (pathname === '/login' || pathname === '/register') {
-    const token = await getToken({
-      req,
-      secret: authSecret,
-      secureCookie,
-    })
-
-    if (token) {
-      return NextResponse.redirect(new URL('/dashboard', req.url))
-    }
+  // Authenticated users have no business on /login or /register.
+  if (isAuthPage && token) {
+    return NextResponse.redirect(new URL('/dashboard', req.url))
   }
 
   return NextResponse.next()

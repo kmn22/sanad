@@ -44,6 +44,38 @@ async function processEvent(event: Stripe.Event) {
   }
 }
 
+/**
+ * Record the event exactly once, but never turn a failed prior attempt into a
+ * permanent no-op. `create` wins the race for new events; on a unique violation
+ * we re-run unless a previous attempt actually finished.
+ */
+async function claimEvent(event: Stripe.Event): Promise<'process' | 'duplicate'> {
+  try {
+    await db.billingWebhookEvent.create({
+      data: { id: event.id, type: event.type, livemode: event.livemode },
+    })
+    return 'process'
+  } catch (error) {
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') {
+      throw error
+    }
+  }
+
+  const existing = await db.billingWebhookEvent.findUnique({
+    where: { id: event.id },
+    select: { status: true },
+  })
+  // Only short-circuit when the earlier attempt finished. Returning 2xx for a
+  // failed event tells Stripe to stop retrying and the update is lost forever.
+  if (existing?.status === 'processed') return 'duplicate'
+
+  await db.billingWebhookEvent.update({
+    where: { id: event.id },
+    data: { status: 'processing', error: null },
+  })
+  return 'process'
+}
+
 export async function POST(req: Request) {
   const apiKey = process.env.STRIPE_SECRET_KEY
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
@@ -67,15 +99,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
-  try {
-    await db.billingWebhookEvent.create({
-      data: { id: event.id, type: event.type, livemode: event.livemode },
-    })
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      return NextResponse.json({ received: true, duplicate: true })
-    }
-    throw error
+  if ((await claimEvent(event)) === 'duplicate') {
+    return NextResponse.json({ received: true, duplicate: true })
   }
 
   try {

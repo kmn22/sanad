@@ -27,7 +27,9 @@ export async function POST(req: Request) {
         requestType,
         receivedAt,
         dueAt: requestDeadline(receivedAt),
-        responseNotes: typeof body.details === 'string' ? body.details.slice(0, 4000) : null,
+        // The requester's own message. Kept separate from `responseNotes`,
+        // which belongs to the case handler on the admin side.
+        details: typeof body.details === 'string' ? body.details.slice(0, 4000) : null,
       },
       select: { id: true, receivedAt: true, dueAt: true, status: true },
     })

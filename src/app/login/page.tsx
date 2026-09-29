@@ -8,6 +8,20 @@ import { Input } from '@/components/ui/input'
 import { Scale, ArrowLeft, ShieldCheck, Mail, Lock, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 
+/**
+ * Resolve the post-login destination from `?callbackUrl=`.
+ * Only local, single-slash paths are allowed — absolute URLs (`https://evil.com`)
+ * and protocol-relative ones (`//evil.com`, `/\evil.com`) fall back to /dashboard
+ * so the parameter can't be used as an open redirect.
+ */
+function safeCallbackUrl(): string {
+  if (typeof window === 'undefined') return '/dashboard'
+  const raw = new URLSearchParams(window.location.search).get('callbackUrl')
+  if (!raw || !raw.startsWith('/')) return '/dashboard'
+  if (raw.length > 1 && (raw[1] === '/' || raw[1] === '\\')) return '/dashboard'
+  return raw
+}
+
 export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
@@ -43,7 +57,7 @@ export default function LoginPage() {
       }
 
       toast.success('تم تسجيل الدخول بنجاح')
-      router.push('/dashboard')
+      router.push(safeCallbackUrl())
       router.refresh()
     } catch (e) {
       console.warn('NextAuth sign in error:', e)
