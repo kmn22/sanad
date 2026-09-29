@@ -1,6 +1,9 @@
 import { createHash } from 'crypto'
+import { PRIVACY_NOTICE_VERSION } from '@/lib/privacy-version'
 
-export const PRIVACY_NOTICE_VERSION = '2026-09-28'
+// Re-exported so existing server imports from '@/lib/compliance' keep working.
+export { PRIVACY_NOTICE_VERSION }
+
 export const CONTROLLER_NAME_AR = 'سند'
 export const CONTROLLER_NAME_EN = 'Sanad'
 export const PRIVACY_CONTACT_EMAIL = 'ahmed@sanad.sa'

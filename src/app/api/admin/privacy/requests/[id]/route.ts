@@ -12,14 +12,40 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const { id } = await params
   const existing = await db.dataSubjectRequest.findFirst({ where: { id, ...(auth.role === 'admin' ? {} : { workspaceId: auth.workspaceId }) } })
   if (!existing) return notFoundJson()
-  const { status, identityVerified, responseNotes, rejectionReason, extend, executeDestruction } = await req.json()
-  if (status && !STATUSES.has(status)) return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
+
+  let body: {
+    status?: unknown
+    identityVerified?: unknown
+    responseNotes?: unknown
+    rejectionReason?: unknown
+    extend?: unknown
+    executeDestruction?: unknown
+  }
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+
+  const { status, identityVerified, responseNotes, rejectionReason, extend, executeDestruction } = body
+
+  if (status !== undefined && (typeof status !== 'string' || !STATUSES.has(status))) {
+    return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
+  }
+
   if (executeDestruction === true) {
     if (existing.requestType !== 'destruction' || !existing.identityVerified || !existing.userId) {
       return NextResponse.json({ error: 'Verified destruction request is required' }, { status: 400 })
     }
-    const hold = await db.legalHold.findFirst({ where: { workspaceId: existing.workspaceId || undefined, entityType: 'User', entityId: existing.userId, releasedAt: null } })
-    if (hold) return NextResponse.json({ error: 'Destruction is blocked by an active legal hold' }, { status: 409 })
+    // Legal holds are workspace-scoped. Only consult them when the request can be
+    // attributed to a workspace — an unfiltered lookup would let a hold from one
+    // workspace block destruction for an unrelated, workspace-less request.
+    if (existing.workspaceId) {
+      const hold = await db.legalHold.findFirst({
+        where: { workspaceId: existing.workspaceId, entityType: 'User', entityId: existing.userId, releasedAt: null },
+      })
+      if (hold) return NextResponse.json({ error: 'Destruction is blocked by an active legal hold' }, { status: 409 })
+    }
     await db.$transaction([
       db.privacyAcceptance.deleteMany({ where: { userId: existing.userId } }),
       db.consentRecord.deleteMany({ where: { userId: existing.userId } }),
@@ -27,10 +53,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       db.user.update({ where: { id: existing.userId }, data: { email: `deleted-${existing.userId}@invalid.local`, name: 'Deleted User', password: null, disabledAt: new Date(), sessionVersion: { increment: 1 }, mfaSecret: null, mfaRecoveryCodes: null } }),
     ])
   }
+
   const updated = await db.dataSubjectRequest.update({
     where: { id },
     data: {
-      status,
+      status: typeof status === 'string' ? status : undefined,
       identityVerified: typeof identityVerified === 'boolean' ? identityVerified : undefined,
       responseNotes: typeof responseNotes === 'string' ? responseNotes.slice(0, 8000) : undefined,
       rejectionReason: typeof rejectionReason === 'string' ? rejectionReason.slice(0, 2000) : undefined,

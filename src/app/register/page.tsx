@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Scale, ArrowLeft, ShieldCheck, Mail, Lock, User } from 'lucide-react'
 import { toast } from 'sonner'
+import { PRIVACY_NOTICE_VERSION } from '@/lib/privacy-version'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -50,7 +51,7 @@ export default function RegisterPage() {
           password,
           inviteToken,
           acceptPrivacy,
-          privacyNoticeVersion: '2026-09-28',
+          privacyNoticeVersion: PRIVACY_NOTICE_VERSION,
         }),
       })
 
