@@ -2,6 +2,7 @@
 
 import { db } from '@/lib/db'
 import { communicationWorkspaceWhere, getSessionWorkspaceId } from '@/lib/auth/workspace'
+import { filterTaskStats } from '@/lib/sanad/task-stats'
 
 function emptyDashboard() {
   return {
@@ -73,16 +74,7 @@ export async function getLawyerDashboard() {
     (d) => d.expiryDate && d.expiryDate <= in30 && d.expiryDate >= now
   )
 
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
-
-  const openTasks = tasks.filter((t) => t.status !== 'done')
-  const overdueTasks = openTasks.filter(
-    (t) => t.dueDate && new Date(t.dueDate) < startOfToday
-  )
-  const todayTasks = openTasks.filter(
-    (t) => t.dueDate && new Date(t.dueDate) >= startOfToday && new Date(t.dueDate) <= endOfToday
-  )
+  const { openTasks, overdueTasks, todayTasks } = filterTaskStats(tasks, now)
 
   const activeCases = cases.filter((c) => c.stage !== 'closed')
   const urgentCases = cases.filter((c) => c.priority === 'urgent' && c.stage !== 'closed')

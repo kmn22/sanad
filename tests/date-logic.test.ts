@@ -1,25 +1,11 @@
 import { describe, it, expect } from 'vitest'
+import { filterTaskStats } from '../src/lib/sanad/task-stats'
 
 interface MockTask {
   id: string
   title: string
   status: string
   dueDate: Date | null
-}
-
-function filterTaskStats(tasks: MockTask[], now: Date) {
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
-
-  const openTasks = tasks.filter((t) => t.status !== 'done')
-  const overdueTasks = openTasks.filter(
-    (t) => t.dueDate && new Date(t.dueDate) < startOfToday
-  )
-  const todayTasks = openTasks.filter(
-    (t) => t.dueDate && new Date(t.dueDate) >= startOfToday && new Date(t.dueDate) <= endOfToday
-  )
-
-  return { openTasks, overdueTasks, todayTasks }
 }
 
 describe('Dashboard Task Date Logic', () => {

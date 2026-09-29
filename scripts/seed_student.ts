@@ -11,19 +11,19 @@ function daysFromNow(days: number): Date {
 }
 
 async function main() {
-  // Clean student tables
-  await db.lecture.deleteMany()
-  await db.academicDeadline.deleteMany()
-  await db.legalTerm.deleteMany()
-  await db.caseEntry.deleteMany()
-  await db.course.deleteMany()
-
   const workspace = await db.workspace.upsert({
     where: { domain: 'sanad-student-demo' },
     update: {},
     create: { name: 'حساب طالب تجريبي', domain: 'sanad-student-demo' },
   })
   const ws = { workspaceId: workspace.id }
+
+  // Clean this demo workspace's student tables only — never touch other workspaces
+  await db.lecture.deleteMany({ where: ws })
+  await db.academicDeadline.deleteMany({ where: ws })
+  await db.legalTerm.deleteMany({ where: ws })
+  await db.caseEntry.deleteMany({ where: ws })
+  await db.course.deleteMany({ where: ws })
 
   // Courses — typical Saudi law school semester
   const courses = [
