@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Scale, ArrowLeft, ShieldCheck, Mail, Lock, User, Briefcase, GraduationCap } from 'lucide-react'
+import { Scale, ArrowLeft, ShieldCheck, Mail, Lock, User } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function RegisterPage() {
@@ -13,9 +13,28 @@ export default function RegisterPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [persona, setPersona] = useState<'lawyer' | 'student'>('lawyer')
+  const [inviteToken, setInviteToken] = useState('')
+  const [invitation, setInvitation] = useState<{ workspaceName: string; role: string; email: string } | null>(null)
+  const [inviteError, setInviteError] = useState('')
   const [acceptPrivacy, setAcceptPrivacy] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    const token = new URLSearchParams(window.location.search).get('invite') || ''
+    setInviteToken(token)
+    if (!token) {
+      setInviteError('هذه الصفحة تتطلب رابط دعوة صالح من مالك المكتب.')
+      return
+    }
+    fetch(`/api/invitations/preview?token=${encodeURIComponent(token)}`)
+      .then(async (response) => {
+        const data = await response.json()
+        if (!response.ok) throw new Error(data.error || 'Invalid invitation')
+        setInvitation(data)
+        setEmail(data.email)
+      })
+      .catch(() => setInviteError('رابط الدعوة غير صالح أو منتهي الصلاحية.'))
+  }, [])
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,7 +48,7 @@ export default function RegisterPage() {
           name: name.trim(),
           email: email.trim(),
           password,
-          inviteToken: new URLSearchParams(window.location.search).get('invite'),
+          inviteToken,
           acceptPrivacy,
           privacyNoticeVersion: '2026-09-28',
         }),
@@ -44,7 +63,7 @@ export default function RegisterPage() {
       }
 
       toast.success(data.message || 'تم إنشاء الحساب بنجاح!')
-      router.push('/login?verificationRequired=1')
+      router.push('/login?registered=1')
     } catch (e) {
       console.error('Registration failed:', e)
       toast.error('تعذر إنشاء الحساب. حاول مجدداً.')
@@ -116,32 +135,15 @@ export default function RegisterPage() {
           </div>
 
           <form onSubmit={handleRegister} className="space-y-5">
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <button
-                type="button"
-                onClick={() => setPersona('lawyer')}
-                className={`flex flex-col items-center justify-center p-4 rounded-2xl border transition-all cursor-pointer ${
-                  persona === 'lawyer'
-                    ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400'
-                    : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-slate-300'
-                }`}
-              >
-                <Briefcase className="w-6 h-6 mb-2" />
-                <span className="text-sm font-semibold">محامي ممارس</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setPersona('student')}
-                className={`flex flex-col items-center justify-center p-4 rounded-2xl border transition-all cursor-pointer ${
-                  persona === 'student'
-                    ? 'bg-blue-500/10 border-blue-500/50 text-blue-400'
-                    : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-slate-300'
-                }`}
-              >
-                <GraduationCap className="w-6 h-6 mb-2" />
-                <span className="text-sm font-semibold">طالب قانون</span>
-              </button>
-            </div>
+            {invitation ? (
+              <div className="mb-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200">
+                دعوة للانضمام إلى <strong>{invitation.workspaceName}</strong> بصلاحية <strong>{invitation.role}</strong>
+              </div>
+            ) : (
+              <div className="mb-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
+                {inviteError || 'جاري التحقق من رابط الدعوة...'}
+              </div>
+            )}
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-300">الاسم الكامل</label>
@@ -167,8 +169,9 @@ export default function RegisterPage() {
                   placeholder="name@lawfirm.sa"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  readOnly={Boolean(invitation)}
                   required
-                  className="bg-slate-800/50 border-slate-700 text-white pl-4 pr-11 h-12 focus-visible:ring-emerald-500"
+                  className="bg-slate-800/50 border-slate-700 text-white pl-4 pr-11 h-12 focus-visible:ring-emerald-500 read-only:opacity-70"
                 />
               </div>
             </div>
@@ -205,7 +208,7 @@ export default function RegisterPage() {
             <Button 
               type="submit" 
               className="w-full h-12 mt-6 bg-emerald-600 hover:bg-emerald-500 text-white text-base font-semibold shadow-lg shadow-emerald-900/20 transition-all hover:scale-[1.02] cursor-pointer" 
-              disabled={loading}
+              disabled={loading || !invitation}
             >
               {loading ? (
                 <div className="flex items-center gap-2">
