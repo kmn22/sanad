@@ -18,17 +18,27 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const workspaceId = await getSessionWorkspaceId()
+  if (!workspaceId) return unauthorizedJson()
+
+  let body: unknown
   try {
-    const workspaceId = await getSessionWorkspaceId()
-    if (!workspaceId) return unauthorizedJson()
-    const rawBody = await req.json()
-    const parsed = createClientSchema.parse(rawBody)
-    const client = await db.client.create({ data: { ...parsed, workspaceId } })
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+
+  const parsed = createClientSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Validation failed', details: parsed.error.issues }, { status: 400 })
+  }
+
+  try {
+    const client = await db.client.create({ data: { ...parsed.data, workspaceId } })
     return NextResponse.json(client)
-  } catch (err: any) {
-    if (err?.name === 'ZodError') {
-      return NextResponse.json({ error: 'Validation failed', details: err.errors }, { status: 400 })
-    }
-    return NextResponse.json({ error: err.message || 'Failed to create client' }, { status: 500 })
+  } catch (err) {
+    // Log server-side; never echo internal/driver messages back to the caller.
+    console.error('Failed to create client:', err)
+    return NextResponse.json({ error: 'Failed to create client' }, { status: 500 })
   }
 }
