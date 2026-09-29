@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
+import { getSessionWorkspaceId, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 
 export async function GET() {
   const workspaceId = await getSessionWorkspaceId()
@@ -22,11 +22,22 @@ export async function POST(req: NextRequest) {
   if (!workspaceId) return unauthorizedJson()
   const body = await req.json()
   const { timeEntryIds, clientId, caseId, dueDate, notes } = body
+  const entryIds = Array.isArray(timeEntryIds) ? timeEntryIds : []
+
+  if (clientId) {
+    const client = await db.client.findFirst({ where: { id: clientId, workspaceId }, select: { id: true } })
+    if (!client) return notFoundJson()
+  }
+  if (caseId) {
+    const legalCase = await db.legalCase.findFirst({ where: { id: caseId, workspaceId }, select: { id: true } })
+    if (!legalCase) return notFoundJson()
+  }
 
   // Fetch time entries
   const timeEntries = await db.timeEntry.findMany({
-    where: { id: { in: timeEntryIds }, workspaceId },
+    where: { id: { in: entryIds }, workspaceId },
   })
+  if (timeEntries.length !== new Set(entryIds).size) return notFoundJson()
 
   const subtotal = timeEntries.reduce((s, t) => s + (t.durationSec / 3600) * (t.hourlyRate || 0), 0)
   const vatAmount = subtotal * 0.15
@@ -54,7 +65,7 @@ export async function POST(req: NextRequest) {
 
   // Link time entries to invoice
   await db.timeEntry.updateMany({
-    where: { id: { in: timeEntryIds }, workspaceId },
+    where: { id: { in: entryIds }, workspaceId },
     data: { invoiced: true, invoiceId: invoice.id },
   })
 

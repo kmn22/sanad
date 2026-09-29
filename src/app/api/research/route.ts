@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { INITIAL_RESEARCH_ITEMS } from '@/lib/sanad/research/seedData'
-import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
+import { getSessionWorkspaceId, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 
 // GET /api/research?q=...&category=...&type=...
 export async function GET(req: NextRequest) {
@@ -76,6 +76,10 @@ export async function POST(req: NextRequest) {
     if (!workspaceId) return unauthorizedJson()
     const body = await req.json()
     const { title, content, type = 'note', category = 'general', source, tags, notes, caseId, url, isPinned = false } = body
+    if (caseId) {
+      const legalCase = await db.legalCase.findFirst({ where: { id: caseId, workspaceId }, select: { id: true } })
+      if (!legalCase) return notFoundJson()
+    }
 
     if (!title || !content) {
       return NextResponse.json({ success: false, error: 'العنوان والمحتوى مطلوبان' }, { status: 400 })

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { createDocumentSchema } from '@/lib/validations'
-import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
+import { getSessionWorkspaceId, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 
 export async function GET() {
   const workspaceId = await getSessionWorkspaceId()
@@ -16,6 +16,14 @@ export async function POST(req: NextRequest) {
     if (!workspaceId) return unauthorizedJson()
     const rawBody = await req.json()
     const parsed = createDocumentSchema.parse(rawBody)
+    if (parsed.clientId) {
+      const client = await db.client.findFirst({ where: { id: parsed.clientId, workspaceId }, select: { id: true } })
+      if (!client) return notFoundJson()
+    }
+    if (parsed.caseId) {
+      const legalCase = await db.legalCase.findFirst({ where: { id: parsed.caseId, workspaceId }, select: { id: true } })
+      if (!legalCase) return notFoundJson()
+    }
     const doc = await db.legalDocument.create({ data: { ...parsed, workspaceId } })
     // Auto-generate follow-up task when a doc is created
   if (doc.docType === 'nda' && doc.status === 'sent') {

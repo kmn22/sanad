@@ -41,10 +41,5 @@ export function canManageUsers(auth: AuthContext) {
 }
 
 export function communicationWorkspaceWhere(workspaceId: string) {
-  return {
-    OR: [
-      { client: { is: { workspaceId } } },
-      { case: { is: { workspaceId } } },
-    ],
-  }
+  return { workspaceId }
 }

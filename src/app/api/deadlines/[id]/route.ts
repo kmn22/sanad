@@ -9,6 +9,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const existing = await db.academicDeadline.findFirst({ where: { id, workspaceId }, select: { id: true } })
   if (!existing) return notFoundJson()
   const body = await req.json()
+  if (body.courseId) {
+    const course = await db.course.findFirst({ where: { id: body.courseId, workspaceId }, select: { id: true } })
+    if (!course) return notFoundJson()
+  }
   const updated = await db.academicDeadline.update({ where: { id }, data: { ...body, id: undefined, workspaceId: undefined } })
   return NextResponse.json(updated)
 }

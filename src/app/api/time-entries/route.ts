@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
+import { getSessionWorkspaceId, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 
 export async function GET() {
   const workspaceId = await getSessionWorkspaceId()
@@ -20,6 +20,14 @@ export async function POST(req: NextRequest) {
     if (!workspaceId) return unauthorizedJson()
     const body = await req.json()
     const { caseId, description, durationSec, billable, hourlyRate, invoiced, invoiceId, sessionType, date } = body
+    if (caseId) {
+      const legalCase = await db.legalCase.findFirst({ where: { id: caseId, workspaceId }, select: { id: true } })
+      if (!legalCase) return notFoundJson()
+    }
+    if (invoiceId) {
+      const invoice = await db.invoice.findFirst({ where: { id: invoiceId, workspaceId }, select: { id: true } })
+      if (!invoice) return notFoundJson()
+    }
     const te = await db.timeEntry.create({
       data: {
         description: description || 'جلسة عمل',
@@ -35,8 +43,8 @@ export async function POST(req: NextRequest) {
       },
     })
     return NextResponse.json(te)
-  } catch (error: any) {
+  } catch (error) {
     console.error('Time entry creation error:', error)
-    return NextResponse.json({ error: error.message || 'Failed to create time entry' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to create time entry' }, { status: 500 })
   }
 }

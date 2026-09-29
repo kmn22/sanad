@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
 
 // Webhook endpoint for receiving updates from a Najiz RPA bot.
-// Gated by a shared secret when NAJIZ_WEBHOOK_SECRET is configured; open in
-// demo mode (no secret set) so the sandbox keeps working out of the box.
+// Requires an authenticated workspace session and, when configured, the shared secret.
 export async function POST(req: Request) {
   try {
+    const workspaceId = await getSessionWorkspaceId()
+    if (!workspaceId) return unauthorizedJson()
     const expectedSecret = process.env.NAJIZ_WEBHOOK_SECRET
     if (expectedSecret) {
       const provided = req.headers.get('x-najiz-webhook-secret')
@@ -21,7 +23,7 @@ export async function POST(req: Request) {
     }
 
     const result = await db.legalCase.updateMany({
-      where: { caseNumber },
+      where: { caseNumber, workspaceId },
       data: {
         hearingDate: hearingDate ? new Date(hearingDate) : undefined,
         stage: status || undefined

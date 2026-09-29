@@ -1,13 +1,13 @@
 import { createHash } from 'crypto'
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { hashPassword } from '@/lib/auth/password'
+import { hashPassword, isStrongPassword } from '@/lib/auth/password'
 
 const hash = (value: string) => createHash('sha256').update(value).digest('hex')
 
 export async function POST(req: Request) {
   const { token, password } = await req.json()
-  if (typeof token !== 'string' || typeof password !== 'string' || password.length < 12 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+  if (typeof token !== 'string' || typeof password !== 'string' || !isStrongPassword(password)) {
     return NextResponse.json({ error: 'Invalid token or password policy' }, { status: 400 })
   }
   const reset = await db.passwordResetToken.findUnique({ where: { tokenHash: hash(token) } })

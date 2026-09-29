@@ -18,6 +18,13 @@ async function main() {
   await db.caseEntry.deleteMany()
   await db.course.deleteMany()
 
+  const workspace = await db.workspace.upsert({
+    where: { domain: 'sanad-student-demo' },
+    update: {},
+    create: { name: 'حساب طالب تجريبي', domain: 'sanad-student-demo' },
+  })
+  const ws = { workspaceId: workspace.id }
+
   // Courses — typical Saudi law school semester
   const courses = [
     { title: 'النظرية العامة للالتزام', code: 'LAW 301', instructor: 'د. عبدالله الشمري', semester: 'الفصل الأول 1447هـ', credits: 4, color: '#0F5132', notes: 'الكتاب: الوسيط للسنهوري' },
@@ -28,7 +35,7 @@ async function main() {
   ]
   const createdCourses: any[] = []
   for (const c of courses) {
-    createdCourses.push(await db.course.create({ data: c }))
+    createdCourses.push(await db.course.create({ data: { ...c, ...ws } }))
   }
 
   // Lectures — recent ones
@@ -45,7 +52,7 @@ async function main() {
     { courseId: createdCourses[4].id, title: 'محاضرة 1: تعريف الفقه وأصوله', lectureDate: daysFromNow(-8), topic: 'الفرق بين الفقه والأصول، أدلة الأحكام', notes: 'الفقه: الأحكام العملية. الأصول: قواعد استنباط الأحكام. الأدلة: الكتاب، السنة، الإجماع، القياس.', status: 'reviewed' },
   ]
   for (const l of lectures) {
-    await db.lecture.create({ data: l })
+    await db.lecture.create({ data: { ...l, ...ws } })
   }
 
   // Academic deadlines
@@ -60,7 +67,7 @@ async function main() {
     { courseId: null, title: 'التسجيل للفصل القادم', type: 'registration', dueDate: daysFromNow(25), status: 'todo', priority: 'normal', weight: null, notes: 'فتح بوابة التسجيل' },
   ]
   for (const d of deadlines) {
-    await db.academicDeadline.create({ data: d })
+    await db.academicDeadline.create({ data: { ...d, ...ws } })
   }
 
   // Legal terms — vocabulary student is building
@@ -82,7 +89,7 @@ async function main() {
     { term: 'الحجر', definition: 'منع الشخص من التصرف في ماله لحمايته أو حماية الغير.', category: 'civil', origin: 'نظام المعاملات المدنية', example: 'الحجر على الصغير والمجنون.', mastery: 'learning' },
   ]
   for (const t of terms) {
-    await db.legalTerm.create({ data: t })
+    await db.legalTerm.create({ data: { ...t, ...ws } })
   }
 
   // Casebook — landmark cases / principles
@@ -95,7 +102,7 @@ async function main() {
     { caseName: 'منازعة تجارية — الشركات', citation: '1442/تج/777', court: 'محكمة الاستئناف التجارية بالرياض', principle: 'لا يعتد بالتزامن في الشركة المساهمة إلا بعد القيد في السجل التجاري.', subject: 'commercial', summary: 'نازع شريك في صحة توقيعه قبل القيد. قضت المحكمة بعدم قبول الدعوى.', significance: 'تطبيق مبدأ الشهر التجاري وحماية الغير حسن النية.', rating: 3 },
   ]
   for (const c of cases) {
-    await db.caseEntry.create({ data: c })
+    await db.caseEntry.create({ data: { ...c, ...ws } })
   }
 
   console.log('Student seed complete (Arabic)')

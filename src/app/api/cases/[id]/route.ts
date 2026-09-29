@@ -11,6 +11,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const parsed = updateCaseSchema.parse(await req.json())
     const existing = await db.legalCase.findFirst({ where: { id, workspaceId }, select: { id: true } })
     if (!existing) return notFoundJson()
+    if (parsed.clientId) {
+      const client = await db.client.findFirst({ where: { id: parsed.clientId, workspaceId }, select: { id: true } })
+      if (!client) return notFoundJson()
+    }
     const updated = await db.legalCase.update({ where: { id }, data: parsed })
     return NextResponse.json(updated)
   } catch (err: any) {

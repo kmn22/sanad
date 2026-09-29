@@ -18,6 +18,7 @@ export async function GET() {
       emailVerified: true,
       disabledAt: true,
       lockedUntil: true,
+      mfaEnabled: true,
       createdAt: true,
       updatedAt: true,
     },

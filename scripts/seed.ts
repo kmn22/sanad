@@ -242,7 +242,7 @@ async function main() {
     { clientId: C['مطعم الديوانية'], caseId: createdCases[9].id, type: 'call', direction: 'incoming', subject: 'تحديث من العميل', body: 'مكالمة 12 دقيقة — تأكيد رغبة العميل في المضي قُدماً', durationMin: 12, date: daysFromNow(-2, 17) },
     { clientId: C['سعود المطيري'], caseId: createdCases[5].id, type: 'sms', direction: 'outgoing', subject: 'تأكيد الموعد', body: 'تذكير بالجلسة الأولى بعد 18 يوماً', date: daysFromNow(0, 9) },
   ]
-  for (const c of comms) await db.communication.create({ data: c })
+  for (const c of comms) await db.communication.create({ data: { ...c, ...ws } })
 
   // ─── Daily briefs (8) ─────────────────────────────────────────────
   const briefs = [

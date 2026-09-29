@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
 
 // GET /api/student/review-sessions — list past sessions for stats
 export async function GET() {
-  const sessions = await db.reviewSession.findMany({ orderBy: { date: 'desc' }, take: 30 })
+  const workspaceId = await getSessionWorkspaceId()
+  if (!workspaceId) return unauthorizedJson()
+  const sessions = await db.reviewSession.findMany({ where: { workspaceId }, orderBy: { date: 'desc' }, take: 30 })
 
   // Aggregate stats
   const total = sessions.length
@@ -31,9 +34,12 @@ export async function GET() {
 
 // POST /api/student/review-sessions — save a completed session
 export async function POST(req: NextRequest) {
+  const workspaceId = await getSessionWorkspaceId()
+  if (!workspaceId) return unauthorizedJson()
   const body = await req.json()
   const session = await db.reviewSession.create({
     data: {
+      workspaceId,
       mode: body.mode,
       sourceType: body.sourceType,
       sourceLabel: body.sourceLabel,

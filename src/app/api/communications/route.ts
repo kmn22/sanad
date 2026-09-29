@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { communicationWorkspaceWhere, getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
+import { communicationWorkspaceWhere, getSessionWorkspaceId, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 
 export async function GET(req: NextRequest) {
   const workspaceId = await getSessionWorkspaceId()
@@ -29,11 +29,23 @@ export async function POST(req: NextRequest) {
   const workspaceId = await getSessionWorkspaceId()
   if (!workspaceId) return unauthorizedJson()
   const body = await req.json()
+  if (body.clientId) {
+    const client = await db.client.findFirst({ where: { id: body.clientId, workspaceId }, select: { id: true } })
+    if (!client) return notFoundJson()
+  }
+  if (body.caseId) {
+    const legalCase = await db.legalCase.findFirst({ where: { id: body.caseId, workspaceId }, select: { id: true } })
+    if (!legalCase) return notFoundJson()
+  }
   const c = await db.communication.create({
     data: {
-      ...body,
       clientId: body.clientId || null,
       caseId: body.caseId || null,
+      workspaceId,
+      type: String(body.type || 'note'),
+      direction: String(body.direction || 'outgoing'),
+      subject: String(body.subject || ''),
+      body: String(body.body || ''),
       date: body.date ? new Date(body.date) : new Date(),
       durationMin: body.durationMin || null,
     },

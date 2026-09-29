@@ -9,6 +9,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const existing = await db.researchItem.findFirst({ where: { id, workspaceId }, select: { id: true } })
   if (!existing) return notFoundJson()
   const body = await req.json()
+  if (body.caseId) {
+    const legalCase = await db.legalCase.findFirst({ where: { id: body.caseId, workspaceId }, select: { id: true } })
+    if (!legalCase) return notFoundJson()
+  }
   const item = await db.researchItem.update({
     where: { id },
     data: {

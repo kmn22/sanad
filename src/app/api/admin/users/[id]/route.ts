@@ -15,12 +15,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   })
   if (!target) return notFoundJson()
 
-  const { role, disabled, revokeSessions, unlock } = await req.json()
+  const { role, disabled, revokeSessions, unlock, mfaReset } = await req.json()
   if (role !== undefined && !ASSIGNABLE_ROLES.has(role)) {
     return NextResponse.json({ error: 'Role is not assignable' }, { status: 400 })
   }
-  if (id === auth.userId && (disabled === true || role !== undefined)) {
-    return NextResponse.json({ error: 'You cannot disable or change your own role' }, { status: 400 })
+  if (id === auth.userId && (disabled === true || role !== undefined || mfaReset === true)) {
+    return NextResponse.json({ error: 'You cannot change your own administrative controls' }, { status: 400 })
   }
 
   const updated = await db.user.update({
@@ -28,11 +28,14 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     data: {
       role,
       disabledAt: disabled === undefined ? undefined : disabled ? new Date() : null,
-      sessionVersion: revokeSessions || disabled ? { increment: 1 } : undefined,
+      sessionVersion: revokeSessions || disabled || mfaReset ? { increment: 1 } : undefined,
       lockedUntil: unlock ? null : undefined,
       failedLoginAttempts: unlock ? 0 : undefined,
+      mfaEnabled: mfaReset ? false : undefined,
+      mfaSecret: mfaReset ? null : undefined,
+      mfaRecoveryCodes: mfaReset ? null : undefined,
     },
-    select: { id: true, email: true, name: true, role: true, disabledAt: true, lockedUntil: true, sessionVersion: true },
+    select: { id: true, email: true, name: true, role: true, disabledAt: true, lockedUntil: true, sessionVersion: true, mfaEnabled: true },
   })
 
   await writeAudit({
@@ -42,7 +45,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     entityType: 'User',
     entityId: target.id,
     ipAddress: requestIp(req),
-    metadata: { role, disabled, revokeSessions: Boolean(revokeSessions), unlock: Boolean(unlock) },
+    metadata: { role, disabled, revokeSessions: Boolean(revokeSessions), unlock: Boolean(unlock), mfaReset: Boolean(mfaReset) },
   })
   return NextResponse.json(updated)
 }

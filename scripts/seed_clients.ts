@@ -11,6 +11,11 @@ function daysFromNow(days: number): Date {
 }
 
 async function main() {
+  const workspaceId = process.env.SEED_WORKSPACE_ID
+  if (!workspaceId) throw new Error('SEED_WORKSPACE_ID is required')
+  const workspace = await db.workspace.findUnique({ where: { id: workspaceId }, select: { id: true } })
+  if (!workspace) throw new Error('SEED_WORKSPACE_ID does not match a workspace')
+
   // Create clients from existing case data
   const clients = [
     { name: 'مجموعة الفيصلية', type: 'corporate', phone: '011-456-7890', email: 'legal@alfaisaliah.com', nationalId: '1010234567', address: 'الرياض، حي العليا', company: 'مجموعة الفيصلية القابضة', notes: 'عميل استراتيجي — تعامل منذ 2020' },
@@ -23,11 +28,11 @@ async function main() {
   ]
   const createdClients: any[] = []
   for (const c of clients) {
-    createdClients.push(await db.client.create({ data: c }))
+    createdClients.push(await db.client.create({ data: { ...c, workspaceId } }))
   }
 
   // Link existing cases to clients
-  const cases = await db.legalCase.findMany()
+  const cases = await db.legalCase.findMany({ where: { workspaceId } })
   const linkMap: Record<string, string> = {
     'نزاع عقد الفيصلية': createdClients[0].id,
     'مراجعة اتفاقية سرية — تكو': createdClients[1].id,
@@ -45,7 +50,7 @@ async function main() {
   }
 
   // Link documents to clients where possible
-  const docs = await db.legalDocument.findMany()
+  const docs = await db.legalDocument.findMany({ where: { workspaceId } })
   const docLinkMap: Record<string, string> = {
     'اتفاقية سرية مشتركة — تكو': createdClients[1].id,
     'اتفاقية خدمات — الفيصلية': createdClients[0].id,
@@ -70,12 +75,12 @@ async function main() {
     { clientId: createdClients[3].id, caseId: cases.find(c => c.title === 'علامة برايتسعود التجارية')?.id, type: 'note', direction: 'outgoing', subject: 'ملاحظة داخلية', body: 'العميل يفضل التواصل عبر البريد الإلكتروني فقط. تجنب المكالمات الهاتفية إلا في حالات الطوارئ.', date: daysFromNow(-5) },
   ]
   for (const c of communications) {
-    await db.communication.create({ data: c as any })
+    await db.communication.create({ data: { ...c, workspaceId } })
   }
 
   // Create one sample invoice (from the Gulf Pharma billable time entries)
   const billableEntries = await db.timeEntry.findMany({
-    where: { billable: true, invoiced: false, caseId: cases.find(c => c.title === 'استحواذ صيدليات الخليج')?.id }
+    where: { billable: true, invoiced: false, workspaceId, caseId: cases.find(c => c.title === 'استحواذ صيدليات الخليج')?.id }
   })
   if (billableEntries.length > 0) {
     const subtotal = billableEntries.reduce((s, t) => s + (t.durationSec / 3600) * (t.hourlyRate || 0), 0)
@@ -95,6 +100,7 @@ async function main() {
         vatAmount,
         total,
         notes: 'فاتورة خدمات قانونية — استحواذ صيدليات الخليج',
+        workspaceId,
       },
     })
 
@@ -109,7 +115,7 @@ async function main() {
 
   // Create a second paid invoice for variety
   const alFaisaliahEntries = await db.timeEntry.findMany({
-    where: { billable: true, invoiced: false, caseId: cases.find(c => c.title === 'نزاع عقد الفيصلية')?.id }
+    where: { billable: true, invoiced: false, workspaceId, caseId: cases.find(c => c.title === 'نزاع عقد الفيصلية')?.id }
   })
   if (alFaisaliahEntries.length > 0) {
     const subtotal = alFaisaliahEntries.reduce((s, t) => s + (t.durationSec / 3600) * (t.hourlyRate || 0), 0)
@@ -131,6 +137,7 @@ async function main() {
         paidAmount: total,
         paidAt: daysFromNow(-2),
         notes: 'صحيفة الدعوى — نزاع عقد الفيصلية',
+        workspaceId,
       },
     })
 

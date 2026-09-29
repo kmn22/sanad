@@ -52,6 +52,7 @@ model Workspace {
   invoices       Invoice[]
   compliance     ComplianceItem[]
   timeEntries    TimeEntry[]
+  communications Communication[]
   courses        Course[]
   lectures       Lecture[]
   deadlines      AcademicDeadline[]
@@ -87,11 +88,11 @@ model Client {
   address     String?
   company     String? // company name if corporate
   notes       String?
-  workspaceId String?
+  workspaceId String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  workspace      Workspace?      @relation(fields: [workspaceId], references: [id])
+  workspace      Workspace       @relation(fields: [workspaceId], references: [id])
   cases          LegalCase[]
   documents      LegalDocument[]
   communications Communication[]
@@ -111,11 +112,11 @@ model ComplianceItem {
   status      String   @default("active") // active | expiring | expired | renewed
   notes       String?
   notifyDays  Int      @default(30)
-  workspaceId String?
+  workspaceId String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  workspace Workspace? @relation(fields: [workspaceId], references: [id])
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
 
   @@index([workspaceId])
   @@index([expiryDate])
@@ -138,11 +139,11 @@ model LegalCase {
   opposingParty String? // الخصم
   notes         String?
   portalToken   String?   @unique // رابط البوابة السري للعميل
-  workspaceId   String?
+  workspaceId   String
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  workspace      Workspace?      @relation(fields: [workspaceId], references: [id])
+  workspace      Workspace       @relation(fields: [workspaceId], references: [id])
   client         Client?         @relation(fields: [clientId], references: [id], onDelete: SetNull)
   timeEntries    TimeEntry[]
   communications Communication[]
@@ -166,12 +167,12 @@ model LegalDocument {
   caseId      String?
   clientId    String?
   notes       String?
-  workspaceId String?
+  workspaceId String
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  workspace Workspace? @relation(fields: [workspaceId], references: [id])
-  client    Client?    @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  client    Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
 
   @@index([workspaceId])
   @@index([caseId])
@@ -190,11 +191,11 @@ model Task {
   relatedDoc  String? // doc title if auto-generated
   caseId      String?
   autoGen     Boolean   @default(false)
-  workspaceId String?
+  workspaceId String
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  workspace Workspace? @relation(fields: [workspaceId], references: [id])
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
 
   @@index([workspaceId])
   @@index([caseId])
@@ -214,10 +215,10 @@ model TimeEntry {
   invoiceId   String? // link to invoice
   sessionType String   @default("focus") // focus | billable | meeting | break
   date        DateTime @default(now())
-  workspaceId String?
+  workspaceId String
   createdAt   DateTime @default(now())
 
-  workspace Workspace? @relation(fields: [workspaceId], references: [id])
+  workspace Workspace  @relation(fields: [workspaceId], references: [id])
   case      LegalCase? @relation(fields: [caseId], references: [id], onDelete: SetNull)
   invoice   Invoice?   @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
 
@@ -242,7 +243,7 @@ model DailyBrief {
 // Research Hub — saved bookmarks, legal precedents, statutes and custom dossiers
 model ResearchItem {
   id          String   @id @default(cuid())
-  workspaceId String?
+  workspaceId String
   title       String
   content     String
   type        String   @default("statute") // statute | precedent | regulation | note | doctrine
@@ -256,7 +257,7 @@ model ResearchItem {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  workspace Workspace? @relation(fields: [workspaceId], references: [id])
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
 
   @@index([workspaceId])
   @@index([type])
@@ -283,11 +284,11 @@ model Invoice {
   zatcaHash   String?
   zatcaXml    String?
   zatcaStatus String    @default("not_submitted") // not_submitted | submitted | valid | rejected
-  workspaceId String?
+  workspaceId String
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  workspace   Workspace?  @relation(fields: [workspaceId], references: [id])
+  workspace   Workspace   @relation(fields: [workspaceId], references: [id])
   client      Client?     @relation(fields: [clientId], references: [id], onDelete: SetNull)
   case        LegalCase?  @relation(fields: [caseId], references: [id], onDelete: SetNull)
   timeEntries TimeEntry[]
@@ -303,6 +304,7 @@ model Communication {
   id          String   @id @default(cuid())
   clientId    String?
   caseId      String?
+  workspaceId String
   type        String // call | email | meeting | sms | note
   direction   String   @default("outgoing") // incoming | outgoing
   subject     String
@@ -311,9 +313,11 @@ model Communication {
   date        DateTime @default(now())
   createdAt   DateTime @default(now())
 
-  client Client?    @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  case   LegalCase? @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  client    Client?    @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  case      LegalCase? @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  workspace Workspace  @relation(fields: [workspaceId], references: [id])
 
+  @@index([workspaceId])
   @@index([clientId])
   @@index([caseId])
   @@index([date])
@@ -323,7 +327,7 @@ model Communication {
 
 model Course {
   id          String   @id @default(cuid())
-  workspaceId String?
+  workspaceId String
   title       String
   code        String?
   instructor  String?
@@ -334,7 +338,7 @@ model Course {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  workspace Workspace?         @relation(fields: [workspaceId], references: [id])
+  workspace Workspace          @relation(fields: [workspaceId], references: [id])
   lectures  Lecture[]
   deadlines AcademicDeadline[]
 
@@ -343,7 +347,7 @@ model Course {
 
 model Lecture {
   id          String   @id @default(cuid())
-  workspaceId String?
+  workspaceId String
   courseId    String
   title       String
   lectureDate DateTime
@@ -354,8 +358,8 @@ model Lecture {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  workspace Workspace? @relation(fields: [workspaceId], references: [id])
-  course    Course     @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  course    Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId])
   @@index([courseId])
@@ -363,7 +367,7 @@ model Lecture {
 
 model AcademicDeadline {
   id          String   @id @default(cuid())
-  workspaceId String?
+  workspaceId String
   courseId    String?
   title       String
   type        String
@@ -375,8 +379,8 @@ model AcademicDeadline {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  workspace Workspace? @relation(fields: [workspaceId], references: [id])
-  course    Course?    @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  course    Course?   @relation(fields: [courseId], references: [id], onDelete: SetNull)
 
   @@index([workspaceId])
   @@index([courseId])
@@ -385,7 +389,7 @@ model AcademicDeadline {
 
 model LegalTerm {
   id          String   @id @default(cuid())
-  workspaceId String?
+  workspaceId String
   term        String
   definition  String
   category    String   @default("general")
@@ -395,7 +399,7 @@ model LegalTerm {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  workspace Workspace? @relation(fields: [workspaceId], references: [id])
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
 
   @@unique([workspaceId, term])
   @@index([workspaceId])
@@ -403,7 +407,7 @@ model LegalTerm {
 
 model CaseEntry {
   id           String   @id @default(cuid())
-  workspaceId  String?
+  workspaceId  String
   caseName     String
   citation     String?
   court        String?
@@ -415,14 +419,14 @@ model CaseEntry {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  workspace Workspace? @relation(fields: [workspaceId], references: [id])
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
 
   @@index([workspaceId])
 }
 
 model ReviewSession {
   id            String   @id @default(cuid())
-  workspaceId   String?
+  workspaceId   String
   mode          String
   sourceType    String
   sourceLabel   String
@@ -434,7 +438,7 @@ model ReviewSession {
   date          DateTime @default(now())
   createdAt     DateTime @default(now())
 
-  workspace Workspace? @relation(fields: [workspaceId], references: [id])
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
 
   @@index([workspaceId])
 }

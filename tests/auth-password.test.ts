@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { hashPassword, verifyPassword } from '../src/lib/auth/password'
+import { hashPassword, isStrongPassword, verifyPassword } from '../src/lib/auth/password'
 
 describe('Cryptographic Password Hashing & Verification', () => {
   it('correctly hashes and verifies valid passwords', () => {
@@ -24,5 +24,12 @@ describe('Cryptographic Password Hashing & Verification', () => {
     // Corrupted hash must return false
     expect(verifyPassword(raw, 'invalid-hash')).toBe(false)
     expect(verifyPassword(raw, '')).toBe(false)
+  })
+
+  it('enforces the account password policy', () => {
+    expect(isStrongPassword('StrongPass2026')).toBe(true)
+    expect(isStrongPassword('short1A')).toBe(false)
+    expect(isStrongPassword('onlyletterslong')).toBe(false)
+    expect(isStrongPassword('123456789012')).toBe(false)
   })
 })

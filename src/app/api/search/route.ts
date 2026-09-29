@@ -105,6 +105,7 @@ export async function GET(req: NextRequest) {
     }),
     db.legalTerm.findMany({
       where: {
+        workspaceId,
         OR: [
           { term: { contains: q } },
           { definition: { contains: q } },
@@ -114,6 +115,7 @@ export async function GET(req: NextRequest) {
     }),
     db.caseEntry.findMany({
       where: {
+        workspaceId,
         OR: [
           { caseName: { contains: q } },
           { principle: { contains: q } },

@@ -1,18 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { SBA_EXAM_QUESTIONS } from '@/lib/sanad/student/sbaQuestionBank'
+import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
 
 // GET /api/student/review?source=all|terms|cases|lectures|sba|course:{id}|subject:{value}&mode=flashcards|quiz
 // Generates a deck of review cards from the user's library.
 export async function GET(req: NextRequest) {
+  const workspaceId = await getSessionWorkspaceId()
+  if (!workspaceId) return unauthorizedJson()
   const { searchParams } = new URL(req.url)
   const source = searchParams.get('source') || 'all'
   const mode = (searchParams.get('mode') || 'flashcards') as 'flashcards' | 'quiz'
 
   const [terms, cases, lectures] = await Promise.all([
-    db.legalTerm.findMany(),
-    db.caseEntry.findMany(),
-    db.lecture.findMany({ include: { course: true } }),
+    db.legalTerm.findMany({ where: { workspaceId } }),
+    db.caseEntry.findMany({ where: { workspaceId } }),
+    db.lecture.findMany({ where: { workspaceId }, include: { course: true } }),
   ])
 
   interface Card {
@@ -229,7 +232,7 @@ export async function GET(req: NextRequest) {
   else if (source === 'sba') sourceLabel = 'اختبار رخصة المحاماة (SBA)'
   else if (source.startsWith('course:')) {
     const courseId = source.split(':')[1]
-    const course = await db.course.findUnique({ where: { id: courseId } })
+    const course = await db.course.findFirst({ where: { id: courseId, workspaceId } })
     sourceLabel = course?.title || 'مادة محددة'
   } else if (source.startsWith('subject:')) {
     const subject = source.split(':')[1]

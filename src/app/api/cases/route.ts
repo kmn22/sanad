@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { createCaseSchema } from '@/lib/validations'
-import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
+import { getSessionWorkspaceId, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 
 export async function GET() {
   const workspaceId = await getSessionWorkspaceId()
@@ -16,6 +16,10 @@ export async function POST(req: NextRequest) {
     if (!workspaceId) return unauthorizedJson()
     const rawBody = await req.json()
     const parsed = createCaseSchema.parse(rawBody)
+    if (parsed.clientId) {
+      const client = await db.client.findFirst({ where: { id: parsed.clientId, workspaceId }, select: { id: true } })
+      if (!client) return notFoundJson()
+    }
     const c = await db.legalCase.create({ data: { ...parsed, workspaceId } })
     return NextResponse.json(c)
   } catch (err: any) {

@@ -11,6 +11,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const parsed = updateInvoiceSchema.parse(await req.json())
     const invoice = await db.invoice.findFirst({ where: { id, workspaceId } })
     if (!invoice) return notFoundJson()
+    if (parsed.clientId) {
+      const client = await db.client.findFirst({ where: { id: parsed.clientId, workspaceId }, select: { id: true } })
+      if (!client) return notFoundJson()
+    }
+    if (parsed.caseId) {
+      const legalCase = await db.legalCase.findFirst({ where: { id: parsed.caseId, workspaceId }, select: { id: true } })
+      if (!legalCase) return notFoundJson()
+    }
 
     if (parsed.status === 'paid' && !parsed.paidAt) {
       parsed.paidAt = new Date()

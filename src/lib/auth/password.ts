@@ -14,6 +14,10 @@ export function hashPassword(password: string): string {
  * Cryptographically verifies a plaintext password against a stored `salt:derivedKeyHex` hash
  * using constant-time comparison to protect against timing attacks.
  */
+export function isStrongPassword(password: string): boolean {
+  return password.length >= 12 && /[A-Za-z]/.test(password) && /\d/.test(password)
+}
+
 export function verifyPassword(password: string, storedHash: string): boolean {
   try {
     if (!storedHash || !storedHash.includes(':')) return false
