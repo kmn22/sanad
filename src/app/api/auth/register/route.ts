@@ -1,10 +1,9 @@
-import { createHash, randomBytes } from 'crypto'
+import { createHash } from 'crypto'
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { hashPassword } from '@/lib/auth/password'
 import { rateLimit } from '@/lib/rate-limit'
 import { PRIVACY_NOTICE_VERSION, privacyNoticeHash } from '@/lib/compliance'
-import { emailConfigured, publicAppUrl, sendTransactionalEmail } from '@/lib/email'
 
 const hashToken = (token: string) => createHash('sha256').update(token).digest('hex')
 
@@ -14,7 +13,6 @@ function getClientIp(req: Request): string {
 
 export async function POST(req: Request) {
   try {
-    if (!emailConfigured()) return NextResponse.json({ error: 'Registration is unavailable until email delivery is configured' }, { status: 503 })
     const ip = getClientIp(req)
     if (ip !== 'unknown' && !(await rateLimit(`register:ip:${ip}`, 10, 15 * 60 * 1000)).success) {
       return NextResponse.json({ error: 'Too many registration attempts. Please try again later.' }, { status: 429 })
@@ -31,7 +29,7 @@ export async function POST(req: Request) {
     if (typeof password !== 'string' || password.length < 12 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
       return NextResponse.json({ error: 'كلمة المرور يجب أن تكون 12 خانة على الأقل وتحتوي على حروف وأرقام' }, { status: 400 })
     }
-    if (typeof inviteToken !== 'string') {
+    if (typeof inviteToken !== 'string' || !/^[a-f0-9]{64}$/i.test(inviteToken)) {
       return NextResponse.json({ error: 'A valid invitation is required' }, { status: 403 })
     }
     if (acceptPrivacy !== true || privacyNoticeVersion !== PRIVACY_NOTICE_VERSION) {
@@ -46,7 +44,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'هذا البريد الإلكتروني مسجل بالفعل.' }, { status: 409 })
     }
 
-    const verificationToken = randomBytes(32).toString('hex')
     const newUser = await db.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
@@ -55,6 +52,7 @@ export async function POST(req: Request) {
           password: hashPassword(password),
           role: invitation.role,
           workspaceId: invitation.workspaceId,
+          emailVerified: new Date(),
           privacyNoticeVersion: PRIVACY_NOTICE_VERSION,
         },
       })
@@ -67,28 +65,25 @@ export async function POST(req: Request) {
       await tx.privacyAcceptance.create({
         data: { userId: user.id, noticeId: notice.id, ipAddress: ip, userAgent: req.headers.get('user-agent')?.slice(0, 500) },
       })
-      await tx.verificationToken.create({
-        data: { tokenHash: hashToken(verificationToken), email: cleanEmail, expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
-      })
       await tx.auditLog.create({
         data: { workspaceId: invitation.workspaceId, userId: user.id, action: 'auth.register', entityType: 'User', entityId: user.id, ipAddress: ip },
+      })
+      await tx.notification.create({
+        data: {
+          workspaceId: invitation.workspaceId,
+          userId: user.id,
+          type: 'system',
+          title: 'مرحباً بك في سند',
+          message: 'اكتمل إعداد حسابك وتم ربطه بمساحة العمل.',
+          link: '/dashboard',
+        },
       })
       return user
     })
 
-    await sendTransactionalEmail({
-      to: cleanEmail,
-      subject: 'تحقق من بريدك الإلكتروني في سند',
-      heading: 'تأكيد البريد الإلكتروني',
-      text: 'أكمل التحقق خلال 24 ساعة لتفعيل تسجيل الدخول.',
-      actionUrl: publicAppUrl(`/verify-email?token=${encodeURIComponent(verificationToken)}`),
-      actionLabel: 'تأكيد البريد',
-    })
-
     return NextResponse.json({
       success: true,
-      message: 'تم إنشاء الحساب. يجب التحقق من البريد الإلكتروني قبل تسجيل الدخول.',
-      emailVerificationRequired: true,
+      message: 'تم إنشاء الحساب ويمكنك تسجيل الدخول الآن.',
       user: { id: newUser.id, email: newUser.email, name: newUser.name, role: newUser.role, workspaceId: newUser.workspaceId },
     }, { status: 201 })
   } catch (error) {

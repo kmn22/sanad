@@ -31,7 +31,12 @@ model User {
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
-  workspace Workspace? @relation(fields: [workspaceId], references: [id])
+  workspace        Workspace?       @relation(fields: [workspaceId], references: [id])
+  notifications    Notification[]
+  assignedTasks    Task[]           @relation("TaskAssignee")
+  caseAssignments        CaseAssignment[]
+  workflowEvents         WorkflowEvent[]
+  assignedPortalRequests PortalRequest[]
 
   @@index([workspaceId])
 }
@@ -59,22 +64,39 @@ model Workspace {
   legalTerms     LegalTerm[]
   caseEntries    CaseEntry[]
   reviewSessions ReviewSession[]
-  researchItems  ResearchItem[]
-  invitations    Invitation[]
-  auditLogs      AuditLog[]
-  subscription   Subscription?      @relation(fields: [subscriptionId], references: [id])
+  researchItems   ResearchItem[]
+  invitations     Invitation[]
+  auditLogs       AuditLog[]
+  notifications   Notification[]
+  caseAssignments CaseAssignment[]
+  workflowEvents  WorkflowEvent[]
+  portalAccesses  PortalAccess[]
+  portalRequests  PortalRequest[]
+  portalFiles     PortalFile[]
+  subscription    Subscription?      @relation(fields: [subscriptionId], references: [id])
 }
 
 model Notification {
-  id        String   @id @default(cuid())
-  userId    String
-  title     String
-  message   String
-  isRead    Boolean  @default(false)
-  link      String?
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  actorId     String?
+  type        String   @default("system") // system | assignment | workflow | portal | security
+  title       String
+  message     String
+  isRead      Boolean  @default(false)
+  link        String?
+  entityType  String?
+  entityId    String?
+  createdAt   DateTime @default(now())
 
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
   @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
 }
 
 // ===== Client management (CRM) =====
@@ -97,6 +119,9 @@ model Client {
   documents      LegalDocument[]
   communications Communication[]
   invoices       Invoice[]
+  portalAccesses PortalAccess[]
+  portalRequests PortalRequest[]
+  portalFiles    PortalFile[]
 
   @@index([workspaceId])
 }
@@ -138,7 +163,6 @@ model LegalCase {
   court         String? // المحكمة
   opposingParty String? // الخصم
   notes         String?
-  portalToken   String?   @unique // رابط البوابة السري للعميل
   workspaceId   String
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -148,6 +172,11 @@ model LegalCase {
   timeEntries    TimeEntry[]
   communications Communication[]
   invoices       Invoice[]
+  assignments    CaseAssignment[]
+  workflowEvents WorkflowEvent[]
+  portalAccesses PortalAccess[]
+  portalRequests PortalRequest[]
+  portalFiles    PortalFile[]
 
   @@index([workspaceId])
   @@index([clientId])
@@ -166,13 +195,19 @@ model LegalDocument {
   expiryDate  DateTime?
   caseId      String?
   clientId    String?
-  notes       String?
-  workspaceId String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  notes        String?
+  fileKey      String? // encrypted storage key under UPLOAD_ROOT
+  mimeType     String?
+  sizeBytes    Int?
+  checksumSha256 String?
+  uploadedBy   String? // user | client_portal | system
+  workspaceId  String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  workspace Workspace @relation(fields: [workspaceId], references: [id])
-  client    Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id])
+  client      Client?      @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  portalFiles PortalFile[]
 
   @@index([workspaceId])
   @@index([caseId])
@@ -189,18 +224,155 @@ model Task {
   priority    String    @default("normal") // low | normal | high
   dueDate     DateTime?
   relatedDoc  String? // doc title if auto-generated
-  caseId      String?
-  autoGen     Boolean   @default(false)
-  workspaceId String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  caseId       String?
+  assignedToId String?
+  autoGen      Boolean   @default(false)
+  workspaceId  String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  workspace  Workspace @relation(fields: [workspaceId], references: [id])
+  assignedTo User?     @relation("TaskAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  events     WorkflowEvent[]
 
   @@index([workspaceId])
   @@index([caseId])
+  @@index([assignedToId])
   @@index([status])
   @@index([dueDate])
+}
+
+// Team workflow — case ownership and auditable transitions
+model CaseAssignment {
+  id           String   @id @default(cuid())
+  workspaceId  String
+  caseId       String
+  userId       String
+  assignedById String
+  role         String   @default("assignee") // lead | assignee | reviewer | observer
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  case      LegalCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([caseId, userId])
+  @@index([workspaceId])
+  @@index([userId])
+}
+
+model WorkflowEvent {
+  id          String   @id @default(cuid())
+  workspaceId String
+  caseId      String?
+  taskId      String?
+  actorId     String?
+  action      String // assign | unassign | stage_change | task_update | portal_request | client_upload
+  fromState   String?
+  toState     String?
+  note        String?
+  metadata    String? // JSON string, no secrets
+  createdAt   DateTime @default(now())
+
+  workspace Workspace  @relation(fields: [workspaceId], references: [id])
+  case      LegalCase? @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  task      Task?      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  actor     User?      @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId])
+  @@index([caseId])
+  @@index([taskId])
+  @@index([createdAt])
+}
+
+// Secure client portal — hashed, expiring, revocable case/client links
+model PortalAccess {
+  id             String    @id @default(cuid())
+  workspaceId    String
+  clientId       String
+  caseId         String?
+  tokenHash      String    @unique
+  label          String?
+  allowUpload    Boolean   @default(true)
+  expiresAt      DateTime
+  revokedAt      DateTime?
+  lastAccessedAt DateTime?
+  createdById    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  workspace Workspace       @relation(fields: [workspaceId], references: [id])
+  client    Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  case      LegalCase?      @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  requests  PortalRequest[]
+  files     PortalFile[]
+
+  @@index([workspaceId])
+  @@index([clientId])
+  @@index([caseId])
+  @@index([expiresAt])
+}
+
+model PortalRequest {
+  id             String    @id @default(cuid())
+  workspaceId    String
+  portalAccessId String
+  clientId       String
+  caseId         String?
+  assignedToId   String?
+  createdBy      String // portal | user
+  title          String
+  message        String
+  status         String   @default("open") // open | answered | closed
+  priority       String   @default("normal") // low | normal | high | urgent
+  dueDate        DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  workspace    Workspace      @relation(fields: [workspaceId], references: [id])
+  portalAccess PortalAccess   @relation(fields: [portalAccessId], references: [id], onDelete: Cascade)
+  client       Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  case         LegalCase?     @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  assignedTo   User?          @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+  files        PortalFile[]
+
+  @@index([workspaceId])
+  @@index([portalAccessId])
+  @@index([clientId])
+  @@index([caseId])
+  @@index([status])
+}
+
+model PortalFile {
+  id             String   @id @default(cuid())
+  workspaceId    String
+  portalAccessId String
+  requestId      String?
+  documentId     String?
+  clientId       String
+  caseId         String?
+  fileKey        String // encrypted object key under UPLOAD_ROOT
+  originalName   String
+  mimeType       String
+  sizeBytes      Int
+  checksumSha256 String
+  status         String   @default("stored") // stored | linked | quarantined | deleted
+  createdAt      DateTime @default(now())
+
+  workspace    Workspace      @relation(fields: [workspaceId], references: [id])
+  portalAccess PortalAccess   @relation(fields: [portalAccessId], references: [id], onDelete: Cascade)
+  request      PortalRequest? @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  document     LegalDocument? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  client       Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  case         LegalCase?     @relation(fields: [caseId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId])
+  @@index([portalAccessId])
+  @@index([requestId])
+  @@index([clientId])
+  @@index([caseId])
 }
 
 // Billable hours + focus sessions

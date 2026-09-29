@@ -15,7 +15,9 @@ export async function proxy(req: NextRequest) {
     pathname === '/api/auth/register' ||
     pathname.startsWith('/api/auth/') ||
     pathname.startsWith('/api/billing/webhook') ||
-    pathname === '/api/privacy/requests'
+    pathname === '/api/privacy/requests' ||
+    pathname === '/api/invitations/preview' ||
+    pathname.startsWith('/api/portal/')
 
   if (pathname.startsWith('/api/') && !publicApiPath) {
     const token = await getToken({
@@ -33,7 +35,7 @@ export async function proxy(req: NextRequest) {
   }
 
   // Protected paths
-  if (pathname.startsWith('/dashboard') || pathname.startsWith('/settings') || pathname.startsWith('/admin') || pathname === '/privacy/accept') {
+  if (pathname.startsWith('/dashboard') || pathname.startsWith('/settings') || pathname.startsWith('/admin') || pathname.startsWith('/workflow') || pathname === '/privacy/accept') {
     const token = await getToken({
       req,
       secret: authSecret,
@@ -67,5 +69,5 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/api/:path*', '/dashboard/:path*', '/dashboard', '/settings/:path*', '/admin/:path*', '/admin', '/privacy/accept', '/login', '/register'],
+  matcher: ['/api/:path*', '/dashboard/:path*', '/dashboard', '/settings/:path*', '/admin/:path*', '/admin', '/workflow/:path*', '/workflow', '/privacy/accept', '/login', '/register'],
 }
