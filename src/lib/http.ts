@@ -22,3 +22,15 @@ export function safeErrorResponse(error: unknown) {
   }
   return Response.json({ error: 'Internal Server Error' }, { status: 500 })
 }
+
+/**
+ * Best-effort client IP from proxy headers. Returns 'unknown' rather than ''
+ * so callers can decide whether to skip IP-scoped rate limiting.
+ */
+export function clientIp(req: Request): string {
+  return (
+    req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+    req.headers.get('x-real-ip')?.trim() ||
+    'unknown'
+  )
+}
