@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
+import { PRIVACY_NOTICE_VERSION } from '@/lib/compliance'
 
 const secureCookie = process.env.NODE_ENV === 'production'
 const authSecret = process.env.NEXTAUTH_SECRET
@@ -26,6 +27,9 @@ export async function proxy(req: NextRequest) {
     if (!token) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
+    if (pathname !== '/api/privacy/accept' && token.privacyNoticeVersion !== PRIVACY_NOTICE_VERSION) {
+      return NextResponse.json({ error: 'Current privacy notice acceptance is required', code: 'PRIVACY_NOTICE_REQUIRED' }, { status: 403 })
+    }
   }
 
   // Protected paths
@@ -41,7 +45,7 @@ export async function proxy(req: NextRequest) {
       loginUrl.searchParams.set('callbackUrl', req.nextUrl.pathname)
       return NextResponse.redirect(loginUrl)
     }
-    if (pathname !== '/privacy/accept' && token.privacyNoticeVersion !== '2026-09-28') {
+    if (pathname !== '/privacy/accept' && token.privacyNoticeVersion !== PRIVACY_NOTICE_VERSION) {
       return NextResponse.redirect(new URL('/privacy/accept', req.url))
     }
   }
