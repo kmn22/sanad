@@ -9,26 +9,41 @@ import { useLang } from '@/lib/sanad/i18n'
 import { useQuery } from '@tanstack/react-query'
 import { getLawyerDashboard } from '@/app/actions/dashboard'
 import { getStudentDashboard } from '@/app/actions/studentDashboard'
-import { DashboardView } from '@/components/sanad/DashboardView'
-import { ComplianceView } from '@/components/sanad/ComplianceView'
-import { CasesView } from '@/components/sanad/CasesView'
-import { DeepWorkView } from '@/components/sanad/DeepWorkView'
-import { TasksView } from '@/components/sanad/TasksView'
-import { DocumentsView } from '@/components/sanad/DocumentsView'
-import { ClientsView } from '@/components/sanad/ClientsView'
-import { InvoicesView } from '@/components/sanad/InvoicesView'
-import { ScannerView } from '@/components/sanad/ScannerView'
-import { CalendarView } from '@/components/sanad/CalendarView'
-import { CommunicationsView } from '@/components/sanad/CommunicationsView'
-import { StudentView } from '@/components/sanad/StudentView'
+import dynamic from 'next/dynamic'
 import { TodayFocusView } from '@/components/sanad/TodayFocusView'
-import { CommandPalette } from '@/components/sanad/CommandPalette'
+import { DashboardView } from '@/components/sanad/DashboardView'
 import { TopNav } from '@/components/sanad/TopNav'
 import { MobileNav } from '@/components/sanad/MobileNav'
 import { Sidebar } from '@/components/sanad/Sidebar'
-import { DailyBriefView } from '@/components/sanad/DailyBriefView'
-import { ResearchHubView } from '@/components/sanad/ResearchHubView'
 import type { DashboardData, StudentDashboardData } from '@/lib/sanad/types'
+
+const ViewLoadingSkeleton = () => (
+  <div className="space-y-4 p-6 animate-pulse" dir="rtl">
+    <div className="h-8 bg-muted/60 rounded-lg w-1/4" />
+    <div className="h-4 bg-muted/40 rounded-lg w-1/2" />
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+      <div className="h-28 bg-muted/40 rounded-xl" />
+      <div className="h-28 bg-muted/40 rounded-xl" />
+      <div className="h-28 bg-muted/40 rounded-xl" />
+    </div>
+    <div className="h-64 bg-muted/30 rounded-xl mt-6" />
+  </div>
+)
+
+const CasesView = dynamic(() => import('@/components/sanad/CasesView').then((m) => m.CasesView), { loading: ViewLoadingSkeleton })
+const InvoicesView = dynamic(() => import('@/components/sanad/InvoicesView').then((m) => m.InvoicesView), { loading: ViewLoadingSkeleton })
+const ScannerView = dynamic(() => import('@/components/sanad/ScannerView').then((m) => m.ScannerView), { loading: ViewLoadingSkeleton })
+const ResearchHubView = dynamic(() => import('@/components/sanad/ResearchHubView').then((m) => m.ResearchHubView), { loading: ViewLoadingSkeleton })
+const DailyBriefView = dynamic(() => import('@/components/sanad/DailyBriefView').then((m) => m.DailyBriefView), { loading: ViewLoadingSkeleton })
+const DocumentsView = dynamic(() => import('@/components/sanad/DocumentsView').then((m) => m.DocumentsView), { loading: ViewLoadingSkeleton })
+const DeepWorkView = dynamic(() => import('@/components/sanad/DeepWorkView').then((m) => m.DeepWorkView), { loading: ViewLoadingSkeleton })
+const TasksView = dynamic(() => import('@/components/sanad/TasksView').then((m) => m.TasksView), { loading: ViewLoadingSkeleton })
+const ClientsView = dynamic(() => import('@/components/sanad/ClientsView').then((m) => m.ClientsView), { loading: ViewLoadingSkeleton })
+const ComplianceView = dynamic(() => import('@/components/sanad/ComplianceView').then((m) => m.ComplianceView), { loading: ViewLoadingSkeleton })
+const CalendarView = dynamic(() => import('@/components/sanad/CalendarView').then((m) => m.CalendarView), { loading: ViewLoadingSkeleton })
+const CommunicationsView = dynamic(() => import('@/components/sanad/CommunicationsView').then((m) => m.CommunicationsView), { loading: ViewLoadingSkeleton })
+const StudentView = dynamic(() => import('@/components/sanad/StudentView').then((m) => m.StudentView), { loading: ViewLoadingSkeleton })
+const CommandPalette = dynamic(() => import('@/components/sanad/CommandPalette').then((m) => m.CommandPalette))
 
 type View = 'today' | 'dashboard' | 'compliance' | 'cases' | 'deepwork' | 'tasks' | 'documents' | 'clients' | 'invoices' | 'scanner' | 'calendar' | 'communications' | 'briefs' | 'research'
 type Persona = 'lawyer' | 'student'

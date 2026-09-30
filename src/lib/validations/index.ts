@@ -69,6 +69,7 @@ export const createTaskSchema = z.object({
   priority: z.enum(['low', 'normal', 'high', 'urgent']).default('normal'),
   dueDate: z.string().optional().nullable().transform(v => v ? new Date(v) : null),
   caseId: z.string().optional().nullable(),
+  assignedToId: z.string().optional().nullable(),
   relatedDoc: z.string().optional().nullable(),
 })
 
@@ -78,7 +79,7 @@ export const updateTaskSchema = createTaskSchema.partial()
 export const createDocumentSchema = z.object({
   title: z.string().min(1, 'عنوان المستند مطلوب').max(200),
   docType: z.string().min(1, 'نوع المستند مطلوب'),
-  status: z.enum(['draft', 'sent', 'active', 'expiring', 'expired']).default('draft'),
+  status: z.enum(['draft', 'sent', 'received', 'active', 'expiring', 'expired']).default('draft'),
   parties: z.string().default(''),
   signedDate: z.string().optional().nullable().transform(v => v ? new Date(v) : null),
   expiryDate: z.string().optional().nullable().transform(v => v ? new Date(v) : null),

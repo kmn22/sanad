@@ -1,13 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
+import { parsePagination, paginatedResponse } from '@/lib/http'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const workspaceId = await getSessionWorkspaceId()
   if (!workspaceId) return unauthorizedJson()
-  const items = await db.complianceItem.findMany({ where: { workspaceId }, orderBy: { expiryDate: 'asc' } })
-  return NextResponse.json(items)
+  const { limit, cursor } = parsePagination(new URL(req.url))
+  const [rows, total] = await Promise.all([
+    db.complianceItem.findMany({
+      where: { workspaceId },
+      orderBy: { expiryDate: 'asc' },
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    }),
+    db.complianceItem.count({ where: { workspaceId } }),
+  ])
+  return NextResponse.json(paginatedResponse(rows, limit, { total }))
 }
+
 
 export async function POST(req: NextRequest) {
   const workspaceId = await getSessionWorkspaceId()

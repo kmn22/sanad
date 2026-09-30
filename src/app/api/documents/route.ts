@@ -2,13 +2,24 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { createDocumentSchema } from '@/lib/validations'
 import { getSessionWorkspaceId, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
+import { parsePagination, paginatedResponse } from '@/lib/http'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const workspaceId = await getSessionWorkspaceId()
   if (!workspaceId) return unauthorizedJson()
-  const docs = await db.legalDocument.findMany({ where: { workspaceId }, orderBy: { updatedAt: 'desc' } })
-  return NextResponse.json(docs)
+  const { limit, cursor } = parsePagination(new URL(req.url))
+  const [rows, total] = await Promise.all([
+    db.legalDocument.findMany({
+      where: { workspaceId },
+      orderBy: { updatedAt: 'desc' },
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    }),
+    db.legalDocument.count({ where: { workspaceId } }),
+  ])
+  return NextResponse.json(paginatedResponse(rows, limit, { total }))
 }
+
 
 export async function POST(req: NextRequest) {
   try {

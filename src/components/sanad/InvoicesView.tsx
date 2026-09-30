@@ -57,6 +57,11 @@ import {
   Calendar,
   Eye,
   Printer,
+  ShieldCheck,
+  FileCode,
+  Copy,
+  Download,
+  Loader2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLang } from '@/lib/sanad/i18n'
@@ -331,6 +336,7 @@ export function InvoicesView({ invoices, clients, cases, timeEntries, stats, onC
         open={previewOpen}
         onOpenChange={setPreviewOpen}
         inv={activeInvoice}
+        onZatcaUpdated={onChange}
       />
     </div>
   )
@@ -970,14 +976,31 @@ function InvoicePreviewDialog({
   open,
   onOpenChange,
   inv,
+  onZatcaUpdated,
 }: {
   open: boolean
   onOpenChange: (v: boolean) => void
   inv: Invoice | null
+  onZatcaUpdated?: () => void
 }) {
   const { lang, t } = useLang()
+  const [submittingZatca, setSubmittingZatca] = useState(false)
+  const [zatcaStatus, setZatcaStatus] = useState<string | null>(null)
+  const [zatcaHash, setZatcaHash] = useState<string | null>(null)
+  const [zatcaXml, setZatcaXml] = useState<string | null>(null)
+  const [zatcaQrBase64, setZatcaQrBase64] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (inv) {
+      setZatcaStatus(inv.zatcaStatus || null)
+      setZatcaHash(inv.zatcaHash || null)
+      setZatcaXml(inv.zatcaXml || null)
+      setZatcaQrBase64(null)
+    }
+  }, [inv])
 
   const qrBase64 = useMemo(() => {
+    if (zatcaQrBase64) return zatcaQrBase64
     if (!inv) return ''
     return generateZatcaQr(
       "مكتب سند للمحاماة والاستشارات القانونية",
@@ -986,12 +1009,57 @@ function InvoicePreviewDialog({
       inv.total,
       inv.vatAmount
     )
-  }, [inv])
+  }, [inv, zatcaQrBase64])
 
   if (!inv) return null
 
   const handlePrint = () => {
     window.print()
+  }
+
+  const handleZatcaClearance = async () => {
+    try {
+      setSubmittingZatca(true)
+      const res = await fetch('/api/zatca', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoiceId: inv.id }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to submit to ZATCA')
+      }
+      setZatcaStatus(data.zatca.status)
+      setZatcaHash(data.zatca.hashHex)
+      setZatcaXml(data.invoice.zatcaXml)
+      setZatcaQrBase64(data.zatca.qrCodeBase64)
+      toast.success(lang === 'ar' ? 'تم اعتماد الفاتورة وتوليد التوقيع الرقمي (Phase 2) بنجاح!' : 'Invoice cleared with ZATCA Phase 2!')
+      onZatcaUpdated?.()
+    } catch (err: any) {
+      toast.error(err.message || 'ZATCA submission failed')
+    } finally {
+      setSubmittingZatca(false)
+    }
+  }
+
+  const handleDownloadXml = () => {
+    if (!zatcaXml) return
+    const blob = new Blob([zatcaXml], { type: 'application/xml;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${inv.number}-zatca-ubl2.1.xml`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    toast.success(lang === 'ar' ? 'تم تنزيل ملف UBL 2.1 XML' : 'UBL 2.1 XML downloaded')
+  }
+
+  const handleCopyHash = () => {
+    if (!zatcaHash) return
+    navigator.clipboard.writeText(zatcaHash)
+    toast.success(lang === 'ar' ? 'تم نسخ الهاش الرقمي' : 'Invoice hash copied')
   }
 
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(qrBase64)}`
@@ -1011,6 +1079,48 @@ function InvoicePreviewDialog({
             <span>{lang === 'ar' ? 'طباعة' : 'Print'}</span>
           </Button>
         </DialogHeader>
+
+        {/* ZATCA Phase 2 Compliance Status Box */}
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl border bg-muted/40 print:hidden">
+          <div className="flex items-center gap-2.5">
+            <div className={`p-2 rounded-lg ${zatcaStatus === 'cleared' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'}`}>
+              <ShieldCheck className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-foreground">
+                  {lang === 'ar' ? 'منظومة الفوترة الإلكترونية (ZATCA Phase 2)' : 'ZATCA Phase 2 E-Invoicing'}
+                </span>
+                <Badge variant={zatcaStatus === 'cleared' ? 'default' : 'secondary'} className={zatcaStatus === 'cleared' ? 'bg-emerald-600 text-white hover:bg-emerald-700 text-[10px]' : 'bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[10px]'}>
+                  {zatcaStatus === 'cleared' ? (lang === 'ar' ? 'معتمدة ومطابقة (Phase 2)' : 'Cleared') : (lang === 'ar' ? 'بانتظار الاعتماد' : 'Pending Clearance')}
+                </Badge>
+              </div>
+              {zatcaHash && (
+                <p className="text-[10px] text-muted-foreground font-mono mt-0.5 flex items-center gap-1.5">
+                  <span>SHA-256: {zatcaHash.slice(0, 16)}...{zatcaHash.slice(-8)}</span>
+                  <button onClick={handleCopyHash} className="hover:text-foreground cursor-pointer" title="Copy Hash">
+                    <Copy className="h-3 w-3" />
+                  </button>
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {zatcaXml && (
+              <Button variant="outline" size="sm" onClick={handleDownloadXml} className="h-8 text-xs gap-1.5 cursor-pointer">
+                <FileCode className="h-3.5 w-3.5 text-primary" />
+                <span>{lang === 'ar' ? 'تحميل UBL XML' : 'Download XML'}</span>
+              </Button>
+            )}
+            {zatcaStatus !== 'cleared' && (
+              <Button size="sm" onClick={handleZatcaClearance} disabled={submittingZatca} className="h-8 text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer">
+                {submittingZatca ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />}
+                <span>{submittingZatca ? (lang === 'ar' ? 'جاري الاعتماد...' : 'Clearing...') : (lang === 'ar' ? 'اعتماد الفاتورة (Phase 2)' : 'Submit to ZATCA')}</span>
+              </Button>
+            )}
+          </div>
+        </div>
 
         {/* Invoice Printable Sheet */}
         <div className="p-6 bg-card border rounded-lg space-y-6 text-sm font-sans relative antialiased print:border-0 print:p-0">

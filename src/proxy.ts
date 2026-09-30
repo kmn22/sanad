@@ -19,7 +19,8 @@ export async function proxy(req: NextRequest) {
     pathname === '/api/billing/webhook' ||
     pathname === '/api/privacy/requests' ||
     pathname === '/api/invitations/preview' ||
-    pathname.startsWith('/api/portal/')
+    pathname.startsWith('/api/portal/') ||
+    pathname.startsWith('/api/cron/')
 
   const isApi = pathname.startsWith('/api/')
   const isProtectedPage =
@@ -52,6 +53,10 @@ export async function proxy(req: NextRequest) {
       // Preserve the query string so deep links survive the login round trip.
       loginUrl.searchParams.set('callbackUrl', pathname + req.nextUrl.search)
       return NextResponse.redirect(loginUrl)
+    }
+    // Admin guard: only admin or workspace_owner can access /admin
+    if (pathname.startsWith('/admin') && token.role !== 'admin' && token.role !== 'workspace_owner') {
+      return NextResponse.redirect(new URL('/dashboard', req.url))
     }
     if (pathname !== '/privacy/accept' && token.privacyNoticeVersion !== PRIVACY_NOTICE_VERSION) {
       return NextResponse.redirect(new URL('/privacy/accept', req.url))

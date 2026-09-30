@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import {
   Sheet,
   SheetContent,
@@ -39,6 +39,7 @@ import {
   Sparkles,
   Bot,
   ShieldAlert,
+  Loader2,
   type LucideIcon,
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -372,7 +373,15 @@ export function CaseDetailDrawer({ caseId, onClose, onChange }: Props) {
 
             <TabsContent value="time" className="flex-1 min-h-0 outline-none">
               <ScrollArea className="h-full">
-                <TimeTab timeEntries={data.timeEntries} />
+                <TimeTab
+                  timeEntries={data.timeEntries}
+                  caseId={data.id}
+                  clientId={data.clientId}
+                  caseTitle={data.title}
+                  onInvoiceCreated={() => {
+                    onChange()
+                  }}
+                />
               </ScrollArea>
             </TabsContent>
 
@@ -760,19 +769,117 @@ function DocumentsTab({ documents }: { documents: LegalDocument[] }) {
   )
 }
 
+interface TimeTabProps {
+  timeEntries: (TimeEntry & { invoice?: { id: string; number: string } | null })[]
+  caseId?: string
+  clientId?: string | null
+  caseTitle?: string
+  onInvoiceCreated?: () => void
+}
+
 function TimeTab({
   timeEntries,
-}: {
-  timeEntries: (TimeEntry & { invoice?: { id: string; number: string } | null })[]
-}) {
+  caseId,
+  clientId,
+  caseTitle,
+  onInvoiceCreated,
+}: TimeTabProps) {
   const { lang, t } = useLang()
+  const [generating, setGenerating] = useState(false)
+
+  const unbilledEntries = useMemo(
+    () => timeEntries.filter((e) => e.billable && !e.invoice),
+    [timeEntries]
+  )
+  const unbilledSec = useMemo(
+    () => unbilledEntries.reduce((acc, e) => acc + (e.durationSec || 0), 0),
+    [unbilledEntries]
+  )
+  const unbilledSAR = useMemo(
+    () => unbilledEntries.reduce((acc, e) => acc + entryAmount(e), 0),
+    [unbilledEntries]
+  )
+
+  const handleGenerateInvoice = async () => {
+    if (unbilledEntries.length === 0) return
+    setGenerating(true)
+    try {
+      const res = await fetch('/api/invoices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          timeEntryIds: unbilledEntries.map((e) => e.id),
+          caseId,
+          clientId,
+          notes:
+            lang === 'ar'
+              ? `أتعاب ساعات عمل مسجلة لقضية: ${caseTitle || ''}`.trim()
+              : `Billable hours for case: ${caseTitle || ''}`.trim(),
+          dueDate: new Date(Date.now() + 14 * 86400000).toISOString(),
+        }),
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to generate invoice')
+      }
+
+      const inv = await res.json()
+      toast.success(
+        lang === 'ar'
+          ? `تم إنشاء الفاتورة ${inv.number} بنجاح وربط ${unbilledEntries.length} جلسة`
+          : `Invoice ${inv.number} generated & ${unbilledEntries.length} sessions linked`
+      )
+      onInvoiceCreated?.()
+    } catch {
+      toast.error(
+        lang === 'ar' ? 'فشل إصدار الفاتورة، يرجى المحاولة لاحقاً' : 'Failed to generate invoice'
+      )
+    } finally {
+      setGenerating(false)
+    }
+  }
 
   if (timeEntries.length === 0) {
     return <EmptyState icon={Clock} label={t('case.no_time')} />
   }
 
   return (
-    <ul className="p-3 space-y-2">
+    <div className="p-3 space-y-3">
+      {unbilledEntries.length > 0 && (
+        <div className="p-3 rounded-lg border border-primary/20 bg-primary/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="inline-block size-2 rounded-full bg-emerald-500 animate-pulse" />
+              <p className="text-xs font-semibold text-foreground">
+                {lang === 'ar' ? 'ساعات عمل مستحقة غير مفوترة' : 'Unbilled Billable Hours'}
+              </p>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              {lang === 'ar'
+                ? `${unbilledEntries.length} جلسات (${formatDuration(unbilledSec, lang)}) بإجمالي `
+                : `${unbilledEntries.length} sessions (${formatDuration(unbilledSec, lang)}) totaling `}
+              <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                {formatSAR(unbilledSAR, lang)}
+              </span>
+            </p>
+          </div>
+          <Button
+            size="sm"
+            onClick={handleGenerateInvoice}
+            disabled={generating}
+            className="shrink-0 gap-1.5 shadow-sm text-xs"
+          >
+            {generating ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Receipt className="size-3.5" />
+            )}
+            {lang === 'ar' ? 'إصدار فاتورة بالأتعاب فوراً' : 'Generate Invoice Now'}
+          </Button>
+        </div>
+      )}
+
+      <ul className="space-y-2">
       {timeEntries.map((e) => {
         const amount = entryAmount(e)
         return (
@@ -829,7 +936,8 @@ function TimeTab({
           </li>
         )
       })}
-    </ul>
+      </ul>
+    </div>
   )
 }
 

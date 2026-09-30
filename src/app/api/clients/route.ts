@@ -2,20 +2,27 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { createClientSchema } from '@/lib/validations'
 import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
+import { parsePagination, paginatedResponse } from '@/lib/http'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const workspaceId = await getSessionWorkspaceId()
   if (!workspaceId) return unauthorizedJson()
-  const clients = await db.client.findMany({
-    where: { workspaceId },
-    include: {
-      cases: { select: { id: true, title: true, stage: true } },
-      _count: { select: { cases: true, documents: true, communications: true, invoices: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-  })
-  return NextResponse.json(clients)
+  const { limit, cursor } = parsePagination(new URL(req.url))
+  const [rows, total] = await Promise.all([
+    db.client.findMany({
+      where: { workspaceId },
+      include: {
+        _count: { select: { cases: true, documents: true, communications: true, invoices: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    }),
+    db.client.count({ where: { workspaceId } }),
+  ])
+  return NextResponse.json(paginatedResponse(rows, limit, { total }))
 }
+
 
 export async function POST(req: NextRequest) {
   const workspaceId = await getSessionWorkspaceId()

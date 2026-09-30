@@ -35,6 +35,13 @@ import { toast } from 'sonner'
 import { useLang } from '@/lib/sanad/i18n'
 import { SmartEditor } from './SmartEditor'
 import { TEMPLATES } from '@/lib/sanad/drafting/templates'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { SAUDI_STANDARD_CLAUSES } from '@/lib/sanad/drafting/standardClauses'
 import { evaluateSafeguards } from '@/lib/sanad/drafting/regulatorySafeguards'
 import type { TemplateId, DocumentCategory, DocumentTemplate } from '@/lib/sanad/drafting/types'
 import type { LegalCase } from '@/lib/sanad/types'
@@ -228,6 +235,11 @@ ${JSON.stringify(answers, null, 2)}
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
     toast.success(isAr ? 'جاري تنزيل الملف' : 'Downloading file')
+  }
+
+  const handleInsertClause = (clauseText: string, clauseTitle: string) => {
+    setGeneratedMarkdown((prev) => `${prev.trim()}\n\n${clauseText}\n`)
+    toast.success(isAr ? `تم إدراج ${clauseTitle} في المسودة` : `Clause inserted into draft`)
   }
 
   return (
@@ -556,6 +568,32 @@ ${JSON.stringify(answers, null, 2)}
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <DropdownMenu dir={isAr ? 'rtl' : 'ltr'}>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer">
+                        <Sparkles className="h-3.5 w-3.5" />
+                        <span>{isAr ? 'إدراج بند سعودي نموذجي' : 'Insert Saudi Clause'}</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-80">
+                      <div className="px-3 py-2 border-b text-[11px] font-semibold text-muted-foreground">
+                        {isAr ? 'بنود نموذجية متوافقة مع الأنظمة السعودية' : 'Standard Saudi Statutory Clauses'}
+                      </div>
+                      {SAUDI_STANDARD_CLAUSES.map((clause) => (
+                        <DropdownMenuItem
+                          key={clause.id}
+                          onClick={() => handleInsertClause(clause.clauseText, isAr ? clause.titleAr : clause.titleEn)}
+                          className="cursor-pointer flex flex-col items-start gap-0.5 py-2"
+                        >
+                          <span className="font-medium text-xs text-foreground">
+                            {isAr ? clause.titleAr : clause.titleEn}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">{clause.law}</span>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
                   <Button variant="outline" size="sm" onClick={handleCopy} className="h-8 text-xs gap-1.5">
                     {copied ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
                     <span>{copied ? (isAr ? 'تم النسخ' : 'Copied') : (isAr ? 'نسخ النص' : 'Copy')}</span>

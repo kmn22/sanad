@@ -15,7 +15,18 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y openssl libpq5 libzstd1 liblz4-1 && rm -rf /var/lib/apt/lists/*
 COPY --from=postgres-tools /usr/lib/postgresql/16/bin/pg_dump /usr/local/bin/pg_dump
 COPY --from=builder /app/.next/standalone ./
+# Copy Prisma schema + migrations so `prisma migrate deploy` works at runtime
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 RUN mkdir -p /app/db
 ENV PORT=3001 HOSTNAME="0.0.0.0" NODE_ENV=production
+
+# Entrypoint: run DB migrations before starting the server.
+# `prisma migrate deploy` is idempotent — safe on every restart.
+# Never use `db push` in production: it can silently drop columns.
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 EXPOSE 3001
-CMD ["node", "server.js"]
+ENTRYPOINT ["docker-entrypoint.sh"]
+

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { useLang } from '@/lib/sanad/i18n'
 import { useTheme } from 'next-themes'
 import { signOut, useSession } from 'next-auth/react'
+import { NotificationCenter } from '@/components/sanad/NotificationCenter'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -131,6 +132,8 @@ export function TopNav({
             >
               <Search className="h-3.5 w-3.5" />
             </Button>
+
+            <NotificationCenter />
 
             <Button
               variant="ghost"

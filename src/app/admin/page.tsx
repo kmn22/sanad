@@ -11,6 +11,7 @@ export default function AdminPage() {
   const [email, setEmail] = useState('')
   const [role, setRole] = useState('staff')
   const [message, setMessage] = useState('')
+  const [lastInviteUrl, setLastInviteUrl] = useState('')
   useEffect(() => {
     Promise.all([fetch('/api/admin/system/status'), fetch('/api/admin/privacy/requests'), fetch('/api/admin/users')]).then(async ([a, b, c]) => {
       if (a.ok) setStatus(await a.json())
@@ -22,7 +23,13 @@ export default function AdminPage() {
     e.preventDefault()
     const response = await fetch('/api/invitations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, role }) })
     const result = await response.json()
-    setMessage(response.ok ? 'تم إرسال الدعوة بالبريد.' : result.error || 'تعذر إرسال الدعوة')
+    if (response.ok) {
+      setLastInviteUrl(result.url || '')
+      setMessage(result.delivery === 'email' ? 'تم إرسال الدعوة بالبريد وإنشاء رابط احتياطي.' : 'تم إنشاء رابط الدعوة. انسخه وأرسله للعضو عبر قناة موثوقة.')
+    } else {
+      setLastInviteUrl('')
+      setMessage(result.error || 'تعذر إنشاء الدعوة')
+    }
   }
   async function testEmail() {
     const response = await fetch('/api/admin/system/email-test', { method: 'POST' })
@@ -57,9 +64,10 @@ export default function AdminPage() {
           <form onSubmit={invite} className="flex flex-wrap gap-3">
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="rounded border p-3" placeholder="البريد" />
             <select value={role} onChange={(e) => setRole(e.target.value)} className="rounded border p-3"><option value="staff">موظف</option><option value="lawyer">محامٍ</option><option value="student">متدرب</option><option value="auditor">مدقق</option></select>
-            <button className="rounded bg-emerald-700 px-5 text-white">إرسال الدعوة</button>
+            <button className="rounded bg-emerald-700 px-5 text-white">إنشاء الدعوة</button>
           </form>
           {message && <p className="mt-3">{message}</p>}
+          {lastInviteUrl && <div className="mt-3 rounded bg-slate-100 dark:bg-slate-800 p-3 text-left" dir="ltr"><code>{lastInviteUrl}</code></div>}
         </section>
         <section className="mb-8">
           <h2 className="text-xl font-bold mb-4">المستخدمون والجلسات</h2>

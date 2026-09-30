@@ -176,6 +176,9 @@ export interface Invoice {
   paidAmount: number
   paidAt: string | null
   notes: string | null
+  zatcaStatus?: string | null
+  zatcaHash?: string | null
+  zatcaXml?: string | null
   client?: { id: string; name: string; company: string | null } | null
   case?: { id: string; title: string } | null
   _count?: { timeEntries: number }
