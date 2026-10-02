@@ -284,6 +284,103 @@ export interface StudentDashboardData {
   briefs: DailyBrief[]
 }
 
+// ===== Ecosystem integration types =====
+
+export type EcosystemEntity = 'lawyer' | 'client' | 'student' | 'admin'
+
+export interface EcosystemNode {
+  id: EcosystemEntity
+  labelAr: string
+  labelEn: string
+  color: string
+  icon: 'scale' | 'user' | 'graduationCap' | 'shield'
+}
+
+export interface EcosystemEdge {
+  from: EcosystemEntity
+  to: EcosystemEntity
+  label: string
+  workflow: string
+}
+
+export interface EcosystemWorkflow {
+  id: string
+  source: EcosystemEntity
+  target: EcosystemEntity
+  trigger: string
+  result: string
+  channels: ('in_app' | 'email' | 'sms' | 'whatsapp')[]
+}
+
+export const ECOSYSTEM_NODES: EcosystemNode[] = [
+  { id: 'lawyer', labelAr: 'مكتب المحاماة', labelEn: 'Lawyer / Firm', color: 'emerald', icon: 'scale' },
+  { id: 'client', labelAr: 'بوابة الموكل', labelEn: 'Client Portal', color: 'blue', icon: 'user' },
+  { id: 'student', labelAr: 'أكاديمية الطلاب', labelEn: 'Student Academy', color: 'indigo', icon: 'graduationCap' },
+  { id: 'admin', labelAr: 'الامتثال والإدارة', labelEn: 'Admin / Compliance', color: 'amber', icon: 'shield' },
+]
+
+export const ECOSYSTEM_EDGES: EcosystemEdge[] = [
+  { from: 'lawyer', to: 'client', label: 'مشاركة المستندات والفواتير', workflow: 'portal_share' },
+  { from: 'client', to: 'lawyer', label: 'رفع المستندات وسداد الفواتير', workflow: 'client_action' },
+  { from: 'lawyer', to: 'student', label: 'توليد مهام تدريبية من القضايا', workflow: 'learning_assignment' },
+  { from: 'student', to: 'lawyer', label: 'أبحاث وملخصات جاهزة', workflow: 'research_submit' },
+  { from: 'admin', to: 'lawyer', label: 'مراجعة الامتثال والضبط', workflow: 'compliance_review' },
+  { from: 'admin', to: 'client', label: 'طلبات الخصوصية والحذف', workflow: 'pdppl_request' },
+  { from: 'admin', to: 'student', label: 'خطط ومسارات تدريبية معتمدة', workflow: 'path_approval' },
+]
+
+export const ECOSYSTEM_WORKFLOWS: EcosystemWorkflow[] = [
+  {
+    id: 'doc_share',
+    source: 'lawyer',
+    target: 'client',
+    trigger: 'مشاركة مستند أو مسودة عبر بوابة الموكل',
+    result: 'يستلم الموكل إشعاراً ويطّلع ويوقّع إلكترونياً',
+    channels: ['in_app', 'email', 'whatsapp'],
+  },
+  {
+    id: 'client_upload',
+    source: 'client',
+    target: 'lawyer',
+    trigger: 'رفع الموكل مستنداً أو رداً على طلب',
+    result: 'يظهر الملف في ملف القضية ويتم إشعار الفريق القانوني',
+    channels: ['in_app'],
+  },
+  {
+    id: 'invoice_payment',
+    source: 'client',
+    target: 'lawyer',
+    trigger: 'سداد فاتورة عبر بوابة الموكل',
+    result: 'تتحدث الفاتورة إلى مدفوعة ويُسجل حدث الدفع تحليلياً',
+    channels: ['in_app', 'email'],
+  },
+  {
+    id: 'student_assignment',
+    source: 'lawyer',
+    target: 'student',
+    trigger: 'إنشاء مهمة بحث من قضية حقيقية',
+    result: 'تُضاف بطاقة تدريبية لمسار الطالب مع مهلة',
+    channels: ['in_app', 'email'],
+  },
+  {
+    id: 'research_submit',
+    source: 'student',
+    target: 'lawyer',
+    trigger: 'إرسال الطالب بحثاً أو تلخيصاً',
+    result: 'يظهر البحث في مستودع أبحاث المكتب مع إشعار للمحامي',
+    channels: ['in_app'],
+  },
+]
+
+export function personaColorForNode(node: EcosystemEntity): string {
+  switch (node) {
+    case 'lawyer': return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+    case 'client': return 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+    case 'student': return 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
+    case 'admin': return 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+  }
+}
+
 // ---- Formatting helpers ----
 
 export function daysUntil(dateStr: string | Date): number {

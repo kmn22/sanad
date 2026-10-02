@@ -15,6 +15,7 @@ import { DashboardView } from '@/components/sanad/DashboardView'
 import { TopNav } from '@/components/sanad/TopNav'
 import { MobileNav } from '@/components/sanad/MobileNav'
 import { Sidebar } from '@/components/sanad/Sidebar'
+import { EcosystemMap } from '@/components/sanad/EcosystemMap'
 import type { DashboardData, StudentDashboardData } from '@/lib/sanad/types'
 
 const ViewLoadingSkeleton = () => (
@@ -45,7 +46,7 @@ const CommunicationsView = dynamic(() => import('@/components/sanad/Communicatio
 const StudentView = dynamic(() => import('@/components/sanad/StudentView').then((m) => m.StudentView), { loading: ViewLoadingSkeleton })
 const CommandPalette = dynamic(() => import('@/components/sanad/CommandPalette').then((m) => m.CommandPalette))
 
-type View = 'today' | 'dashboard' | 'compliance' | 'cases' | 'deepwork' | 'tasks' | 'documents' | 'clients' | 'invoices' | 'scanner' | 'calendar' | 'communications' | 'briefs' | 'research'
+type View = 'today' | 'dashboard' | 'compliance' | 'cases' | 'deepwork' | 'tasks' | 'documents' | 'clients' | 'invoices' | 'scanner' | 'calendar' | 'communications' | 'briefs' | 'research' | 'ecosystem'
 type Persona = 'lawyer' | 'student'
 
 const PERSONA_STORAGE_KEY = 'sanad.persona'
@@ -197,38 +198,49 @@ export default function Home() {
         />
 
         <main className="flex-1 min-w-0">
-          {loading && (!data || (persona === 'student' && !studentData)) ? (
-            <div className="space-y-4 animate-pulse">
-              <div className="h-8 w-48 bg-muted rounded" />
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">{[1, 2, 3, 4].map((i) => <div key={i} className="h-20 bg-muted rounded-lg" />)}</div>
-              <div className="h-64 bg-muted rounded-lg" />
-            </div>
-          ) : persona === 'student' && studentData ? (
-            <StudentView
-              data={studentData}
-              onChange={onChange}
-              activeTab={studentTab}
-              onTabChange={setStudentTab}
-            />
-          ) : data ? (
-            <>
-              {view === 'today' && <TodayFocusView data={data} onNavigate={(v) => setView(v)} onStartFocus={() => setView('deepwork')} onRefresh={onRefresh} />}
-              {view === 'dashboard' && <DashboardView data={data} onNavigate={(v) => setView(v)} />}
-              {view === 'compliance' && <ComplianceView items={data.compliance.all} onChange={onChange} />}
-              {view === 'cases' && <CasesView cases={data.cases.all} clients={data.clients} onChange={onChange} />}
-              {view === 'deepwork' && <DeepWorkView cases={data.cases.all} timeEntries={data.timeEntries} onChange={onChange} />}
-              {view === 'tasks' && <TasksView tasks={data.tasks.all} cases={data.cases.all} onChange={onChange} />}
-              {view === 'documents' && <DocumentsView documents={data.documents.all} cases={data.cases.all} onChange={onChange} />}
-              {view === 'clients' && <ClientsView clients={data.clients} onChange={onChange} />}
-              {view === 'invoices' && <InvoicesView invoices={data.invoices} clients={data.clients} cases={data.cases.all} timeEntries={data.timeEntries.filter((te: any) => te.billable && !te.invoiced)} stats={data.stats} onChange={onChange} />}
-              {view === 'scanner' && <ScannerView />}
-              {view === 'calendar' && <CalendarView onNavigate={(v) => setView(v)} />}
-              {view === 'communications' && <CommunicationsView cases={data.cases.all} clients={data.clients} onChange={onChange} />}
-              {view === 'briefs' && <DailyBriefView onNavigateToResearch={() => setView('research')} />}
-              {view === 'research' && <ResearchHubView onNavigateToDrafting={() => setView('documents')} />}
-            </>
+          {view === 'ecosystem' ? (
+            <EcosystemMap onClose={() => setView('today')} />
           ) : (
-            <div className="text-center py-12 text-sm text-muted-foreground">{t('dash.failed_load')} <Button variant="link" onClick={() => onChange()}>{t('dash.retry')}</Button></div>
+            <>
+              {loading && (!data || (persona === 'student' && !studentData)) ? (
+                <div className="space-y-4 animate-pulse">
+                  <div className="h-8 w-48 bg-muted rounded" />
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">{[1, 2, 3, 4].map((i) => <div key={i} className="h-20 bg-muted rounded-lg" />)}</div>
+                  <div className="h-64 bg-muted rounded-lg" />
+                </div>
+              ) : persona === 'student' && studentData ? (
+                <StudentView
+                  data={studentData}
+                  onChange={onChange}
+                  activeTab={studentTab}
+                  onTabChange={setStudentTab}
+                />
+              ) : data ? (
+                <>
+                  <div className="mb-4 flex justify-end">
+                    <Button variant="outline" size="sm" onClick={() => setView('ecosystem')}>
+                      🌐 {t('dash.ecosystem') || 'خريطة الربط البيئي'}
+                    </Button>
+                  </div>
+                  {view === 'today' && <TodayFocusView data={data} onNavigate={(v) => setView(v)} onStartFocus={() => setView('deepwork')} onRefresh={onRefresh} />}
+                  {view === 'dashboard' && <DashboardView data={data} onNavigate={(v) => setView(v)} />}
+                  {view === 'compliance' && <ComplianceView items={data.compliance.all} onChange={onChange} />}
+                  {view === 'cases' && <CasesView cases={data.cases.all} clients={data.clients} onChange={onChange} />}
+                  {view === 'deepwork' && <DeepWorkView cases={data.cases.all} timeEntries={data.timeEntries} onChange={onChange} />}
+                  {view === 'tasks' && <TasksView tasks={data.tasks.all} cases={data.cases.all} onChange={onChange} />}
+                  {view === 'documents' && <DocumentsView documents={data.documents.all} cases={data.cases.all} onChange={onChange} />}
+                  {view === 'clients' && <ClientsView clients={data.clients} onChange={onChange} />}
+                  {view === 'invoices' && <InvoicesView invoices={data.invoices} clients={data.clients} cases={data.cases.all} timeEntries={data.timeEntries.filter((te: any) => te.billable && !te.invoiced)} stats={data.stats} onChange={onChange} />}
+                  {view === 'scanner' && <ScannerView />}
+                  {view === 'calendar' && <CalendarView onNavigate={(v) => setView(v)} />}
+                  {view === 'communications' && <CommunicationsView cases={data.cases.all} clients={data.clients} onChange={onChange} />}
+                  {view === 'briefs' && <DailyBriefView onNavigateToResearch={() => setView('research')} />}
+                  {view === 'research' && <ResearchHubView onNavigateToDrafting={() => setView('documents')} />}
+                </>
+              ) : (
+                <div className="text-center py-12 text-sm text-muted-foreground">{t('dash.failed_load')} <Button variant="link" onClick={() => onChange()}>{t('dash.retry')}</Button></div>
+              )}
+            </>
           )}
         </main>
       </div>
