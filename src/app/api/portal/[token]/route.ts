@@ -3,9 +3,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getPortalAccess } from '@/lib/portal'
 import { trackEvent, ANALYTICS_EVENTS } from '@/lib/analytics/events'
+import { publishNotification } from '@/lib/notifications/bus'
 import { rateLimit } from '@/lib/rate-limit'
 import { MAX_UPLOAD_BYTES, checksum, sanitizeFilename, storeEncryptedFile, validateUpload } from '@/lib/file-storage'
-import { activeCaseUserIds, notifyUsers, recordWorkflowEvent } from '@/lib/workflow'
+import { activeCaseUserIds, recordWorkflowEvent } from '@/lib/workflow'
 
 export const runtime = 'nodejs'
 
@@ -54,6 +55,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
   if (!limited.success) return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   const access = await getPortalAccess(token)
   if (!access) return NextResponse.json({ error: 'Portal link is invalid or expired' }, { status: 404 })
+
+  const recipients = await workspaceRecipients(access.workspaceId, access.caseId)
+  const privacyRecipients = await workspaceRecipients(access.workspaceId, null)
 
   const contentType = req.headers.get('content-type') || ''
   if (contentType.includes('multipart/form-data')) {
@@ -129,10 +133,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
       toState: 'received',
       metadata: { portalFileId: stored.id, originalName, sizeBytes: stored.sizeBytes },
     })
-    await notifyUsers(access.workspaceId, await workspaceRecipients(access.workspaceId, access.caseId), {
+    await publishNotification(access.workspaceId, recipients, {
       type: 'portal',
       title: 'ملف جديد من العميل',
-      message: `قام ${access.client.name} برفع ${originalName}`,
+      body: `قام ${access.client.name} برفع ${originalName}`,
       link: access.caseId ? `/cases/${access.caseId}` : '/documents',
       entityType: 'PortalFile',
       entityId: stored.id,
@@ -186,13 +190,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
       toState: 'paid',
       metadata: { invoiceId: updated.id, number: updated.number, amount: updated.total, paymentMethod },
     })
-    await notifyUsers(access.workspaceId, await workspaceRecipients(access.workspaceId, access.caseId), {
+    await publishNotification(access.workspaceId, recipients, {
       type: 'portal',
       title: 'تم سداد فاتورة جديدة',
-      message: `قام ${access.client.name} بسداد الفاتورة رقم ${updated.number} بمبلغ ${updated.total} ر.س عبر بوابة العميل`,
+      body: `قام ${access.client.name} بسداد الفاتورة رقم ${updated.number} بمبلغ ${updated.total} ر.س عبر بوابة العميل`,
       link: access.caseId ? `/cases/${access.caseId}` : '/billing',
       entityType: 'Invoice',
       entityId: updated.id,
+    })
+
+    await trackEvent({
+      event: ANALYTICS_EVENTS.PAYMENT_SUCCESS,
+      userId: access.clientId,
+      workspaceId: access.workspaceId,
+      invoiceId: updated.id,
+      amount: updated.total,
+      method: paymentMethod,
     })
 
     return NextResponse.json({ success: true, invoice: updated })
@@ -240,10 +253,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
       toState: 'active',
       metadata: { documentId: updated.id, title: updated.title, signerName },
     })
-    await notifyUsers(access.workspaceId, await workspaceRecipients(access.workspaceId, access.caseId), {
+    await publishNotification(access.workspaceId, recipients, {
       type: 'portal',
       title: 'تم توقيع واعتماد مستند',
-      message: `قام ${signerName} بتوقيع واعتماد المستند "${updated.title}" عبر بوابة العميل`,
+      body: `قام ${signerName} بتوقيع واعتماد المستند "${updated.title}" عبر بوابة العميل`,
       link: access.caseId ? `/cases/${access.caseId}` : '/documents',
       entityType: 'LegalDocument',
       entityId: updated.id,
@@ -293,10 +306,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
       data: { notes: updatedNotes },
     })
 
-    await notifyUsers(access.workspaceId, await workspaceRecipients(access.workspaceId, access.caseId), {
+    await publishNotification(access.workspaceId, recipients, {
       type: 'portal',
       title: `ملاحظة من العميل على مستند: ${doc.title}`,
-      message: `${access.client.name} أضاف ملاحظة على الصفحة ${pageNumber}: "${commentText}"`,
+      body: `${access.client.name} أضاف ملاحظة على الصفحة ${pageNumber}: "${commentText}"`,
       link: access.caseId ? `/cases/${access.caseId}` : '/documents',
       entityType: 'LegalDocument',
       entityId: doc.id,
@@ -318,10 +331,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
       },
     })
 
-    await notifyUsers(access.workspaceId, await workspaceRecipients(access.workspaceId, null), {
+    await publishNotification(access.workspaceId, privacyRecipients, {
       type: 'portal',
       title: 'طلب حذف بيانات شخصية (PDPPL)',
-      message: `الموكل ${access.client.name} قدم طلباً رسمياً لحذف بياناته الشخصية بموجب نظام حماية البيانات الشخصية. السبب: ${reason}`,
+      body: `الموكل ${access.client.name} قدم طلباً رسمياً لحذف بياناته الشخصية بموجب نظام حماية البيانات الشخصية. السبب: ${reason}`,
       link: '/settings?tab=privacy',
       entityType: 'Client',
       entityId: access.clientId,
@@ -355,10 +368,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     return created
   })
   await recordWorkflowEvent({ workspaceId: access.workspaceId, caseId: access.caseId, action: 'portal_request', toState: 'open', metadata: { requestId: request.id } })
-  await notifyUsers(access.workspaceId, await workspaceRecipients(access.workspaceId, access.caseId), {
+  await publishNotification(access.workspaceId, recipients, {
     type: 'portal',
     title: 'طلب جديد من العميل',
-    message: `${access.client.name}: ${title}`,
+    body: `${access.client.name}: ${title}`,
     link: access.caseId ? `/cases/${access.caseId}` : '/dashboard',
     entityType: 'PortalRequest',
     entityId: request.id,
