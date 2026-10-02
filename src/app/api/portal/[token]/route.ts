@@ -2,6 +2,7 @@ import { randomBytes } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getPortalAccess } from '@/lib/portal'
+import { trackEvent, ANALYTICS_EVENTS } from '@/lib/analytics/events'
 import { rateLimit } from '@/lib/rate-limit'
 import { MAX_UPLOAD_BYTES, checksum, sanitizeFilename, storeEncryptedFile, validateUpload } from '@/lib/file-storage'
 import { activeCaseUserIds, notifyUsers, recordWorkflowEvent } from '@/lib/workflow'
@@ -26,6 +27,15 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
   if (!limited.success) return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   const access = await getPortalAccess(token)
   if (!access) return NextResponse.json({ error: 'Portal link is invalid or expired' }, { status: 404 })
+
+  await trackEvent({
+    event: ANALYTICS_EVENTS.PORTAL_OPEN,
+    portalAccessId: access.id,
+    workspaceId: access.workspaceId,
+    clientId: access.clientId,
+    caseId: access.caseId ?? undefined,
+  })
+
   return NextResponse.json({
     workspace: access.workspace,
     client: access.client,
