@@ -32,17 +32,22 @@ export async function publishNotification(
   const deliveredChannels: NotificationChannel[] = [];
 
   if (channels.includes('in_app')) {
+    const prefs = await db.notificationPreference.findMany({
+      where: { userId: { in: recipients }, type: payload.type, inApp: false },
+      select: { userId: true },
+    });
+    const optedOut = new Set(prefs.map((pref) => pref.userId));
+    const inAppRecipients = recipients.filter((userId) => !optedOut.has(userId));
     const rows = await db.notification.createMany({
-      data: recipients.map((userId) => ({
+      data: inAppRecipients.map((userId) => ({
         workspaceId,
         userId,
         type: payload.type,
         title: payload.title,
-        body: payload.body,
+        message: payload.body,
         link: payload.link,
         entityType: payload.entityType,
         entityId: payload.entityId,
-        metadata: payload.metadata,
       })),
     });
     inAppCount = rows.count;
@@ -75,16 +80,18 @@ async function deliverToChannel(
   payload: NotificationPayload,
   workspaceId: string
 ): Promise<void> {
-  // These are placeholder implementations that log for now.
-  // Replace with real providers (e.g., Twilio, WhatsApp Business API, SMTP) later.
   switch (channel) {
-    case 'email':
-      console.log(`[notification-bus] email channel: ${payload.title}`, {
-        workspaceId,
+    case 'email': {
+      const { enqueueJob } = await import('@/lib/jobs');
+      await enqueueJob('notification.email', {
         userIds,
-        payload,
-      });
+        type: payload.type,
+        title: payload.title,
+        body: payload.body,
+        link: payload.link,
+      }, { workspaceId });
       break;
+    }
     case 'sms':
       console.log(`[notification-bus] sms channel: ${payload.title}`, {
         workspaceId,

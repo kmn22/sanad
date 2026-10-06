@@ -4,6 +4,7 @@ import { db } from '@/lib/db'
 import { forbiddenJson, getAuthContext, unauthorizedJson } from '@/lib/auth/workspace'
 import { emailConfigured, publicAppUrl, sendTransactionalEmail } from '@/lib/email'
 import { rateLimit } from '@/lib/rate-limit'
+import { canInviteWorkspaceMember } from '@/lib/saas/entitlements'
 
 const hashToken = (token: string) => createHash('sha256').update(token).digest('hex')
 const ALLOWED_ROLES = new Set(['lawyer', 'staff', 'student', 'auditor'])
@@ -37,6 +38,10 @@ export async function POST(req: Request) {
   }
   if (await db.user.findUnique({ where: { email: cleanEmail }, select: { id: true } })) {
     return NextResponse.json({ error: 'User already exists' }, { status: 409 })
+  }
+  const seatCheck = await canInviteWorkspaceMember(auth.workspaceId)
+  if (!seatCheck.allowed) {
+    return NextResponse.json({ error: seatCheck.reason, code: 'SEAT_LIMIT_REACHED', plan: seatCheck.plan?.plan }, { status: 403 })
   }
 
   const token = randomBytes(32).toString('hex')

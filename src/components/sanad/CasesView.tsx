@@ -61,6 +61,7 @@ import {
 import { CaseDetailDrawer } from './CaseDetailDrawer'
 import { DraftingHub } from './DraftingHub'
 import { ConflictCheckModal } from './ConflictCheckModal'
+import { StatTile } from '@/components/portal/PortalShell'
 import { ShieldAlert } from 'lucide-react'
 
 interface Props {
@@ -211,6 +212,13 @@ export function CasesView({ cases, clients = [], onChange }: Props) {
           </Button>
           <AddCaseDialog open={open} onOpenChange={setOpen} clients={clients} onSaved={() => { onChange(); setOpen(false) }} />
         </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatTile label={lang === 'ar' ? 'قضايا نشطة' : 'Active cases'} value={activeCount} icon={Scale} />
+        <StatTile label={lang === 'ar' ? 'عاجلة' : 'Urgent'} value={cases.filter((item) => item.stage !== 'closed' && item.priority === 'urgent').length} icon={AlertCircle} tone={cases.some((item) => item.stage !== 'closed' && item.priority === 'urgent') ? 'bad' : 'good'} />
+        <StatTile label={lang === 'ar' ? 'جلسات قادمة' : 'Upcoming hearings'} value={cases.filter((item) => item.stage !== 'closed' && item.hearingDate && new Date(item.hearingDate) >= new Date()).length} icon={CalendarRange} />
+        <StatTile label={lang === 'ar' ? 'القيمة التقديرية' : 'Estimated value'} value={formatSAR(cases.reduce((total, item) => total + (item.value || 0), 0), lang)} icon={FileText} />
       </div>
 
       <ConflictCheckModal
@@ -435,18 +443,22 @@ function CaseCard({
   const overdue = days !== null && days < 0
 
   const copyPortalLink = async () => {
-    let token = c.portalToken
-    if (!token) {
-      token = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15)
-      await fetch(`/api/cases/${c.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ portalToken: token })
-      })
+    if (!c.clientId) {
+      toast.error('يجب ربط القضية بعميل قبل إنشاء رابط البوابة')
+      return
     }
-    const url = `${window.location.origin}/portal/${token}`
-    navigator.clipboard.writeText(url)
-    toast.success('تم نسخ رابط بوابة العميل بنجاح')
+    const response = await fetch('/api/portal-links', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clientId: c.clientId, caseId: c.id, sendEmail: false }),
+    })
+    const result = await response.json()
+    if (!response.ok) {
+      toast.error(result.error || 'تعذر إنشاء رابط بوابة العميل')
+      return
+    }
+    await navigator.clipboard.writeText(result.url)
+    toast.success('تم إنشاء ونسخ رابط بوابة العميل الآمن')
   }
 
   return (

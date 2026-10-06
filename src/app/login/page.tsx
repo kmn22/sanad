@@ -35,8 +35,20 @@ export default function LoginPage() {
     setLoading(true)
     setErrorMsg('')
 
-    if (!email.trim() || !password) {
-      setErrorMsg('يرجى إدخال البريد الإلكتروني وكلمة المرور')
+    if (!email.trim()) {
+      setErrorMsg('الرجاء إدخال البريد الإلكتروني')
+      setLoading(false)
+      return
+    }
+
+    if (!email.includes('@') || !email.includes('.')) {
+      setErrorMsg('صيغة البريد الإلكتروني غير صحيحة (مثال: name@lawfirm.sa)')
+      setLoading(false)
+      return
+    }
+
+    if (!password) {
+      setErrorMsg('الرجاء إدخال كلمة المرور')
       setLoading(false)
       return
     }
@@ -116,51 +128,69 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleLogin} noValidate className="space-y-6">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-300">البريد الإلكتروني</label>
+              <label htmlFor="login-email" className="text-sm font-medium text-slate-300">
+                البريد الإلكتروني
+              </label>
               <div className="relative">
-                <Mail className="absolute right-3 top-3 h-5 w-5 text-slate-500" />
+                <Mail className="absolute right-3 top-3 h-5 w-5 text-slate-500" aria-hidden="true" />
                 <Input
+                  id="login-email"
                   type="email"
+                  autoComplete="email"
+                  aria-label="البريد الإلكتروني"
                   placeholder="name@lawfirm.sa"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="bg-slate-800/50 border-slate-700 text-white pl-4 pr-11 h-12 focus-visible:ring-emerald-500"
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    if (errorMsg) setErrorMsg('')
+                  }}
+                  className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-400 pl-4 pr-11 h-12 focus-visible:ring-emerald-500"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <label className="text-sm font-medium text-slate-300">كلمة المرور</label>
+                <label htmlFor="login-password" className="text-sm font-medium text-slate-300">
+                  كلمة المرور
+                </label>
                 <a href="/forgot-password" className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors">نسيت كلمة المرور؟</a>
               </div>
               <div className="relative">
-                <Lock className="absolute right-3 top-3 h-5 w-5 text-slate-500" />
+                <Lock className="absolute right-3 top-3 h-5 w-5 text-slate-500" aria-hidden="true" />
                 <Input
+                  id="login-password"
                   type="password"
+                  autoComplete="current-password"
+                  aria-label="كلمة المرور"
                   placeholder="••••••••"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="bg-slate-800/50 border-slate-700 text-white pl-4 pr-11 h-12 focus-visible:ring-emerald-500"
+                  onChange={(e) => {
+                    setPassword(e.target.value)
+                    if (errorMsg) setErrorMsg('')
+                  }}
+                  className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-400 pl-4 pr-11 h-12 focus-visible:ring-emerald-500"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-300">رمز التحقق بخطوتين (عند تفعيله)</label>
+              <label htmlFor="login-otp" className="text-sm font-medium text-slate-300">
+                رمز التحقق بخطوتين (عند تفعيله)
+              </label>
               <Input
+                id="login-otp"
                 type="text"
                 inputMode="numeric"
                 autoComplete="one-time-code"
+                aria-label="رمز التحقق بخطوتين"
                 placeholder="123456 أو رمز الاسترداد"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
                 maxLength={16}
-                className="bg-slate-800/50 border-slate-700 text-white h-12 focus-visible:ring-emerald-500"
+                className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-400 h-12 focus-visible:ring-emerald-500"
               />
             </div>
 
@@ -184,7 +214,7 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-8 pt-8 border-t border-slate-800 text-center">
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-slate-300">
               ليس لديك حساب؟{' '}
               <a href="/register" className="text-emerald-400 hover:text-emerald-300 transition-colors font-medium">
                 إنشاء حساب جديد

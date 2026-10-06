@@ -54,7 +54,6 @@ export interface LegalCase {
   court: string | null
   opposingParty: string | null
   notes: string | null
-  portalToken?: string | null
   client?: { id: string; name: string } | null
 }
 

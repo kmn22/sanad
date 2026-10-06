@@ -13,7 +13,24 @@ export async function getAuthContext(): Promise<AuthContext | null> {
   const session = await getServerSession(authOptions)
   const user = session?.user as { id?: string; workspaceId?: string; role?: string; mfaEnabled?: boolean } | undefined
   if (!user?.id || !user.workspaceId) return null
+  // Client logins share the firm's workspaceId but must never be authorised
+  // by it — every workspace-scoped API would otherwise expose firm data.
+  if (user.role === 'client') return null
   return { userId: user.id, workspaceId: user.workspaceId, role: user.role || 'lawyer', mfaEnabled: Boolean(user.mfaEnabled) }
+}
+
+export type ClientAuthContext = {
+  userId: string
+  workspaceId: string
+  clientId: string
+}
+
+/** Auth context for the client portal — scoped strictly to one Client record. */
+export async function getClientContext(): Promise<ClientAuthContext | null> {
+  const session = await getServerSession(authOptions)
+  const user = session?.user as { id?: string; workspaceId?: string; role?: string; clientId?: string } | undefined
+  if (!user?.id || !user.workspaceId || user.role !== 'client' || !user.clientId) return null
+  return { userId: user.id, workspaceId: user.workspaceId, clientId: user.clientId }
 }
 
 export async function getSessionWorkspaceId(): Promise<string | null> {

@@ -65,6 +65,7 @@ server.log
 .next/standalone/
 logs/
 backups/
+uploads/
 *.tar.gz
 
 # Database
@@ -78,3 +79,7 @@ backups/
 graphify-out/cache/
 graphify-out/20*/
 .aider*
+
+# Playwright
+test-results/
+playwright-report/

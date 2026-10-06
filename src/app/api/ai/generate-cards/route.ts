@@ -2,17 +2,23 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ollamaChat, SAUDI_PROMPTS } from '@/lib/ai/ollama';
 import { db } from '@/lib/db';
 import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace';
+import { checkAiUsage, incrementUsage } from '@/lib/saas/entitlements';
 
 export async function POST(req: NextRequest) {
   try {
     const workspaceId = await getSessionWorkspaceId();
     if (!workspaceId) return unauthorizedJson();
+    const quota = await checkAiUsage(workspaceId);
+    if (!quota.allowed) {
+      return NextResponse.json({ error: 'AI usage limit reached for the current plan', code: quota.code }, { status: 403 });
+    }
     const body = await req.json();
     const { notes, category = 'general' } = body;
 
     if (!notes || !notes.trim()) {
       return NextResponse.json({ error: 'Notes content is required' }, { status: 400 });
     }
+    await incrementUsage(workspaceId, 'ai_requests');
 
     let generatedTerms: Array<{
       term: string;

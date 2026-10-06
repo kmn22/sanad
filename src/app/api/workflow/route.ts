@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { forbiddenJson, getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 import { CASE_ASSIGNMENT_ROLES, CASE_STAGES, activeCaseUserIds, canManageWorkflow, notifyUsers, recordWorkflowEvent } from '@/lib/workflow'
+import { hasEntitlement } from '@/lib/saas/entitlements'
 
 export async function GET() {
   const auth = await getAuthContext()
   if (!auth) return unauthorizedJson()
+  if (!(await hasEntitlement(auth.workspaceId, 'workflow'))) {
+    return NextResponse.json({ error: 'Workflow is not included in the current plan', code: 'WORKFLOW_NOT_INCLUDED' }, { status: 403 })
+  }
   const [cases, events, requests, tasks] = await Promise.all([
     db.legalCase.findMany({
       where: { workspaceId: auth.workspaceId },
@@ -32,11 +36,14 @@ async function canActOnCase(auth: NonNullable<Awaited<ReturnType<typeof getAuthC
 export async function POST(req: NextRequest) {
   const auth = await getAuthContext()
   if (!auth) return unauthorizedJson()
+  if (!(await hasEntitlement(auth.workspaceId, 'workflow'))) {
+    return NextResponse.json({ error: 'Workflow is not included in the current plan', code: 'WORKFLOW_NOT_INCLUDED' }, { status: 403 })
+  }
   const body = await req.json().catch(() => null)
   const action = typeof body?.action === 'string' ? body.action : ''
   const caseId = typeof body?.caseId === 'string' ? body.caseId : ''
   const note = typeof body?.note === 'string' ? body.note.trim().slice(0, 1000) : null
-  const legalCase = await db.legalCase.findFirst({ where: { id: caseId, workspaceId: auth.workspaceId }, select: { id: true, title: true, stage: true, clientId: true } })
+  const legalCase = await db.legalCase.findFirst({ where: { id: caseId, workspaceId: auth.workspaceId }, select: { id: true, title: true, stage: true, clientId: true, templateId: true } })
   if (!legalCase) return notFoundJson()
   if (!(await canActOnCase(auth, legalCase.id))) return forbiddenJson()
 
@@ -44,7 +51,7 @@ export async function POST(req: NextRequest) {
     if (!canManageWorkflow(auth)) return forbiddenJson()
     const userId = typeof body?.userId === 'string' ? body.userId : ''
     const role = CASE_ASSIGNMENT_ROLES.has(body?.role) ? body.role : 'assignee'
-    const member = await db.user.findFirst({ where: { id: userId, workspaceId: auth.workspaceId, disabledAt: null }, select: { id: true, name: true } })
+    const member = await db.user.findFirst({ where: { id: userId, workspaceId: auth.workspaceId, disabledAt: null, role: { not: 'client' } }, select: { id: true, name: true } })
     if (!member) return notFoundJson()
     await db.$transaction(async (tx) => {
       await tx.caseAssignment.upsert({
@@ -67,9 +74,35 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true })
   }
 
+  if (action === 'apply_template') {
+    if (!canManageWorkflow(auth)) return forbiddenJson()
+    const templateId = typeof body?.templateId === 'string' ? body.templateId : ''
+    const template = await db.workflowTemplate.findFirst({ where: { id: templateId, workspaceId: auth.workspaceId, active: true } })
+    if (!template) return notFoundJson()
+    const stages = JSON.parse(template.stages) as string[]
+    if (!stages.includes(legalCase.stage)) {
+      return NextResponse.json({ error: 'Current case stage is not part of this template pipeline', code: 'STAGE_NOT_IN_TEMPLATE', stages }, { status: 409 })
+    }
+    await db.$transaction(async (tx) => {
+      await tx.legalCase.update({ where: { id: legalCase.id }, data: { templateId: template.id } })
+      await tx.auditLog.create({ data: { workspaceId: auth.workspaceId, userId: auth.userId, action: 'workflow.template.apply', entityType: 'LegalCase', entityId: legalCase.id } })
+    })
+    await recordWorkflowEvent({ workspaceId: auth.workspaceId, caseId: legalCase.id, actorId: auth.userId, action: 'template_applied', toState: template.name, metadata: { templateId: template.id } })
+    return NextResponse.json({ ok: true })
+  }
+
   if (action === 'stage') {
     const stage = typeof body?.stage === 'string' ? body.stage : ''
     if (!CASE_STAGES.has(stage)) return NextResponse.json({ error: 'Invalid stage' }, { status: 400 })
+    if (legalCase.templateId) {
+      const template = await db.workflowTemplate.findFirst({ where: { id: legalCase.templateId, workspaceId: auth.workspaceId }, select: { stages: true, name: true } })
+      if (template) {
+        const stages = JSON.parse(template.stages) as string[]
+        if (!stages.includes(stage)) {
+          return NextResponse.json({ error: `Stage is not part of the "${template.name}" template pipeline`, code: 'STAGE_NOT_IN_TEMPLATE', stages }, { status: 400 })
+        }
+      }
+    }
     const previous = legalCase.stage
     if (previous === stage) return NextResponse.json({ ok: true })
     await db.$transaction(async (tx) => {

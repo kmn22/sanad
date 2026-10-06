@@ -23,19 +23,32 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ error: 'You cannot change your own administrative controls' }, { status: 400 })
   }
 
-  const updated = await db.user.update({
-    where: { id },
-    data: {
-      role,
-      disabledAt: disabled === undefined ? undefined : disabled ? new Date() : null,
-      sessionVersion: revokeSessions || disabled || mfaReset ? { increment: 1 } : undefined,
-      lockedUntil: unlock ? null : undefined,
-      failedLoginAttempts: unlock ? 0 : undefined,
-      mfaEnabled: mfaReset ? false : undefined,
-      mfaSecret: mfaReset ? null : undefined,
-      mfaRecoveryCodes: mfaReset ? null : undefined,
-    },
-    select: { id: true, email: true, name: true, role: true, disabledAt: true, lockedUntil: true, sessionVersion: true, mfaEnabled: true },
+  const updated = await db.$transaction(async (tx) => {
+    const user = await tx.user.update({
+      where: { id },
+      data: {
+        role,
+        disabledAt: disabled === undefined ? undefined : disabled ? new Date() : null,
+        sessionVersion: revokeSessions || disabled || mfaReset ? { increment: 1 } : undefined,
+        lockedUntil: unlock ? null : undefined,
+        failedLoginAttempts: unlock ? 0 : undefined,
+        mfaEnabled: mfaReset ? false : undefined,
+        mfaSecret: mfaReset ? null : undefined,
+        mfaRecoveryCodes: mfaReset ? null : undefined,
+      },
+      select: { id: true, email: true, name: true, role: true, disabledAt: true, lockedUntil: true, sessionVersion: true, mfaEnabled: true },
+    })
+    if (target.workspaceId) {
+      await tx.workspaceMembership.updateMany({
+        where: { workspaceId: target.workspaceId, userId: id },
+        data: {
+          role,
+          status: disabled === undefined ? undefined : disabled ? 'suspended' : 'active',
+          suspendedAt: disabled === undefined ? undefined : disabled ? new Date() : null,
+        },
+      })
+    }
+    return user
   })
 
   await writeAudit({

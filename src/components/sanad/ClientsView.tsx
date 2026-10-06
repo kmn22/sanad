@@ -45,6 +45,7 @@ import {
 import { toast } from 'sonner'
 import { useLang } from '@/lib/sanad/i18n'
 import type { Client } from '@/lib/sanad/types'
+import { StatTile } from '@/components/portal/PortalShell'
 
 interface Props {
   clients: Client[]
@@ -112,8 +113,15 @@ export function ClientsView({ clients, onChange }: Props) {
         </Button>
       </div>
 
-      <div className="relative">
-        <Search className="absolute top-1/2 -translate-y-1/2 start-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatTile label={lang === 'ar' ? 'إجمالي الموكّلين' : 'Total clients'} value={clients.length} icon={Users} />
+        <StatTile label={lang === 'ar' ? 'منشآت' : 'Corporate'} value={clients.filter((client) => client.type === 'corporate').length} icon={Building2} />
+        <StatTile label={lang === 'ar' ? 'قضايا مرتبطة' : 'Linked cases'} value={clients.reduce((total, client) => total + (client._count?.cases || 0), 0)} icon={Briefcase} />
+        <StatTile label={lang === 'ar' ? 'بيانات اتصال ناقصة' : 'Missing contact'} value={clients.filter((client) => !client.email && !client.phone).length} icon={Mail} tone={clients.some((client) => !client.email && !client.phone) ? 'warn' : 'good'} />
+      </div>
+
+      <div className="relative rounded-2xl border border-border/60 bg-card/60 p-2 shadow-sm">
+        <Search className="absolute top-1/2 -translate-y-1/2 start-5 h-4 w-4 text-muted-foreground pointer-events-none" />
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}

@@ -5,6 +5,7 @@ import { forbiddenJson, getAuthContext, notFoundJson, unauthorizedJson } from '@
 import { emailConfigured, publicAppUrl, sendTransactionalEmail } from '@/lib/email'
 import { hashPortalToken } from '@/lib/portal'
 import { rateLimit } from '@/lib/rate-limit'
+import { hasEntitlement } from '@/lib/saas/entitlements'
 
 export async function GET() {
   const auth = await getAuthContext()
@@ -29,6 +30,9 @@ export async function POST(req: NextRequest) {
   if (!['admin', 'workspace_owner', 'lawyer'].includes(auth.role)) return forbiddenJson()
   const limited = await rateLimit(`portal-link:create:${auth.userId}`, 20, 60 * 60 * 1000)
   if (!limited.success) return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  if (!(await hasEntitlement(auth.workspaceId, 'portal'))) {
+    return NextResponse.json({ error: 'Client portal is not included in the current plan', code: 'PORTAL_NOT_INCLUDED' }, { status: 403 })
+  }
 
   const body = await req.json().catch(() => null)
   const clientId = typeof body?.clientId === 'string' ? body.clientId : ''

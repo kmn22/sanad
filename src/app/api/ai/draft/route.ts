@@ -1,16 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ollamaChat, ollamaChatStream, SAUDI_PROMPTS } from '@/lib/ai/ollama';
 import { readJsonLimited, safeErrorResponse } from '@/lib/http';
+import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace';
+import { checkAiUsage, incrementUsage } from '@/lib/saas/entitlements';
 
 export async function POST(req: NextRequest) {
   const stream = req.nextUrl.searchParams.get('stream') === '1';
 
   try {
+    const workspaceId = await getSessionWorkspaceId();
+    if (!workspaceId) return unauthorizedJson();
+    const quota = await checkAiUsage(workspaceId);
+    if (!quota.allowed) {
+      return NextResponse.json({ error: 'AI usage limit reached for the current plan', code: quota.code }, { status: 403 });
+    }
     const { prompt } = await readJsonLimited<{ prompt?: unknown }>(req, 32 * 1024);
 
     if (typeof prompt !== 'string' || !prompt.trim() || prompt.length > 20_000) {
       return NextResponse.json({ error: 'Prompt must be between 1 and 20000 characters' }, { status: 400 });
     }
+
+    await incrementUsage(workspaceId, 'ai_requests');
 
     const messages = [
       { role: 'system' as const, content: SAUDI_PROMPTS.draft },

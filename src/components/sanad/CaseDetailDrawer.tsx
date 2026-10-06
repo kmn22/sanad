@@ -58,6 +58,7 @@ import {
   type Invoice,
   type LegalDocument,
 } from '@/lib/sanad/types'
+import CasePortalTab from '@/components/sanad/CasePortalTab'
 
 interface Props {
   caseId: string | null
@@ -346,6 +347,10 @@ export function CaseDetailDrawer({ caseId, onClose, onChange }: Props) {
                     <CountChip n={data.invoices.length} lang={lang} />
                   )}
                 </TabsTrigger>
+                <TabsTrigger value="portal" className="flex-none gap-1.5 text-emerald-600 dark:text-emerald-400">
+                  <ShieldAlert className="size-3.5" />
+                  {lang === 'ar' ? 'بوابة الموكل' : 'Client Portal'}
+                </TabsTrigger>
                 <TabsTrigger value="ai" className="flex-none gap-1.5">
                   <Sparkles className="size-3.5 text-amber-500" />
                   {t('case.ai_insights')}
@@ -356,6 +361,18 @@ export function CaseDetailDrawer({ caseId, onClose, onChange }: Props) {
             <TabsContent value="overview" className="flex-1 min-h-0 outline-none">
               <ScrollArea className="h-full">
                 <OverviewTab data={data} />
+              </ScrollArea>
+            </TabsContent>
+
+            <TabsContent value="portal" className="flex-1 min-h-0 outline-none">
+              <ScrollArea className="h-full">
+                <CasePortalTab
+                  caseId={data.id}
+                  clientId={data.clientId}
+                  clientName={data.clientName}
+                  clientPhone={data.client?.phone}
+                  caseTitle={data.title}
+                />
               </ScrollArea>
             </TabsContent>
 

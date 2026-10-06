@@ -28,6 +28,7 @@ export const metadata: Metadata = {
   title: "سند — لوحة العمليات اليومية للامتثال والمحاماة",
   description:
     "لوحة العمليات اليومية للمحامين والمنشآت الصغيرة في السعودية. تتبع الامتثال، إدارة القضايا، جلسات تركيز، ولا تفوّت أي تجديد.",
+  metadataBase: new URL(process.env.NEXTAUTH_URL || "https://sanad.sa"),
   keywords: [
     "سند",
     "Sanad",
@@ -37,8 +38,33 @@ export const metadata: Metadata = {
     "وزارة العدل",
     "الموارد البشرية",
     "إدارة قضايا",
+    "بوابة الموكل",
+    "فوترة زاتكا",
   ],
-  authors: [{ name: "Sanad" }],
+  authors: [{ name: "Sanad Legal Tech" }],
+  openGraph: {
+    type: "website",
+    locale: "ar_SA",
+    url: "https://sanad.sa",
+    siteName: "سند (Sanad)",
+    title: "سند — منظومة المحاماة الذكية والامتثال السعودي",
+    description:
+      "منظومة متكاملة للمحامين والشركات: إدارة القضايا، بوابة الموكل الخفيفة بدون كلمات مرور، وفوترة إلكترونية متوافقة مع هيئة الزكاة والضريبة والجمارك.",
+    images: [
+      {
+        url: "/og-preview.png",
+        width: 1200,
+        height: 630,
+        alt: "سند — منظومة المحاماة الذكية",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "سند — منظومة المحاماة الذكية والامتثال السعودي",
+    description: "لوحة العمليات اليومية وإدارة القضايا وبوابة الموكل السيادية للمحامين في المملكة العربية السعودية.",
+    images: ["/og-preview.png"],
+  },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -51,7 +77,6 @@ export const viewport: Viewport = {
   themeColor: "#0f5132",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
 };
 
 export default function RootLayout({

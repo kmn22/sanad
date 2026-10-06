@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { OLLAMA_URL, OLLAMA_MODEL } from '@/lib/ai/ollama'
 import { db } from '@/lib/db'
+import { getAuthContext, hasRole, unauthorizedJson, forbiddenJson } from '@/lib/auth/workspace'
 
 // Verified repository of recent official gazette (Umm Al-Qura) and ministerial updates
 const OFFICIAL_LEGAL_UPDATES = [
@@ -99,6 +100,9 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await getAuthContext()
+    if (!auth) return unauthorizedJson()
+    if (!hasRole(auth, ['admin', 'workspace_owner'])) return forbiddenJson()
     let newItemsCount = 0
     const results: any[] = []
 

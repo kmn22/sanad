@@ -41,9 +41,11 @@ interface Props {
   onChange: () => void
   activeTab?: string
   onTabChange?: (tab: string) => void
+  /** Portal mode: navigation lives in the portal sidebar, so hide header + tab bar. */
+  embedded?: boolean
 }
 
-export function StudentView({ data, onChange, activeTab, onTabChange }: Props) {
+export function StudentView({ data, onChange, activeTab, onTabChange, embedded = false }: Props) {
   const { lang, t } = useLang()
   const [internalTab, setInternalTab] = useState('overview')
   const tab = activeTab ?? internalTab
@@ -54,13 +56,15 @@ export function StudentView({ data, onChange, activeTab, onTabChange }: Props) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold tracking-tight">{t('student.morning')}</h2>
-        <p className="text-sm text-muted-foreground">{t('student.subtitle')}</p>
-      </div>
+      {!embedded && (
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight">{t('student.morning')}</h2>
+          <p className="text-sm text-muted-foreground">{t('student.subtitle')}</p>
+        </div>
+      )}
 
       <Tabs value={tab} onValueChange={setTab} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-7 h-auto" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+        <TabsList className={embedded ? 'hidden' : 'grid w-full grid-cols-3 sm:grid-cols-7 h-auto'} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
           <TabsTrigger value="overview" className="text-xs gap-1.5">
             <GraduationCap className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">{t('student.morning')}</span>

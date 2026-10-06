@@ -130,6 +130,13 @@ export default function LandingPage() {
               <a href="#newsletter" className="hover:text-emerald-400 transition-colors">النشرة القانونية</a>
               <a href="#zatca" className="hover:text-emerald-400 transition-colors">فوترة زاتكا</a>
               <a href="#student-path" className="hover:text-emerald-400 transition-colors">مسار المتدربين</a>
+              <Link href="/pricing" className="hover:text-emerald-400 text-emerald-400 font-bold transition-colors">
+                الأسعار والباقات
+              </Link>
+              <Link href="/sandbox" className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-bold border border-emerald-500/30 transition-colors">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>جرّب المعمل التجريبي</span>
+              </Link>
               <a href="#faq" className="hover:text-emerald-400 transition-colors">الأسئلة الشائعة</a>
             </nav>
 
@@ -176,15 +183,15 @@ export default function LandingPage() {
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-            <Link href="/register" className="w-full sm:w-auto">
-              <Button size="lg" className="w-full sm:w-auto h-14 px-8 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-lg font-bold shadow-2xl shadow-emerald-700/40 border border-emerald-400/40 transition-all hover:scale-[1.03] cursor-pointer">
-                <span>ابدأ تجربة المنصة مجاناً</span>
+            <Link href="/sandbox" className="w-full sm:w-auto">
+              <Button size="lg" className="w-full sm:w-auto h-14 px-8 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-base sm:text-lg font-bold shadow-2xl shadow-emerald-700/40 border border-emerald-400/40 transition-all hover:scale-[1.03] cursor-pointer">
+                <span>جرّب مكتب تجريبي فوري (Sandbox)</span>
                 <ArrowLeft className="w-5 h-5 mr-2" />
               </Button>
             </Link>
-            <Link href="/login" className="w-full sm:w-auto">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto h-14 px-8 border-slate-700 bg-slate-900/60 hover:bg-slate-800/90 text-slate-200 text-lg font-semibold transition-all cursor-pointer">
-                <span>تسجيل الدخول</span>
+            <Link href="/pricing" className="w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto h-14 px-8 border-slate-700 bg-slate-900/60 hover:bg-slate-800/90 text-slate-200 text-base sm:text-lg font-semibold transition-all cursor-pointer">
+                <span>استعراض الباقات والأسعار</span>
                 <ArrowLeft className="w-5 h-5 mr-2 text-slate-400" />
               </Button>
             </Link>
@@ -299,8 +306,9 @@ export default function LandingPage() {
                     <div className="text-sm font-semibold text-slate-200 mb-2">محددات الصياغة التفاعلية:</div>
 
                     <div>
-                      <label className="text-xs text-slate-400 block mb-1.5">مدة العقد الأساسي:</label>
+                      <label htmlFor="contract-duration" className="text-xs text-slate-400 block mb-1.5">مدة العقد الأساسي:</label>
                       <select
+                        id="contract-duration"
                         value={contractDuration}
                         onChange={(e) => setContractDuration(e.target.value)}
                         className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"
@@ -812,7 +820,7 @@ export default function LandingPage() {
                   </ul>
                   <div className="mt-8">
                     <Link href="/register">
-                      <Button className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 cursor-pointer">
+                      <Button className="bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-6 cursor-pointer">
                         سجل كمحامٍ الآن
                       </Button>
                     </Link>
@@ -1026,7 +1034,7 @@ export default function LandingPage() {
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
                 <Link href="/register" className="w-full sm:w-auto">
-                  <Button size="lg" className="w-full sm:w-auto h-14 px-10 bg-emerald-600 hover:bg-emerald-500 text-white text-lg font-bold shadow-xl shadow-emerald-700/40 transition-all hover:scale-[1.03] cursor-pointer">
+                  <Button size="lg" className="w-full sm:w-auto h-14 px-10 bg-emerald-700 hover:bg-emerald-600 text-white text-lg font-bold shadow-xl shadow-emerald-700/40 transition-all hover:scale-[1.03] cursor-pointer">
                     إنشاء حساب جديد مجاناً
                     <ArrowLeft className="w-5 h-5 mr-2" />
                   </Button>
@@ -1067,6 +1075,7 @@ export default function LandingPage() {
               <a href="#interactive-demo" className="hover:text-emerald-400 transition-colors">التجربة التفاعلية</a>
               <a href="#drafting" className="hover:text-emerald-400 transition-colors">محرك الصياغة</a>
               <a href="#zatca" className="hover:text-emerald-400 transition-colors">فوترة زاتكا</a>
+              <Link href="/pricing" className="hover:text-emerald-400 transition-colors">الأسعار والباقات</Link>
               <Link href="/login" className="hover:text-emerald-400 transition-colors">تسجيل الدخول</Link>
               <Link href="/register" className="hover:text-emerald-400 transition-colors">حساب جديد</Link>
             </div>
@@ -1147,7 +1156,7 @@ export default function LandingPage() {
             <div className="p-4 border-t border-white/10 bg-slate-950/60 flex justify-end">
               <Button
                 onClick={() => setShowPrivacyModal(false)}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 cursor-pointer"
+                className="bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-6 cursor-pointer"
               >
                 إغلاق وفهمت الشروط
               </Button>
@@ -1175,7 +1184,7 @@ export default function LandingPage() {
             <Button
               size="sm"
               onClick={acceptCookies}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 h-8 cursor-pointer"
+              className="bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold px-4 h-8 cursor-pointer"
             >
               موافق ومتابعة
             </Button>

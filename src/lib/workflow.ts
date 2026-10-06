@@ -1,7 +1,7 @@
 import { db } from '@/lib/db'
 import type { AuthContext } from '@/lib/auth/workspace'
 
-export const CASE_STAGES = new Set(['drafting', 'client_review', 'filed', 'closed'])
+export const CASE_STAGES = new Set(['intake', 'drafting', 'client_review', 'pleading', 'filed', 'hearing', 'appeal', 'enforcement', 'closed'])
 export const CASE_ASSIGNMENT_ROLES = new Set(['lead', 'assignee', 'reviewer', 'observer'])
 export const TASK_STATUSES = new Set(['todo', 'in_progress', 'done'])
 
@@ -42,8 +42,16 @@ export async function notifyUsers(
 ) {
   const uniqueIds = [...new Set(userIds.filter(Boolean))]
   if (!uniqueIds.length) return
+  const optedOut = new Set(
+    (await db.notificationPreference.findMany({
+      where: { userId: { in: uniqueIds }, type: notification.type || 'workflow', inApp: false },
+      select: { userId: true },
+    })).map((pref) => pref.userId),
+  )
+  const recipients = uniqueIds.filter((userId) => !optedOut.has(userId))
+  if (!recipients.length) return
   await db.notification.createMany({
-    data: uniqueIds.map((userId) => ({
+    data: recipients.map((userId) => ({
       workspaceId,
       userId,
       actorId: notification.actorId || null,

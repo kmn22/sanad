@@ -20,6 +20,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { PrismaClient } from '@prisma/client'
 import { hashPassword } from '../src/lib/auth/password'
+import { checkAiUsage, checkPortalUpload, getUsageQuantity, incrementUsage, storageBytesUsed } from '../src/lib/saas/entitlements'
 
 // Skip this entire suite when there is no database configured (unit-only CI).
 const hasDb = Boolean(process.env.DATABASE_URL)
@@ -44,6 +45,7 @@ async function createWorkspace(suffix: string) {
       emailVerified: new Date(),
     },
   })
+  await db.workspaceMembership.create({ data: { workspaceId: ws.id, userId: user.id, role: 'lawyer', status: 'active' } })
   return { workspaceId: ws.id, userId: user.id }
 }
 
@@ -56,6 +58,8 @@ let taskAId: string
 let documentAId: string
 let complianceAId: string
 let invoiceAId: string
+let portalAccessAId: string
+let portalRequestAId: string
 
 // ---------------------------------------------------------------------------
 // Setup
@@ -121,10 +125,37 @@ beforeAll(async () => {
     },
   })
   invoiceAId = invoice.id
+
+  const portalAccess = await db.portalAccess.create({
+    data: {
+      workspaceId: wsA.workspaceId,
+      clientId: clientAId,
+      caseId: caseAId,
+      tokenHash: `test-token-${wsA.workspaceId}`,
+      expiresAt: new Date(Date.now() + 86400_000),
+    },
+  })
+  portalAccessAId = portalAccess.id
+  const portalRequest = await db.portalRequest.create({
+    data: {
+      workspaceId: wsA.workspaceId,
+      portalAccessId: portalAccess.id,
+      clientId: clientAId,
+      caseId: caseAId,
+      createdBy: 'user',
+      title: 'Upload identity document',
+      message: 'Please upload the requested document',
+    },
+  })
+  portalRequestAId = portalRequest.id
 })
 
 afterAll(async () => {
   // Delete in reverse FK order — most restrictive first
+  await db.usageMetric.deleteMany({ where: { workspaceId: { in: [wsA.workspaceId, wsB.workspaceId] } } })
+  await db.portalFile.deleteMany({ where: { workspaceId: { in: [wsA.workspaceId, wsB.workspaceId] } } })
+  await db.portalRequest.deleteMany({ where: { workspaceId: { in: [wsA.workspaceId, wsB.workspaceId] } } })
+  await db.portalAccess.deleteMany({ where: { workspaceId: { in: [wsA.workspaceId, wsB.workspaceId] } } })
   await db.invoice.deleteMany({ where: { workspaceId: { in: [wsA.workspaceId, wsB.workspaceId] } } })
   await db.complianceItem.deleteMany({ where: { workspaceId: { in: [wsA.workspaceId, wsB.workspaceId] } } })
   await db.legalDocument.deleteMany({ where: { workspaceId: { in: [wsA.workspaceId, wsB.workspaceId] } } })
@@ -179,6 +210,19 @@ describeWithDb('LegalCase isolation', () => {
   })
 })
 
+describeWithDb('Workspace membership isolation', () => {
+  it('workspace B cannot resolve workspace A membership as its own', async () => {
+    const membership = await db.workspaceMembership.findFirst({ where: { workspaceId: wsB.workspaceId, userId: wsA.userId, status: 'active' } })
+    expect(membership).toBeNull()
+  })
+
+  it('a membership role is scoped to one workspace', async () => {
+    const membership = await db.workspaceMembership.findUnique({ where: { workspaceId_userId: { workspaceId: wsA.workspaceId, userId: wsA.userId } } })
+    expect(membership?.role).toBe('lawyer')
+    expect(membership?.workspaceId).toBe(wsA.workspaceId)
+  })
+})
+
 describeWithDb('Client isolation', () => {
   it('workspace B cannot see workspace A clients', async () => {
     const clients = await db.client.findMany({ where: { workspaceId: wsB.workspaceId } })
@@ -212,6 +256,48 @@ describeWithDb('ComplianceItem isolation', () => {
   it('workspace B cannot see workspace A compliance items', async () => {
     const items = await db.complianceItem.findMany({ where: { workspaceId: wsB.workspaceId } })
     expect(items.map((i) => i.id)).not.toContain(complianceAId)
+  })
+
+  it('workspace B cannot update a workspace A compliance item', async () => {
+    const result = await db.complianceItem.updateMany({
+      where: { id: complianceAId, workspaceId: wsB.workspaceId },
+      data: { title: 'COMPROMISED' },
+    })
+    expect(result.count).toBe(0)
+
+    const item = await db.complianceItem.findUnique({ where: { id: complianceAId } })
+    expect(item?.title).not.toBe('COMPROMISED')
+  })
+
+  it('workspace B cannot delete a workspace A compliance item', async () => {
+    const result = await db.complianceItem.deleteMany({
+      where: { id: complianceAId, workspaceId: wsB.workspaceId },
+    })
+    expect(result.count).toBe(0)
+
+    const item = await db.complianceItem.findUnique({ where: { id: complianceAId } })
+    expect(item).not.toBeNull()
+  })
+})
+
+describeWithDb('Client portal isolation', () => {
+  it('workspace B cannot read workspace A portal access', async () => {
+    const access = await db.portalAccess.findFirst({ where: { id: portalAccessAId, workspaceId: wsB.workspaceId } })
+    expect(access).toBeNull()
+  })
+
+  it('workspace B cannot read or update workspace A client requests', async () => {
+    const request = await db.portalRequest.findFirst({ where: { id: portalRequestAId, workspaceId: wsB.workspaceId } })
+    expect(request).toBeNull()
+    const updated = await db.portalRequest.updateMany({ where: { id: portalRequestAId, workspaceId: wsB.workspaceId }, data: { status: 'closed' } })
+    expect(updated.count).toBe(0)
+  })
+
+  it('portal request parent references remain in one workspace and client scope', async () => {
+    const request = await db.portalRequest.findFirst({
+      where: { id: portalRequestAId, workspaceId: wsA.workspaceId, clientId: clientAId, caseId: caseAId, portalAccessId: portalAccessAId },
+    })
+    expect(request?.id).toBe(portalRequestAId)
   })
 })
 
@@ -257,6 +343,92 @@ describeWithDb('Positive access: workspace A reads its own data', () => {
 // ---------------------------------------------------------------------------
 // Rate limiter key isolation (no cross-user bleed)
 // ---------------------------------------------------------------------------
+
+describeWithDb('Workflow template, approval, and version isolation', () => {
+  it('workspace B cannot read workspace A workflow templates', async () => {
+    const template = await db.workflowTemplate.create({
+      data: { workspaceId: wsA.workspaceId, name: 'Template A', stages: JSON.stringify(['intake', 'closed']) },
+    })
+    const found = await db.workflowTemplate.findFirst({ where: { id: template.id, workspaceId: wsB.workspaceId } })
+    expect(found).toBeNull()
+    await db.workflowTemplate.delete({ where: { id: template.id } })
+  })
+
+  it('workspace B cannot decide a workspace A approval', async () => {
+    const approval = await db.approval.create({
+      data: { workspaceId: wsA.workspaceId, caseId: caseAId, title: 'Approve filing', requestedById: wsA.userId, approverId: wsA.userId },
+    })
+    const decided = await db.approval.updateMany({ where: { id: approval.id, workspaceId: wsB.workspaceId }, data: { status: 'approved' } })
+    expect(decided.count).toBe(0)
+    const original = await db.approval.findUnique({ where: { id: approval.id } })
+    expect(original?.status).toBe('pending')
+    await db.approval.delete({ where: { id: approval.id } })
+  })
+
+  it('workspace B cannot read workspace A document versions', async () => {
+    const version = await db.documentVersion.create({
+      data: { workspaceId: wsA.workspaceId, documentId: documentAId, version: 9, fileKey: 'a/b.enc' },
+    })
+    const found = await db.documentVersion.findFirst({ where: { id: version.id, workspaceId: wsB.workspaceId } })
+    expect(found).toBeNull()
+    await db.documentVersion.delete({ where: { id: version.id } })
+  })
+
+  it('internal documents are excluded from client portal visibility', async () => {
+    const internal = await db.legalDocument.findFirst({ where: { id: documentAId, workspaceId: wsA.workspaceId, visibility: 'internal' } })
+    expect(internal?.id).toBe(documentAId)
+  })
+})
+
+describeWithDb('Plan entitlement and usage enforcement', () => {
+  it('a workspace without exhausted quota can use AI', async () => {
+    const check = await checkAiUsage(wsA.workspaceId)
+    expect(check.allowed).toBe(true)
+  })
+
+  it('AI usage is denied once the monthly plan limit is reached', async () => {
+    const period = `${new Date().getUTCFullYear()}-${String(new Date().getUTCMonth() + 1).padStart(2, '0')}`
+    await db.usageMetric.upsert({
+      where: { workspaceId_metric_period: { workspaceId: wsA.workspaceId, metric: 'ai_requests', period } },
+      create: { workspaceId: wsA.workspaceId, metric: 'ai_requests', period, quantity: 100 },
+      update: { quantity: 100 },
+    })
+    const check = await checkAiUsage(wsA.workspaceId)
+    expect(check.allowed).toBe(false)
+    expect(check.code).toBe('AI_LIMIT_REACHED')
+    const other = await checkAiUsage(wsB.workspaceId)
+    expect(other.allowed).toBe(true)
+  })
+
+  it('portal uploads are denied once the monthly upload limit is reached', async () => {
+    const period = `${new Date().getUTCFullYear()}-${String(new Date().getUTCMonth() + 1).padStart(2, '0')}`
+    await db.usageMetric.upsert({
+      where: { workspaceId_metric_period: { workspaceId: wsA.workspaceId, metric: 'portal_uploads', period } },
+      create: { workspaceId: wsA.workspaceId, metric: 'portal_uploads', period, quantity: 100 },
+      update: { quantity: 100 },
+    })
+    const check = await checkPortalUpload(wsA.workspaceId, 1024)
+    expect(check.allowed).toBe(false)
+    expect(check.code).toBe('PORTAL_UPLOAD_LIMIT_REACHED')
+    const other = await checkPortalUpload(wsB.workspaceId, 1024)
+    expect(other.allowed).toBe(true)
+  })
+
+  it('incrementUsage is scoped per workspace and period', async () => {
+    await incrementUsage(wsA.workspaceId, 'emails', 2)
+    await incrementUsage(wsA.workspaceId, 'emails', 1)
+    expect(await getUsageQuantity(wsA.workspaceId, 'emails')).toBe(3)
+    expect(await getUsageQuantity(wsB.workspaceId, 'emails')).toBe(0)
+  })
+
+  it('storage usage only counts files with stored content in the same workspace', async () => {
+    await db.legalDocument.create({
+      data: { title: 'Stored file', docType: 'client_upload', status: 'received', parties: 'Client A', workspaceId: wsA.workspaceId, fileKey: 'test/file.enc', sizeBytes: 2048 },
+    })
+    expect(await storageBytesUsed(wsA.workspaceId)).toBe(2048)
+    expect(await storageBytesUsed(wsB.workspaceId)).toBe(0)
+  })
+})
 
 describeWithDb('Rate limiter isolation', () => {
   it('rate limit keys are namespaced by email so they do not bleed across users', async () => {

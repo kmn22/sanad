@@ -42,7 +42,6 @@ export const createCaseSchema = z.object({
   court: z.string().optional().nullable(),
   opposingParty: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
-  portalToken: z.string().optional().nullable(),
 })
 
 export const updateCaseSchema = createCaseSchema.partial()
@@ -86,6 +85,7 @@ export const createDocumentSchema = z.object({
   caseId: z.string().optional().nullable(),
   clientId: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
+  visibility: z.enum(['internal', 'client']).optional(),
 })
 
 export const updateDocumentSchema = createDocumentSchema.partial()
@@ -108,3 +108,17 @@ export const createInvoiceSchema = z.object({
 })
 
 export const updateInvoiceSchema = createInvoiceSchema.partial()
+
+// ===== Compliance Schemas =====
+export const createComplianceSchema = z.object({
+  title: z.string().min(1, 'عنوان البند مطلوب').max(200),
+  category: z.string().min(1, 'التصنيف مطلوب').max(50),
+  entityName: z.string().min(1, 'اسم الكيان أو الشخص مطلوب').max(200),
+  issueDate: z.union([z.string(), z.date()]).optional().nullable().transform(v => v ? new Date(v) : new Date()),
+  expiryDate: z.union([z.string(), z.date()]).transform(v => new Date(v)),
+  status: z.enum(['active', 'expiring', 'expired', 'renewed']).default('active'),
+  notes: z.string().optional().nullable(),
+  notifyDays: z.number().int().min(1).default(30),
+})
+
+export const updateComplianceSchema = createComplianceSchema.partial()

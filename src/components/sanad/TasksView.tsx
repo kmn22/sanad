@@ -18,9 +18,10 @@ import {
   DialogClose,
 } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Plus, ListTodo, Sparkles, Calendar, Kanban as KanbanIcon, LayoutList, GripVertical } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Plus, ListTodo, Sparkles, Calendar, Kanban as KanbanIcon, LayoutList, GripVertical } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLang } from '@/lib/sanad/i18n'
+import { StatTile } from '@/components/portal/PortalShell'
 import {
   PRIORITY_COLORS,
   daysUntil,
@@ -154,6 +155,13 @@ export function TasksView({ tasks, cases, onChange }: Props) {
           </div>
           <AddTaskDialog open={open} onOpenChange={setOpen} cases={cases} onSaved={() => { onChange(); setOpen(false) }} />
         </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatTile label={lang === 'ar' ? 'مفتوحة' : 'Open'} value={counts.all} icon={ListTodo} />
+        <StatTile label={lang === 'ar' ? 'مستحقة اليوم' : 'Due today'} value={counts.today} icon={Calendar} tone={counts.today ? 'warn' : 'default'} />
+        <StatTile label={lang === 'ar' ? 'متأخرة' : 'Overdue'} value={counts.overdue} icon={AlertTriangle} tone={counts.overdue ? 'bad' : 'good'} />
+        <StatTile label={lang === 'ar' ? 'مكتملة' : 'Completed'} value={sorted.filter((task) => task.status === 'done').length} icon={CheckCircle2} tone="good" />
       </div>
 
       {view === 'list' && (

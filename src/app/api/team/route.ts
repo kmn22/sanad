@@ -6,7 +6,7 @@ export async function GET() {
   const auth = await getAuthContext()
   if (!auth) return unauthorizedJson()
   const members = await db.user.findMany({
-    where: { workspaceId: auth.workspaceId, disabledAt: null },
+    where: { workspaceId: auth.workspaceId, disabledAt: null, role: { not: 'client' } },
     orderBy: { name: 'asc' },
     select: { id: true, name: true, email: true, role: true, createdAt: true },
   })

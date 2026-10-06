@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Moon, Sun, RefreshCw, Languages, GraduationCap, Briefcase, Search, LogOut } from 'lucide-react'
+import { Moon, Sun, RefreshCw, Languages, GraduationCap, Briefcase, Search, LogOut, CreditCard, Scale } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useLang } from '@/lib/sanad/i18n'
 import { useTheme } from 'next-themes'
@@ -133,6 +133,16 @@ export function TopNav({
               <Search className="h-3.5 w-3.5" />
             </Button>
 
+            {/* Sandbox CTA Button */}
+            <a
+              href="/sandbox"
+              className="hidden lg:inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full text-xs font-semibold bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 transition-colors"
+              title="تجربة بيئة العمل الفورية ببيانات افتراضية"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span>معمل تجريبي</span>
+            </a>
+
             <NotificationCenter />
 
             <Button
@@ -197,6 +207,19 @@ export function TopNav({
                 >
                   {persona === 'lawyer' ? <GraduationCap className="h-4 w-4 text-primary" /> : <Briefcase className="h-4 w-4 text-primary" />}
                   <span>{persona === 'lawyer' ? 'التبديل إلى وضع الطالب' : 'التبديل إلى وضع المحامي'}</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <a href="/pricing" className="cursor-pointer gap-2 flex items-center">
+                    <CreditCard className="h-4 w-4 text-emerald-600" />
+                    <span>الباقات والأسعار</span>
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a href="/sandbox" className="cursor-pointer gap-2 flex items-center">
+                    <Scale className="h-4 w-4 text-emerald-600" />
+                    <span>المعمل التجريبي (Sandbox)</span>
+                  </a>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem

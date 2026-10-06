@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { OLLAMA_URL, OLLAMA_MODEL } from '@/lib/ai/ollama'
 import { readJsonLimited, safeErrorResponse } from '@/lib/http'
 import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
+import { checkAiUsage, incrementUsage } from '@/lib/saas/entitlements'
 
 const ANALYSIS_TYPES = new Set(['ocr_id', 'summarize_judgment', 'legal_analysis'])
 
@@ -9,6 +10,10 @@ export async function POST(req: Request) {
   try {
     const workspaceId = await getSessionWorkspaceId()
     if (!workspaceId) return unauthorizedJson()
+    const quota = await checkAiUsage(workspaceId)
+    if (!quota.allowed) {
+      return NextResponse.json({ error: 'AI usage limit reached for the current plan', code: quota.code }, { status: 403 })
+    }
     const { documentText, type = 'legal_analysis' } = await readJsonLimited<{ documentText?: unknown; type?: string }>(req, 128 * 1024)
 
     if (typeof documentText !== 'string' || !documentText.trim() || documentText.length > 100_000) {
@@ -17,6 +22,7 @@ export async function POST(req: Request) {
     if (!ANALYSIS_TYPES.has(type)) {
       return NextResponse.json({ error: 'Invalid analysis type' }, { status: 400 })
     }
+    await incrementUsage(workspaceId, 'ai_requests')
 
     let systemPrompt = ''
     if (type === 'ocr_id') {

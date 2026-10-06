@@ -13,4 +13,3 @@ const handler = (req: any, ctx: any) => {
 }
 
 export { handler as GET, handler as POST }
-export { authOptions }

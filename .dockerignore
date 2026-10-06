@@ -12,4 +12,5 @@ ts-state
 ! .env.production
 graphify-out
 backups
+uploads
 db

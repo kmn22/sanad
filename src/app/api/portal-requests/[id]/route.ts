@@ -4,6 +4,7 @@ import { getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/works
 import { notifyUsers, recordWorkflowEvent } from '@/lib/workflow'
 
 const STATUSES = new Set(['open', 'answered', 'closed'])
+const PRIORITIES = new Set(['low', 'normal', 'high', 'urgent'])
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await getAuthContext()
@@ -13,7 +14,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const existing = await db.portalRequest.findFirst({ where: { id, workspaceId: auth.workspaceId } })
   if (!existing) return notFoundJson()
 
-  const data: { status?: string; assignedToId?: string | null } = {}
+  const data: { status?: string; assignedToId?: string | null; priority?: string; dueDate?: Date | null } = {}
   if (body?.status !== undefined) {
     if (!STATUSES.has(body.status)) return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
     data.status = body.status
@@ -21,9 +22,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (body?.assignedToId !== undefined) {
     if (body.assignedToId === null) data.assignedToId = null
     else {
-      const member = await db.user.findFirst({ where: { id: body.assignedToId, workspaceId: auth.workspaceId, disabledAt: null }, select: { id: true } })
+      const member = await db.user.findFirst({ where: { id: body.assignedToId, workspaceId: auth.workspaceId, disabledAt: null, role: { not: 'client' } }, select: { id: true } })
       if (!member) return notFoundJson()
       data.assignedToId = member.id
+    }
+  }
+  if (body?.priority !== undefined) {
+    if (!PRIORITIES.has(body.priority)) return NextResponse.json({ error: 'Invalid priority' }, { status: 400 })
+    data.priority = body.priority
+  }
+  if (body?.dueDate !== undefined) {
+    if (body.dueDate === null || body.dueDate === '') data.dueDate = null
+    else {
+      const dueDate = new Date(body.dueDate)
+      if (Number.isNaN(dueDate.getTime())) return NextResponse.json({ error: 'Invalid due date' }, { status: 400 })
+      data.dueDate = dueDate
     }
   }
   const updated = await db.$transaction(async (tx) => {
@@ -46,7 +59,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       actorId: auth.userId,
       title: 'تم تعيين طلب عميل لك',
       message: updated.title,
-      link: '/workflow',
+      link: '/lawyer/workflow',
       entityType: 'PortalRequest',
       entityId: updated.id,
     })

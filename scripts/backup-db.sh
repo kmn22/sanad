@@ -14,6 +14,8 @@ DUMP_FILE="$BACKUP_DIR/sanad-$DATE.dump"
 ENCRYPTED_FILE="$DUMP_FILE.enc"
 VERIFY_FILE="$BACKUP_DIR/.verify-$DATE.dump"
 VERIFY_DB="sanad_restore_${DATE//-/}"
+UPLOAD_DIR="${UPLOAD_ROOT:-$PROJECT_DIR/uploads}"
+UPLOAD_ARCHIVE="$BACKUP_DIR/sanad-files-$DATE.tar.gz"
 
 mkdir -p "$BACKUP_DIR"
 cleanup() {
@@ -34,6 +36,10 @@ docker exec sanad-postgres pg_restore -U sanad -d "$VERIFY_DB" --no-owner --no-p
 docker exec sanad-postgres psql -U sanad -d "$VERIFY_DB" -v ON_ERROR_STOP=1 -Atc 'SELECT COUNT(*) FROM "User"; SELECT COUNT(*) FROM "Workspace";' >/dev/null
 
 sha256sum "$ENCRYPTED_FILE" > "$ENCRYPTED_FILE.sha256"
+if [ -d "$UPLOAD_DIR" ]; then
+  tar -C "$UPLOAD_DIR" -czf "$UPLOAD_ARCHIVE" .
+  sha256sum "$UPLOAD_ARCHIVE" > "$UPLOAD_ARCHIVE.sha256"
+fi
 
 if [ -n "${S3_BACKUP_BUCKET:-}" ]; then
   if ! command -v aws >/dev/null 2>&1; then
@@ -46,7 +52,11 @@ if [ -n "${S3_BACKUP_BUCKET:-}" ]; then
   fi
   aws "${AWS_ARGS[@]}" s3 cp "$ENCRYPTED_FILE" "s3://$S3_BACKUP_BUCKET/sanad/$(basename "$ENCRYPTED_FILE")" --only-show-errors
   aws "${AWS_ARGS[@]}" s3 cp "$ENCRYPTED_FILE.sha256" "s3://$S3_BACKUP_BUCKET/sanad/$(basename "$ENCRYPTED_FILE.sha256")" --only-show-errors
+  if [ -f "$UPLOAD_ARCHIVE" ]; then
+    aws "${AWS_ARGS[@]}" s3 cp "$UPLOAD_ARCHIVE" "s3://$S3_BACKUP_BUCKET/sanad/$(basename "$UPLOAD_ARCHIVE")" --only-show-errors
+    aws "${AWS_ARGS[@]}" s3 cp "$UPLOAD_ARCHIVE.sha256" "s3://$S3_BACKUP_BUCKET/sanad/$(basename "$UPLOAD_ARCHIVE.sha256")" --only-show-errors
+  fi
 fi
 
-find "$BACKUP_DIR" -type f \( -name 'sanad-*.dump.enc' -o -name 'sanad-*.dump.enc.sha256' \) -mtime +30 -delete
+find "$BACKUP_DIR" -type f \( -name 'sanad-*.dump.enc' -o -name 'sanad-*.dump.enc.sha256' -o -name 'sanad-files-*.tar.gz' -o -name 'sanad-files-*.tar.gz.sha256' \) -mtime +30 -delete
 printf '[%s] Encrypted backup verified: %s (%s)\n' "$(date --iso-8601=seconds)" "$ENCRYPTED_FILE" "$(du -h "$ENCRYPTED_FILE" | cut -f1)"

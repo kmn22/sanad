@@ -32,8 +32,8 @@ function emptyStudentDashboard() {
 
 export async function getStudentDashboard() {
   const session = await getServerSession(authOptions)
-  const user = session?.user as { id?: string; workspaceId?: string } | undefined
-  if (!user?.id || !user.workspaceId) {
+  const user = session?.user as { id?: string; workspaceId?: string; role?: string } | undefined
+  if (!user?.id || !user.workspaceId || user.role === 'client') {
     return emptyStudentDashboard()
   }
 

@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { useSession } from 'next-auth/react'
 import {
   Timer,
   CheckCircle2,
@@ -39,6 +40,8 @@ interface Props {
 
 export function TodayFocusView({ data, onNavigate, onStartFocus, onRefresh }: Props) {
   const { lang, t } = useLang()
+  const { data: session } = useSession()
+  const firstName = session?.user?.name?.trim().split(/\s+/)[0] || (lang === 'ar' ? 'زميلنا' : 'Counsel')
   const now = new Date()
   const hour = now.getHours()
   const greetingKey = hour < 12 ? 'greeting.morning' : hour < 17 ? 'greeting.afternoon' : 'greeting.evening'
@@ -65,7 +68,7 @@ export function TodayFocusView({ data, onNavigate, onStartFocus, onRefresh }: Pr
       const res = await fetch(`/api/tasks/${task.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ completed: true }),
+        body: JSON.stringify({ status: 'done' }),
       })
       if (!res.ok) throw new Error('failed')
       toast.success(lang === 'ar' ? `✓ اكتملت: ${task.title}` : `✓ Done: ${task.title}`)
@@ -91,7 +94,7 @@ export function TodayFocusView({ data, onNavigate, onStartFocus, onRefresh }: Pr
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              {t(greetingKey)}، <span className="text-primary font-black">أحمد</span>
+              {t(greetingKey)} <span className="text-primary font-black">{firstName}</span>
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground">
               {now.toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-GB', {

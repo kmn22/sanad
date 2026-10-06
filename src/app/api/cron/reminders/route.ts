@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { runAutomatedReminders } from '@/lib/reminders'
+import { processDueJobs } from '@/lib/jobs'
 import { getAuthContext } from '@/lib/auth/workspace'
 
 function isAuthorized(req: NextRequest): boolean {
@@ -34,11 +35,12 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const result = await runAutomatedReminders()
+    const [result, jobs] = await Promise.all([runAutomatedReminders(), processDueJobs()])
     return NextResponse.json({
       success: true,
       timestamp: new Date().toISOString(),
       result,
+      jobs,
     })
   } catch (error) {
     console.error('Error running automated reminders:', error)

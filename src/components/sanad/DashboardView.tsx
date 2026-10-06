@@ -21,6 +21,7 @@ import {
   TrendingUp,
   Users,
   Receipt,
+  Sparkles,
 } from 'lucide-react'
 import {
   ResponsiveContainer,
@@ -39,6 +40,7 @@ import {
 } from 'recharts'
 import { useLang } from '@/lib/sanad/i18n'
 import { AiSearchChat } from './AiSearchChat'
+import { LawyerOnboardingWizard } from './LawyerOnboardingWizard'
 import {
   COMPLIANCE_COLORS,
   DOC_STATUS_COLORS,
@@ -65,8 +67,16 @@ export function DashboardView({ data, onNavigate }: Props) {
   const greetingKey = hour < 12 ? 'greeting.morning' : hour < 17 ? 'greeting.afternoon' : 'greeting.evening'
 
   const [isMounted, setIsMounted] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(false)
+
   useEffect(() => {
     setIsMounted(true)
+    try {
+      const done = localStorage.getItem('sanad_lawyer_onboarding_completed')
+      if (!done) {
+        setShowOnboarding(true)
+      }
+    } catch {}
   }, [])
 
   const weeklyChartData = useMemo(() => {
@@ -167,14 +177,23 @@ export function DashboardView({ data, onNavigate }: Props) {
             <span className="text-muted-foreground">{formatHijri(now, lang)}</span>
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => window.print()}>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 cursor-pointer"
+            onClick={() => setShowOnboarding(true)}
+          >
+            <Sparkles className="mx-1.5 h-4 w-4 text-emerald-500" />
+            {lang === 'ar' ? 'معالج التهيئة' : 'Setup Wizard'}
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => window.print()} className="cursor-pointer">
             <FileText className="mx-1.5 h-4 w-4" /> {lang === 'ar' ? 'تصدير PDF' : 'Export PDF'}
           </Button>
-          <Button size="sm" variant="outline" onClick={() => onNavigate('deepwork')}>
+          <Button size="sm" variant="outline" onClick={() => onNavigate('deepwork')} className="cursor-pointer">
             <Timer className="mx-1.5 h-4 w-4" /> {t('dash.start_focus')}
           </Button>
-          <Button size="sm" onClick={() => onNavigate('tasks')}>
+          <Button size="sm" onClick={() => onNavigate('tasks')} className="cursor-pointer">
             <CheckCircle2 className="mx-1.5 h-4 w-4" /> {t('dash.tasks_count', { n: stats.openTasks })}
           </Button>
         </div>
@@ -655,6 +674,12 @@ export function DashboardView({ data, onNavigate }: Props) {
           </CardContent>
         </Card>
       )}
+
+      <LawyerOnboardingWizard
+        isOpen={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+        onComplete={() => onNavigate('cases')}
+      />
     </div>
   )
 }

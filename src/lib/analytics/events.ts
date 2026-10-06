@@ -95,12 +95,15 @@ export type AnalyticsEvent =
   | AlertDeliveredEvent
   | PaymentSuccessEvent;
 
+type DistributiveOmit<T, K extends keyof any> = T extends any ? Omit<T, K> : never;
+export type AnalyticsEventInput = DistributiveOmit<AnalyticsEvent, 'timestamp'> & { timestamp?: string };
+
 /**
  * Send an analytics event to the backend ingestion endpoint.
  * Failures are intentionally swallowed so analytics never break
  * the user-facing flow.
  */
-export async function trackEvent(event: Omit<AnalyticsEvent, 'timestamp'> & { timestamp?: string }) {
+export async function trackEvent(event: AnalyticsEventInput) {
   const payload: AnalyticsEvent = {
     ...event,
     timestamp: event.timestamp ?? new Date().toISOString(),

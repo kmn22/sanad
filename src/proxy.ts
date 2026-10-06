@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 import { PRIVACY_NOTICE_VERSION } from '@/lib/compliance'
+import { canAccessPortal, homePathFor, portalForPath } from '@/lib/auth/portals'
 
 const secureCookie = process.env.NODE_ENV === 'production'
 const authSecret = process.env.NEXTAUTH_SECRET
@@ -23,7 +24,9 @@ export async function proxy(req: NextRequest) {
     pathname.startsWith('/api/cron/')
 
   const isApi = pathname.startsWith('/api/')
+  const portal = portalForPath(pathname)
   const isProtectedPage =
+    portal !== null ||
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/settings') ||
     pathname.startsWith('/admin') ||
@@ -35,6 +38,7 @@ export async function proxy(req: NextRequest) {
 
   // Resolve the token once and reuse it for every branch below.
   const token = await getToken({ req, secret: authSecret, secureCookie })
+  const role = (token?.role as string | undefined) || undefined
 
   if (isApi) {
     if (isPublicApi) return NextResponse.next()
@@ -43,6 +47,14 @@ export async function proxy(req: NextRequest) {
     }
     if (token.privacyNoticeVersion !== PRIVACY_NOTICE_VERSION) {
       return NextResponse.json({ error: 'Current privacy notice acceptance is required', code: 'PRIVACY_NOTICE_REQUIRED' }, { status: 403 })
+    }
+    // Client logins may only reach the client-scoped API surface. This is a
+    // defence-in-depth layer on top of getAuthContext() rejecting clients.
+    if (role === 'client' && !pathname.startsWith('/api/client/')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    if (pathname.startsWith('/api/client/') && role !== 'client') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     return NextResponse.next()
   }
@@ -54,24 +66,46 @@ export async function proxy(req: NextRequest) {
       loginUrl.searchParams.set('callbackUrl', pathname + req.nextUrl.search)
       return NextResponse.redirect(loginUrl)
     }
-    // Admin guard: only admin or workspace_owner can access /admin
-    if (pathname.startsWith('/admin') && token.role !== 'admin' && token.role !== 'workspace_owner') {
-      return NextResponse.redirect(new URL('/dashboard', req.url))
-    }
     if (pathname !== '/privacy/accept' && token.privacyNoticeVersion !== PRIVACY_NOTICE_VERSION) {
       return NextResponse.redirect(new URL('/privacy/accept', req.url))
+    }
+    const home = homePathFor(role)
+    // Legacy single dashboard → the user's own portal.
+    if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
+      return NextResponse.redirect(new URL(home, req.url))
+    }
+    // Portal guard: wrong-role users are sent to their own portal.
+    if (portal && !canAccessPortal(role, portal)) {
+      return NextResponse.redirect(new URL(home, req.url))
+    }
+    // Admin guard: only admin or workspace_owner can access /admin
+    if (pathname.startsWith('/admin') && role !== 'admin' && role !== 'workspace_owner') {
+      return NextResponse.redirect(new URL(home, req.url))
+    }
+    // Workflow tooling is for practice staff only.
+    if (pathname.startsWith('/workflow') && (role === 'client' || role === 'student')) {
+      return NextResponse.redirect(new URL(home, req.url))
     }
     return NextResponse.next()
   }
 
   // Authenticated users have no business on /login or /register.
   if (isAuthPage && token) {
-    return NextResponse.redirect(new URL('/dashboard', req.url))
+    return NextResponse.redirect(new URL(homePathFor(role), req.url))
   }
 
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/api/:path*', '/dashboard/:path*', '/dashboard', '/settings/:path*', '/admin/:path*', '/admin', '/workflow/:path*', '/workflow', '/privacy/accept', '/login', '/register'],
+  matcher: [
+    '/api/:path*',
+    '/dashboard/:path*', '/dashboard',
+    '/student/:path*', '/student',
+    '/lawyer/:path*', '/lawyer',
+    '/firm/:path*', '/firm',
+    '/client/:path*', '/client',
+    '/settings/:path*', '/admin/:path*', '/admin', '/workflow/:path*', '/workflow',
+    '/privacy/accept', '/login', '/register',
+  ],
 }

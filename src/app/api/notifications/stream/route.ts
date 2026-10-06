@@ -62,6 +62,7 @@ export async function GET(req: NextRequest) {
         }
 
         try {
+          const checkTime = new Date()
           // Check for any newly created notifications since last check
           const newNotifications = await db.notification.findMany({
             where: {
@@ -72,7 +73,7 @@ export async function GET(req: NextRequest) {
             orderBy: { createdAt: 'desc' },
           })
 
-          lastChecked = new Date()
+          lastChecked = checkTime
 
           if (newNotifications.length > 0) {
             const unreadCount = await db.notification.count({
