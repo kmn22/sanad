@@ -83,3 +83,52 @@ describe('portal zero-jargon glossary (Client-Portal-UX-Spec Section 05)', () =>
   })
 })
 
+describe('portal API actions (F-08 & F-09)', () => {
+  it('handles simulated payment and document signing for demo portal', async () => {
+    process.env.ENABLE_DEMO_PORTAL = 'true'
+    const { POST } = await import('../src/app/api/portal/[token]/route')
+    const { NextRequest } = await import('next/server')
+
+    // 1. Pay invoice action
+    const payReq = new NextRequest('http://localhost:3000/api/portal/demo-token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'pay_invoice', invoiceId: 'inv-demo-1', paymentMethod: 'mada' }),
+    })
+    const payRes = await POST(payReq, { params: Promise.resolve({ token: 'demo-token' }) })
+    expect(payRes.status).toBe(200)
+    const payData = await payRes.json()
+    expect(payData.success).toBe(true)
+    expect(payData.invoiceId).toBe('inv-demo-1')
+
+    // 2. Sign document action
+    const signReq = new NextRequest('http://localhost:3000/api/portal/demo-token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'sign_document',
+        documentId: 'doc-demo-1',
+        signerName: 'سارة عبد الله',
+        stepUpOtp: '1234',
+      }),
+    })
+    const signRes = await POST(signReq, { params: Promise.resolve({ token: 'demo-token' }) })
+    expect(signRes.status).toBe(200)
+    const signData = await signRes.json()
+    expect(signData.success).toBe(true)
+    expect(signData.documentId).toBe('doc-demo-1')
+
+    // 3. OTP verification action
+    const otpReq = new NextRequest('http://localhost:3000/api/portal/demo-token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'verify_otp', code: '9876' }),
+    })
+    const otpRes = await POST(otpReq, { params: Promise.resolve({ token: 'demo-token' }) })
+    expect(otpRes.status).toBe(200)
+    const otpData = await otpRes.json()
+    expect(otpData.verified).toBe(true)
+  })
+})
+
+
