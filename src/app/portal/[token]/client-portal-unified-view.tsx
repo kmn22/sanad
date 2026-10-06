@@ -118,49 +118,8 @@ interface Props {
   expiresAt: string | Date
 }
 
-// Section 05: Approved Zero-Jargon Glossary Mapping
-export const GLOSSARY_ITEMS = [
-  {
-    term: 'الجلسة',
-    clientWording: 'موعدك أمام القاضي',
-    why: 'يحدد الحدث الفعلي وما سيحصل مباشرة بدلاً من المسمى الإجرائي الرسمي.',
-  },
-  {
-    term: 'المدة النظامية',
-    clientWording: 'موعد نهائي قانوني لا يمكن تجاوزه',
-    why: 'يوصل أهمية الموعد وخطورته دون الحاجة لمصطلحات نظامية معقدة.',
-  },
-  {
-    term: 'المذكرة',
-    clientWording: 'وثيقة قانونية أعدّها محاميك',
-    why: 'يوضح مصدر الوثيقة ودورها في نصرة دعواك بدلاً من تصنيف نوع المحرر.',
-  },
-  {
-    term: 'حكم ابتدائي',
-    clientWording: 'قرار المحكمة الأول في قضيتك',
-    why: 'صيغة تسلسلية واضحة ومطمئنة أفضل من الأوصاف الفقهية المعقدة.',
-  },
-  {
-    term: 'اعتراض',
-    clientWording: 'طلب إعادة النظر في القرار',
-    why: 'فعل يومي مألوف يحافظ على وضوح النموذج الذهني للموكل.',
-  },
-  {
-    term: 'إحالة',
-    clientWording: 'تحويل قضيتك إلى الجهة المختصة',
-    why: 'يركز على حركة المعاملة واختصاص الجهة بدلاً من رقم القيد.',
-  },
-  {
-    term: 'أتعاب المحامي',
-    clientWording: 'رسوم الخدمة القانونية',
-    why: 'يتطابق مع ما يدرك الموكل أنه يدفعه لقاء خدمة مهنية.',
-  },
-  {
-    term: 'قيد الإجراء',
-    clientWording: 'قضيتك مستمرة — لا يوجد مطلوب منك حالياً',
-    why: 'الحالة الأكثر شيوعاً وتستحق العبارة الأكثر طمأنينة ووضوحاً.',
-  },
-]
+import { GLOSSARY_ITEMS, type GlossaryEntry } from '@/lib/portal-glossary'
+export { GLOSSARY_ITEMS, type GlossaryEntry }
 
 export default function ClientPortalUnifiedView({
   token,
