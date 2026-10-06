@@ -10,6 +10,14 @@ export const TOKEN_TTL = {
   emailVerification: 24 * 60 * 60 * 1000,
   /** Team invitation tokens are valid for 7 days. */
   invitation: 7 * 24 * 60 * 60 * 1000,
+  /** Portal magic-link validity per UX spec Section 02 (72 hours). */
+  portalMagicLink: 72 * 60 * 60 * 1000,
+  /** Portal one-time passcode (OTP) validity per UX spec (10 minutes). */
+  portalOtp: 10 * 60 * 1000,
+  /** Portal active session length (24 hours). */
+  portalSession: 24 * 60 * 60 * 1000,
+  /** Portal remembered device duration (30 days). */
+  portalDeviceMemory: 30 * 24 * 60 * 60 * 1000,
 } as const
 
 /**

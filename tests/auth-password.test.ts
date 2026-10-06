@@ -33,3 +33,30 @@ describe('Cryptographic Password Hashing & Verification', () => {
     expect(isStrongPassword('123456789012')).toBe(false)
   })
 })
+
+describe('Cryptographic Tokens & TTL Policies', () => {
+  it('generates secure unique 64-char hex tokens', async () => {
+    const { generateToken, hashToken, expiresIn, TOKEN_TTL } = await import('../src/lib/auth/tokens')
+    const t1 = generateToken()
+    const t2 = generateToken()
+    expect(t1).toHaveLength(64)
+    expect(t2).toHaveLength(64)
+    expect(t1).not.toBe(t2)
+
+    const h1 = hashToken(t1)
+    const h2 = hashToken(t1)
+    expect(h1).toHaveLength(64)
+    expect(h1).toBe(h2)
+    expect(h1).not.toBe(t1)
+
+    const before = Date.now()
+    const expiry = expiresIn(TOKEN_TTL.passwordReset)
+    expect(expiry.getTime()).toBeGreaterThanOrEqual(before + TOKEN_TTL.passwordReset)
+
+    expect(TOKEN_TTL.portalMagicLink).toBe(72 * 60 * 60 * 1000)
+    expect(TOKEN_TTL.portalOtp).toBe(10 * 60 * 1000)
+    expect(TOKEN_TTL.portalSession).toBe(24 * 60 * 60 * 1000)
+    expect(TOKEN_TTL.portalDeviceMemory).toBe(30 * 24 * 60 * 60 * 1000)
+  })
+})
+

@@ -37,32 +37,15 @@ export async function POST(req: NextRequest) {
     }
     const doc = await db.legalDocument.create({ data: { ...parsed, workspaceId } })
     // Auto-generate follow-up task when a doc is created
-  if (doc.docType === 'nda' && doc.status === 'sent') {
-    const due = new Date()
-    due.setDate(due.getDate() + 3)
-    await db.task.create({
-      data: {
-        title: `Follow up on ${doc.title} signature`,
-        description: `${doc.title} sent — chase signature in 3 days`,
-        status: 'todo',
-        priority: 'high',
-        dueDate: due,
-        relatedDoc: doc.title,
-        autoGen: true,
-        workspaceId,
-      },
-    })
-  }
-  if (doc.expiryDate && (doc.docType === 'employment' || doc.docType === 'non_compete')) {
-    const due = new Date(doc.expiryDate)
-    due.setDate(due.getDate() - 30)
-    if (due > new Date()) {
+    if (doc.docType === 'nda' && doc.status === 'sent') {
+      const due = new Date()
+      due.setDate(due.getDate() + 3)
       await db.task.create({
         data: {
-          title: `Renew ${doc.title}`,
-          description: `${doc.title} expires ${doc.expiryDate.toISOString().slice(0, 10)}`,
+          title: `Follow up on ${doc.title} signature`,
+          description: `${doc.title} sent — chase signature in 3 days`,
           status: 'todo',
-          priority: 'normal',
+          priority: 'high',
           dueDate: due,
           relatedDoc: doc.title,
           autoGen: true,
@@ -70,7 +53,24 @@ export async function POST(req: NextRequest) {
         },
       })
     }
-  }
+    if (doc.expiryDate && (doc.docType === 'employment' || doc.docType === 'non_compete')) {
+      const due = new Date(doc.expiryDate)
+      due.setDate(due.getDate() - 30)
+      if (due > new Date()) {
+        await db.task.create({
+          data: {
+            title: `Renew ${doc.title}`,
+            description: `${doc.title} expires ${doc.expiryDate.toISOString().slice(0, 10)}`,
+            status: 'todo',
+            priority: 'normal',
+            dueDate: due,
+            relatedDoc: doc.title,
+            autoGen: true,
+            workspaceId,
+          },
+        })
+      }
+    }
     return NextResponse.json(doc)
   } catch (err: any) {
     if (err?.name === 'ZodError') {
