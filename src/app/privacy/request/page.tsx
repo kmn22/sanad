@@ -19,7 +19,7 @@ export default function PrivacyRequestPage() {
     setMessage(response.ok ? `تم تسجيل الطلب: ${result.request.id}` : result.error || 'تعذر تسجيل الطلب')
   }
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12" dir="rtl">
+    <main className="mx-auto min-h-screen w-full max-w-2xl overflow-x-hidden px-4 py-12 sm:px-6" dir="rtl">
       <h1 className="text-3xl font-bold mb-3">طلب حقوق صاحب البيانات</h1>
       <p className="mb-8 text-muted-foreground">نتحقق من الهوية قبل الإفصاح أو التصحيح أو الإتلاف. المدة النظامية المعتادة 30 يوماً.</p>
       <form action={submit} className="space-y-5">

@@ -75,7 +75,8 @@ export default function RegisterPage() {
 
   useEffect(() => {
     const token = new URLSearchParams(window.location.search).get('invite') || ''
-    const preset = new URLSearchParams(window.location.search).get('type')
+    const params = new URLSearchParams(window.location.search)
+    const preset = params.get('type') || (params.get('plan') === 'firm' ? 'firm' : params.get('plan') === 'solo' ? 'lawyer' : params.get('plan') === 'student' ? 'student' : null)
     if (preset === 'student' || preset === 'lawyer' || preset === 'firm') {
       setAccountType(preset)
       setStep('details')

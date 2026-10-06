@@ -30,13 +30,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
     }
 
-    // Surface a real 503 when mail is down (the page already reports it) rather
-    // than silently pretending a link was sent. Same for every request, so it
-    // leaks nothing about whether an account exists.
-    if (!emailConfigured()) {
-      return NextResponse.json({ error: 'خدمة البريد غير مهيأة حالياً.' }, { status: 503 })
-    }
-
     const user = await db.user.findUnique({
       where: { email },
       select: { id: true, name: true, disabledAt: true },
@@ -61,27 +54,33 @@ export async function POST(req: Request) {
         }),
       ])
 
-      // Dispatch after the response is flushed. An awaited SMTP round trip makes
-      // requests for known addresses measurably slower than unknown ones, which
-      // is a timing side-channel for account enumeration even though the body is
-      // identical. `after()` keeps the send reliable but off the hot path.
       const recipient = email
       const recipientName = user.name || email
       const link = publicAppUrl(`/reset-password?token=${token}`)
-      after(async () => {
-        try {
-          await sendTransactionalEmail({
-            to: recipient,
-            subject: 'إعادة تعيين كلمة المرور — سند',
-            heading: 'إعادة تعيين كلمة المرور',
-            text: `مرحباً ${recipientName}، طلبت إعادة تعيين كلمة المرور. الرابط صالح لمدة ساعة واحدة. إذا لم تطلب ذلك فتجاهل هذه الرسالة — كلمة مرورك لم تتغير.`,
-            actionUrl: link,
-            actionLabel: 'إعادة تعيين كلمة المرور',
-          })
-        } catch (mailError) {
-          console.error('Password reset email failed:', mailError instanceof Error ? mailError.message : 'unknown error')
-        }
-      })
+      if (emailConfigured()) {
+        after(async () => {
+          try {
+            await sendTransactionalEmail({
+              to: recipient,
+              subject: 'إعادة تعيين كلمة المرور — سند',
+              heading: 'إعادة تعيين كلمة المرور',
+              text: `مرحباً ${recipientName}، طلبت إعادة تعيين كلمة المرور. الرابط صالح لمدة ساعة واحدة. إذا لم تطلب ذلك فتجاهل هذه الرسالة — كلمة مرورك لم تتغير.`,
+              actionUrl: link,
+              actionLabel: 'إعادة تعيين كلمة المرور',
+            })
+          } catch (mailError) {
+            console.error('Password reset email failed:', mailError instanceof Error ? mailError.message : 'unknown error')
+          }
+        })
+      }
+
+      if (!emailConfigured() && process.env.NODE_ENV !== 'production') {
+        return NextResponse.json({
+          success: true,
+          message: 'تم إنشاء رابط إعادة التعيين التجريبي.',
+          devResetUrl: link,
+        })
+      }
     }
 
     return NextResponse.json({

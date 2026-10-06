@@ -1,6 +1,7 @@
 export default function TermsPage() {
   return (
-    <main className="mx-auto max-w-4xl px-6 py-12 leading-8" dir="rtl">
+    <main className="min-h-screen w-full overflow-x-hidden bg-background px-4 py-12 leading-8 sm:px-6" dir="rtl">
+      <div className="mx-auto max-w-4xl pb-16">
       <h1 className="text-3xl font-bold mb-2">شروط الاستخدام</h1>
       <p className="text-sm text-muted-foreground mb-8">الإصدار: 2026-09-28 — مقدم الخدمة: سند (Sanad)</p>
       <div className="space-y-6">
@@ -11,6 +12,7 @@ export default function TermsPage() {
         <section><h2 className="text-xl font-semibold">الفوترة</h2><p>خصائص الفواتير الحالية داخلية وتجريبية ولا تمثل حلاً معتمداً أو مدمجاً مع منصة فاتورة. يتحمل المستخدم مسؤولية التحقق من متطلبات ZATCA والضريبة قبل إصدار أي مستند ضريبي.</p></section>
         <section><h2 className="text-xl font-semibold">الإيقاف والمسؤولية</h2><p>يجوز إيقاف الحساب عند إساءة الاستخدام أو الخطر الأمني أو الالتزام النظامي. تُقدم الخدمة بحسب الإمكانات المتاحة، دون ضمان نتيجة قانونية أو قضائية أو ضريبية. لا تحد هذه الشروط من مسؤولية لا يجوز استبعادها نظاماً.</p></section>
         <section><h2 className="text-xl font-semibold">النظام الواجب التطبيق</h2><p>تخضع هذه الشروط للأنظمة السارية في المملكة العربية السعودية. التواصل: <a href="mailto:ahmed@sanad.sa" className="underline">ahmed@sanad.sa</a>.</p></section>
+      </div>
       </div>
     </main>
   )

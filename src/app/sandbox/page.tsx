@@ -105,14 +105,20 @@ export default function SandboxPage() {
 
   // Countdown timer effect
   useEffect(() => {
+    const storageKey = 'sanad-sandbox-started-at'
+    const stored = window.sessionStorage.getItem(storageKey)
+    const startedAt = stored ? Number(stored) : Date.now()
+    if (!stored) window.sessionStorage.setItem(storageKey, String(startedAt))
+    setSecondsLeft(Math.max(0, 1800 - Math.floor((Date.now() - startedAt) / 1000)))
     const timer = setInterval(() => {
       setSecondsLeft((prev) => {
-        if (prev <= 1) {
+        const remaining = Math.max(0, 1800 - Math.floor((Date.now() - startedAt) / 1000))
+        if (remaining <= 0) {
           clearInterval(timer)
-          toast.info('انتهت الجلسة التجريبية المؤقتة (30 دقيقة). يمكنك إنشاء حساب كامل لحفظ أعمالك.')
+          if (prev > 0) toast.info('انتهت الجلسة التجريبية المؤقتة (30 دقيقة). يمكنك إنشاء حساب كامل لحفظ أعمالك.')
           return 0
         }
-        return prev - 1
+        return remaining
       })
     }, 1000)
     return () => clearInterval(timer)
@@ -126,14 +132,21 @@ export default function SandboxPage() {
 
   // Analyze clause against Saudi Labor Law
   const handleAnalyzeClause = () => {
+    const text = clauseText.trim()
+    if (!text) {
+      setAnalysisResult(null)
+      toast.error('أدخل نص البند أولاً')
+      return
+    }
     setAnalyzingClause(true)
     setTimeout(() => {
+      const restrictive = /عدم العمل|عدم المنافسة|منافس/i.test(text)
       setAnalysisResult({
-        valid: false,
-        score: 42,
-        violation: 'شرط عدم المنافسة يخالف المادة (83) من نظام العمل السعودي حيث يتجاوز الحد الأقصى للمدة المسموح بها نظاماً (سنتان) ويفتقر للتحديد المكاني والنوعي الدقيق.',
-        recommendation: 'تعديل المدة إلى سنتين كحد أقصى، وتحديد النطاق المكاني داخل المدينة التي يمارس فيها العمل حصراً مع ذكر نوع الأعمال المنافسة صراحة.',
-        saudiArticle: 'المادة (83) من نظام العمل السعودي واللائحة التنفيذية المعدلة',
+        valid: !restrictive,
+        score: restrictive ? 42 : 96,
+        violation: restrictive ? 'شرط عدم المنافسة يحتاج إلى تحديد مدة ونطاق مكاني ونوعي واضحين وفق المادة (83) من نظام العمل السعودي.' : 'لم يرصد الفحص تعارضاً واضحاً في النص المدخل.',
+        recommendation: restrictive ? 'حدد المدة بما لا يتجاوز سنتين، والنطاق المكاني ونوع الأعمال المنافسة صراحة.' : 'حافظ على وضوح الالتزام وحدد الأطراف والمدة وآلية التنفيذ عند الحاجة.',
+        saudiArticle: restrictive ? 'المادة (83) من نظام العمل السعودي' : 'فحص أولي — لا يوجد سند محدد',
       })
       setAnalyzingClause(false)
       toast.success('تم فحص البند بنجاح بالذكاء الاصطناعي السيادي')
@@ -188,7 +201,7 @@ export default function SandboxPage() {
 
           <div className="flex items-center gap-2">
             <Link
-              href="/register?plan=solo"
+              href="/register?plan=firm"
               className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3.5 py-1.5 rounded-lg font-semibold transition-colors"
             >
               تفعيل اشتراك المكتب
@@ -309,7 +322,10 @@ export default function SandboxPage() {
                 <textarea
                   rows={3}
                   value={clauseText}
-                  onChange={(e) => setClauseText(e.target.value)}
+                  onChange={(e) => {
+                    setClauseText(e.target.value)
+                    setAnalysisResult(null)
+                  }}
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-white leading-relaxed focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-emerald-500"
                 />
               </div>
