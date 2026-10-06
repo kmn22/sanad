@@ -23,21 +23,30 @@ export async function GET(req: NextRequest) {
 
 
 export async function POST(req: NextRequest) {
+  const workspaceId = await getSessionWorkspaceId()
+  if (!workspaceId) return unauthorizedJson()
+
+  let rawBody: unknown
   try {
-    const workspaceId = await getSessionWorkspaceId()
-    if (!workspaceId) return unauthorizedJson()
-    const rawBody = await req.json()
-    const parsed = createCaseSchema.parse(rawBody)
-    if (parsed.clientId) {
-      const client = await db.client.findFirst({ where: { id: parsed.clientId, workspaceId }, select: { id: true } })
+    rawBody = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+
+  const parsed = createCaseSchema.safeParse(rawBody)
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Validation failed', details: parsed.error.issues }, { status: 400 })
+  }
+
+  try {
+    if (parsed.data.clientId) {
+      const client = await db.client.findFirst({ where: { id: parsed.data.clientId, workspaceId }, select: { id: true } })
       if (!client) return notFoundJson()
     }
-    const c = await db.legalCase.create({ data: { ...parsed, workspaceId } })
+    const c = await db.legalCase.create({ data: { ...parsed.data, workspaceId } })
     return NextResponse.json(c)
-  } catch (err: any) {
-    if (err?.name === 'ZodError') {
-      return NextResponse.json({ error: 'Validation failed', details: err.errors }, { status: 400 })
-    }
-    return NextResponse.json({ error: err.message || 'Failed to create case' }, { status: 500 })
+  } catch (err) {
+    console.error('Failed to create case:', err)
+    return NextResponse.json({ error: 'Failed to create case' }, { status: 500 })
   }
 }
