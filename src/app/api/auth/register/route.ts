@@ -6,6 +6,7 @@ import { homePathFor } from '@/lib/auth/portals'
 import { emailConfigured, publicAppUrl, sendTransactionalEmail } from '@/lib/email'
 import { rateLimit } from '@/lib/rate-limit'
 import { PRIVACY_NOTICE_VERSION, privacyNoticeHash } from '@/lib/compliance'
+import { isAcademicEmail, getAcademicInstitutionName } from '@/lib/auth/academic'
 
 function getClientIp(req: Request): string {
   return req.headers.get('x-forwarded-for')?.split(',')[0].trim() || req.headers.get('x-real-ip')?.trim() || 'unknown'
@@ -136,14 +137,39 @@ export async function POST(req: Request) {
           privacyNoticeVersion: PRIVACY_NOTICE_VERSION,
         },
       })
-      const trialPlan = await tx.plan.upsert({
-        where: { code: 'trial' },
-        create: { code: 'trial', name: 'Trial', price: 0, seatLimit: 3, storageLimitMb: 1024, aiRequestLimit: 100, portalUploadLimit: 100, features: JSON.stringify({ cases: true, clients: true, workflow: true, portal: true, ai: true }) },
-        update: {},
-      })
-      const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+      const isAcademic = type === 'student' && isAcademicEmail(cleanEmail)
+      const institution = isAcademic ? getAcademicInstitutionName(cleanEmail) : null
+
+      const selectedPlan = isAcademic
+        ? await tx.plan.upsert({
+            where: { code: 'student' },
+            create: {
+              code: 'student',
+              name: 'باقة الطالب الموثقة (مجانية)',
+              price: 0,
+              seatLimit: 1,
+              storageLimitMb: 1024,
+              aiRequestLimit: 250,
+              portalUploadLimit: 50,
+              features: JSON.stringify({ cases: true, clients: false, workflow: false, portal: false, ai: true, student: true }),
+            },
+            update: {},
+          })
+        : await tx.plan.upsert({
+            where: { code: 'trial' },
+            create: { code: 'trial', name: 'Trial', price: 0, seatLimit: 3, storageLimitMb: 1024, aiRequestLimit: 100, portalUploadLimit: 100, features: JSON.stringify({ cases: true, clients: true, workflow: true, portal: true, ai: true }) },
+            update: {},
+          })
+
+      const now = Date.now()
       const subscription = await tx.subscription.create({
-        data: { planId: trialPlan.id, status: 'trialing', quantity: 1, trialEndsAt, currentPeriodEnd: trialEndsAt },
+        data: {
+          planId: selectedPlan.id,
+          status: isAcademic ? 'active' : 'trialing',
+          quantity: 1,
+          trialEndsAt: isAcademic ? null : new Date(now + 14 * 24 * 60 * 60 * 1000),
+          currentPeriodEnd: isAcademic ? new Date(now + 365 * 24 * 60 * 60 * 1000) : new Date(now + 14 * 24 * 60 * 60 * 1000),
+        },
       })
       await tx.workspace.update({
         where: { id: workspace.id },
@@ -168,10 +194,13 @@ export async function POST(req: Request) {
       await tx.verificationToken.create({ data: { email: cleanEmail, tokenHash: hashToken(verifyToken), expiresAt: expiresIn(TOKEN_TTL.emailVerification) } })
       await recordPrivacyAcceptance(tx, user.id, ip, userAgent)
       await tx.auditLog.create({
-        data: { workspaceId: workspace.id, userId: user.id, action: 'auth.register.self', entityType: 'User', entityId: user.id, ipAddress: ip, metadata: JSON.stringify({ accountType: type }) },
+        data: { workspaceId: workspace.id, userId: user.id, action: 'auth.register.self', entityType: 'User', entityId: user.id, ipAddress: ip, metadata: JSON.stringify({ accountType: type, isAcademic, institution }) },
       })
+      const welcomeMsg = isAcademic
+        ? `تم توثيق حسابك الأكاديمي مجاناً بنجاح${institution ? ` التابع لـ (${institution})` : ''}. يمكنك الاستفادة من بنك المصطلحات ومصحح العقود والتدريب العملي.`
+        : 'تم إنشاء مساحة العمل الخاصة بك.'
       await tx.notification.create({
-        data: { workspaceId: workspace.id, userId: user.id, type: 'system', title: 'مرحباً بك في سند', message: 'تم إنشاء مساحة العمل الخاصة بك.', link: homePathFor(role) },
+        data: { workspaceId: workspace.id, userId: user.id, type: 'system', title: 'مرحباً بك في سند', message: welcomeMsg, link: homePathFor(role) },
       })
     })
 
