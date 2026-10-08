@@ -1,15 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ollamaChat, ollamaChatStream, SAUDI_PROMPTS } from '@/lib/ai/ollama';
 import { readJsonLimited, safeErrorResponse } from '@/lib/http';
-import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace';
+import { getAuthContext, unauthorizedJson } from '@/lib/auth/workspace';
+import { canWrite, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities';
 import { checkAiUsage, incrementUsage } from '@/lib/saas/entitlements';
 
 export async function POST(req: NextRequest) {
   const stream = req.nextUrl.searchParams.get('stream') === '1';
 
   try {
-    const workspaceId = await getSessionWorkspaceId();
-    if (!workspaceId) return unauthorizedJson();
+    const auth = await getAuthContext();
+    if (!auth) return unauthorizedJson();
+    const denied = denyUnless(auth, canWrite(auth));
+    if (denied) return denied;
+    const workspaceId = auth.workspaceId;
     const quota = await checkAiUsage(workspaceId);
     if (!quota.allowed) {
       return NextResponse.json({ error: 'AI usage limit reached for the current plan', code: quota.code }, { status: 403 });

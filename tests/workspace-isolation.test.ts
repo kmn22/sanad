@@ -21,6 +21,8 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { PrismaClient } from '@prisma/client'
 import { hashPassword } from '../src/lib/auth/password'
 import { checkAiUsage, checkPortalUpload, getUsageQuantity, incrementUsage, storageBytesUsed } from '../src/lib/saas/entitlements'
+import { canAccessCase, caseAccessWhere, caseLinkedAccessWhere } from '../src/lib/auth/capabilities'
+import { runRetentionSweep } from '../src/lib/retention'
 
 // Skip this entire suite when there is no database configured (unit-only CI).
 const hasDb = Boolean(process.env.DATABASE_URL)
@@ -427,6 +429,114 @@ describeWithDb('Plan entitlement and usage enforcement', () => {
     })
     expect(await storageBytesUsed(wsA.workspaceId)).toBe(2048)
     expect(await storageBytesUsed(wsB.workspaceId)).toBe(0)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Confidential-matter isolation (same workspace, different visibility)
+// ---------------------------------------------------------------------------
+
+describeWithDb('Confidential case access', () => {
+  const auth = (userId: string, role = 'lawyer') => ({ userId, workspaceId: wsA.workspaceId, role, clientId: null, mfaEnabled: false })
+  let confidentialId: string
+  let assignedUserId: string
+
+  beforeAll(async () => {
+    const assigned = await db.user.create({
+      data: {
+        email: `assigned-${Date.now()}@sanad-test.local`,
+        password: hashPassword('TestPass2026!'),
+        role: 'lawyer',
+        workspaceId: wsA.workspaceId,
+        emailVerified: new Date(),
+      },
+    })
+    assignedUserId = assigned.id
+    await db.workspaceMembership.create({ data: { workspaceId: wsA.workspaceId, userId: assigned.id, role: 'lawyer', status: 'active' } })
+    const c = await db.legalCase.create({
+      data: {
+        title: 'Confidential matter',
+        clientName: 'Client A',
+        clientId: clientAId,
+        caseType: 'litigation',
+        confidential: true,
+        workspaceId: wsA.workspaceId,
+        assignments: { create: { workspaceId: wsA.workspaceId, userId: assigned.id, assignedById: wsA.userId, role: 'lead' } },
+      },
+    })
+    confidentialId = c.id
+    await db.task.create({ data: { title: 'Secret task', workspaceId: wsA.workspaceId, caseId: confidentialId } })
+  })
+
+  it('unassigned members cannot see the confidential case in lists', async () => {
+    const cases = await db.legalCase.findMany({ where: { workspaceId: wsA.workspaceId, ...caseAccessWhere(auth(wsA.userId)) } })
+    expect(cases.map((c) => c.id)).not.toContain(confidentialId)
+  })
+
+  it('assigned members and owners see the confidential case', async () => {
+    const assigned = await db.legalCase.findMany({ where: { workspaceId: wsA.workspaceId, ...caseAccessWhere(auth(assignedUserId)) } })
+    expect(assigned.map((c) => c.id)).toContain(confidentialId)
+    const owner = await db.legalCase.findMany({ where: { workspaceId: wsA.workspaceId, ...caseAccessWhere(auth(wsA.userId, 'workspace_owner')) } })
+    expect(owner.map((c) => c.id)).toContain(confidentialId)
+  })
+
+  it('case-linked children are hidden from unassigned members', async () => {
+    const tasks = await db.task.findMany({ where: { workspaceId: wsA.workspaceId, ...caseLinkedAccessWhere(auth(wsA.userId)) } })
+    expect(tasks.map((t) => t.caseId)).not.toContain(confidentialId)
+    const assignedTasks = await db.task.findMany({ where: { workspaceId: wsA.workspaceId, ...caseLinkedAccessWhere(auth(assignedUserId)) } })
+    expect(assignedTasks.map((t) => t.caseId)).toContain(confidentialId)
+  })
+
+  it('canAccessCase enforces assignment for single records', async () => {
+    expect(await canAccessCase(auth(wsA.userId), confidentialId)).toBe(false)
+    expect(await canAccessCase(auth(assignedUserId), confidentialId)).toBe(true)
+    expect(await canAccessCase(auth(wsA.userId, 'workspace_owner'), confidentialId)).toBe(true)
+  })
+
+  it('non-confidential cases stay visible to everyone', async () => {
+    expect(await canAccessCase(auth(wsA.userId), caseAId)).toBe(true)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Soft delete + retention sweep
+// ---------------------------------------------------------------------------
+
+describeWithDb('Soft delete and retention', () => {
+  it('soft-deleted records disappear from standard filtered queries', async () => {
+    const temp = await db.client.create({ data: { name: 'Temp', workspaceId: wsA.workspaceId } })
+    await db.client.update({ where: { id: temp.id }, data: { deletedAt: new Date() } })
+    const found = await db.client.findFirst({ where: { id: temp.id, workspaceId: wsA.workspaceId, deletedAt: null } })
+    expect(found).toBeNull()
+    const raw = await db.client.findFirst({ where: { id: temp.id } })
+    expect(raw?.deletedAt).not.toBeNull()
+  })
+
+  it('retention sweep purges old soft-deleted rows but skips legal holds', async () => {
+    const doomed = await db.client.create({ data: { name: 'Doomed', workspaceId: wsA.workspaceId, deletedAt: new Date(Date.now() - 400 * 86400_000) } })
+    const held = await db.client.create({ data: { name: 'Held', workspaceId: wsA.workspaceId, deletedAt: new Date(Date.now() - 400 * 86400_000) } })
+    await db.retentionPolicy.create({ data: { workspaceId: wsA.workspaceId, entityType: 'Client', retentionDays: 365, legalBasis: 'test' } })
+    const hold = await db.legalHold.create({ data: { workspaceId: wsA.workspaceId, entityType: 'Client', entityId: held.id, reason: 'test hold', createdById: wsA.userId } })
+
+    await runRetentionSweep()
+
+    expect(await db.client.findUnique({ where: { id: doomed.id } })).toBeNull()
+    expect(await db.client.findUnique({ where: { id: held.id } })).not.toBeNull()
+
+    await db.legalHold.delete({ where: { id: hold.id } })
+    await db.client.delete({ where: { id: held.id } })
+    await db.retentionPolicy.deleteMany({ where: { workspaceId: wsA.workspaceId } })
+  })
+
+  it('retention sweep cleans expired auth tokens', async () => {
+    const rl = await db.authRateLimit.create({ data: { key: `test:stale:${Date.now()}`, attempts: 1 } })
+    await db.authRateLimit.update({ where: { id: rl.id }, data: { updatedAt: new Date(Date.now() - 48 * 3600_000) } })
+    const token = await db.verificationToken.create({
+      data: { email: 'test@x.local', tokenHash: `stale-${Date.now()}`, expiresAt: new Date(Date.now() - 3600_000) },
+    })
+    await runRetentionSweep()
+    expect(await db.authRateLimit.findUnique({ where: { id: rl.id } })).toBeNull()
+    expect(await db.verificationToken.findUnique({ where: { id: token.id } })).toBeNull()
   })
 })
 

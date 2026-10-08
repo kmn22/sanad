@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { createClientSchema } from '@/lib/validations'
-import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
+import { getAuthContext, getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
+import { canWrite, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
 import { parsePagination, paginatedResponse } from '@/lib/http'
 
 export async function GET(req: NextRequest) {
@@ -10,7 +11,7 @@ export async function GET(req: NextRequest) {
   const { limit, cursor } = parsePagination(new URL(req.url))
   const [rows, total] = await Promise.all([
     db.client.findMany({
-      where: { workspaceId },
+      where: { workspaceId, deletedAt: null },
       include: {
         _count: { select: { cases: true, documents: true, communications: true, invoices: true } },
       },
@@ -18,15 +19,20 @@ export async function GET(req: NextRequest) {
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     }),
-    db.client.count({ where: { workspaceId } }),
+    db.client.count({ where: { workspaceId, deletedAt: null } }),
   ])
   return NextResponse.json(paginatedResponse(rows, limit, { total }))
 }
 
 
 export async function POST(req: NextRequest) {
-  const workspaceId = await getSessionWorkspaceId()
-  if (!workspaceId) return unauthorizedJson()
+  const auth = await getAuthContext()
+  if (!auth) return unauthorizedJson()
+  const denied = denyUnless(auth, canWrite(auth))
+  if (denied) return denied
+  const budgeted = await enforceMutationBudget(auth)
+  if (budgeted) return budgeted
+  const workspaceId = auth.workspaceId
 
   let body: unknown
   try {

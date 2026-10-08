@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
+import { canWrite, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
 import { notifyUsers, recordWorkflowEvent } from '@/lib/workflow'
 
 const PRIORITIES = new Set(['low', 'normal', 'high', 'urgent'])
@@ -26,6 +27,10 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const auth = await getAuthContext()
   if (!auth) return unauthorizedJson()
+  const denied = denyUnless(auth, canWrite(auth))
+  if (denied) return denied
+  const budgeted = await enforceMutationBudget(auth)
+  if (budgeted) return budgeted
   const body = await req.json().catch(() => null)
   const clientId = typeof body?.clientId === 'string' ? body.clientId : ''
   const caseId = typeof body?.caseId === 'string' && body.caseId ? body.caseId : null

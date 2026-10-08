@@ -1,16 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { updateCaseSchema } from '@/lib/validations'
-import { getSessionWorkspaceId, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
+import { getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
+import { canAccessCase, canWrite, denyUnless, enforceMutationBudget, legalHoldBlock } from '@/lib/auth/capabilities'
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const workspaceId = await getSessionWorkspaceId()
-    if (!workspaceId) return unauthorizedJson()
+    const auth = await getAuthContext()
+    if (!auth) return unauthorizedJson()
+    const denied = denyUnless(auth, canWrite(auth))
+    if (denied) return denied
+    const budgeted = await enforceMutationBudget(auth)
+    if (budgeted) return budgeted
+    const workspaceId = auth.workspaceId
     const { id } = await params
     const parsed = updateCaseSchema.parse(await req.json())
-    const existing = await db.legalCase.findFirst({ where: { id, workspaceId }, select: { id: true } })
-    if (!existing) return notFoundJson()
+    const existing = await db.legalCase.findFirst({ where: { id, workspaceId, deletedAt: null }, select: { id: true } })
+    if (!existing || !(await canAccessCase(auth, id))) return notFoundJson()
     if (parsed.clientId) {
       const client = await db.client.findFirst({ where: { id: parsed.clientId, workspaceId }, select: { id: true } })
       if (!client) return notFoundJson()
@@ -26,10 +32,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const workspaceId = await getSessionWorkspaceId()
-  if (!workspaceId) return unauthorizedJson()
+  const auth = await getAuthContext()
+  if (!auth) return unauthorizedJson()
+  const denied = denyUnless(auth, canWrite(auth))
+  if (denied) return denied
+  const budgeted = await enforceMutationBudget(auth)
+  if (budgeted) return budgeted
+  const workspaceId = auth.workspaceId
   const { id } = await params
-  const result = await db.legalCase.deleteMany({ where: { id, workspaceId } })
-  if (!result.count) return notFoundJson()
+  const hold = await legalHoldBlock(auth.workspaceId, 'LegalCase', id)
+  if (hold) return hold
+  const existing = await db.legalCase.findFirst({ where: { id, workspaceId, deletedAt: null }, select: { id: true } })
+  if (!existing || !(await canAccessCase(auth, id))) return notFoundJson()
+  await db.legalCase.update({ where: { id }, data: { deletedAt: new Date() } })
   return NextResponse.json({ ok: true })
 }

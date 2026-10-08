@@ -1,21 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { createDocumentSchema } from '@/lib/validations'
-import { getSessionWorkspaceId, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
+import { getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
+import { canAccessCase, canWrite, denyUnless, enforceMutationBudget, caseLinkedAccessWhere } from '@/lib/auth/capabilities'
 import { parsePagination, paginatedResponse } from '@/lib/http'
 
 export async function GET(req: NextRequest) {
-  const workspaceId = await getSessionWorkspaceId()
-  if (!workspaceId) return unauthorizedJson()
+  const auth = await getAuthContext()
+  if (!auth) return unauthorizedJson()
+  const workspaceId = auth.workspaceId
   const { limit, cursor } = parsePagination(new URL(req.url))
   const [rows, total] = await Promise.all([
     db.legalDocument.findMany({
-      where: { workspaceId },
+      where: { workspaceId, deletedAt: null, ...caseLinkedAccessWhere(auth) },
       orderBy: { updatedAt: 'desc' },
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     }),
-    db.legalDocument.count({ where: { workspaceId } }),
+    db.legalDocument.count({ where: { workspaceId, deletedAt: null, ...caseLinkedAccessWhere(auth) } }),
   ])
   return NextResponse.json(paginatedResponse(rows, limit, { total }))
 }
@@ -23,8 +25,13 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const workspaceId = await getSessionWorkspaceId()
-    if (!workspaceId) return unauthorizedJson()
+    const auth = await getAuthContext()
+    if (!auth) return unauthorizedJson()
+    const denied = denyUnless(auth, canWrite(auth))
+    if (denied) return denied
+    const budgeted = await enforceMutationBudget(auth)
+    if (budgeted) return budgeted
+    const workspaceId = auth.workspaceId
     const rawBody = await req.json()
     const parsed = createDocumentSchema.parse(rawBody)
     if (parsed.clientId) {
@@ -32,8 +39,8 @@ export async function POST(req: NextRequest) {
       if (!client) return notFoundJson()
     }
     if (parsed.caseId) {
-      const legalCase = await db.legalCase.findFirst({ where: { id: parsed.caseId, workspaceId }, select: { id: true } })
-      if (!legalCase) return notFoundJson()
+      const legalCase = await db.legalCase.findFirst({ where: { id: parsed.caseId, workspaceId, deletedAt: null }, select: { id: true } })
+      if (!legalCase || !(await canAccessCase(auth, legalCase.id))) return notFoundJson()
     }
     const doc = await db.legalDocument.create({ data: { ...parsed, workspaceId } })
     // Auto-generate follow-up task when a doc is created

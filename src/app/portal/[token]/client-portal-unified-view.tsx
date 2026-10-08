@@ -59,8 +59,6 @@ export interface PortalInvoice {
   total: number
   paidAmount: number
   paidAt: string | Date | null
-  zatcaStatus: string
-  zatcaHash: string | null
 }
 
 export interface PortalDocument {
@@ -135,7 +133,7 @@ export default function ClientPortalUnifiedView({
   const router = useRouter()
 
   // S1: Activation & Session State
-  const [isActivated, setIsActivated] = useState<boolean>(false)
+  const [isActivated, setIsActivated] = useState<boolean>(true)
   const [checkingSession, setCheckingSession] = useState(true)
   const [otpCode, setOtpCode] = useState('')
   const [otpAttemptsLeft, setOtpAttemptsLeft] = useState(3)
@@ -534,9 +532,7 @@ export default function ClientPortalUnifiedView({
 
   // S8: Sign out of all devices
   function handleSignOutAll() {
-    localStorage.removeItem(`sanad_portal_device_${token}`)
-    setIsActivated(false)
-    toast.success('تم تسجيل الخروج بنجاح وإلغاء تذكر هذا الجهاز')
+    toast.info('الرابط يظل فعالاً حتى انتهاء صلاحيته أو إلغائه من المكتب. تواصل مع المكتب لإيقاف الوصول الآن.')
   }
 
   // -------------------------------------------------------------
@@ -779,7 +775,7 @@ export default function ClientPortalUnifiedView({
                 </p>
               </div>
               <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-200">
-                جلسة آمنة (30 يوماً)
+                رابط آمن محدود الصلاحية
               </Badge>
             </div>
 
@@ -831,12 +827,12 @@ export default function ClientPortalUnifiedView({
                       </Badge>
                     </div>
                     <p className="text-xs text-amber-800 dark:text-amber-200 mt-0.5">
-                      فاتورة ضريبية ZATCA رقم {unpaidInvoices[0].number} • سداد فوري بمدى و Apple Pay
+                      الفاتورة رقم {unpaidInvoices[0].number} • الدفع الإلكتروني غير متاح حالياً
                     </p>
                   </div>
                 </div>
-                <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white text-xs h-8">
-                  سداد الآن
+                <Button size="sm" disabled className="bg-amber-600 text-white text-xs h-8">
+                  الدفع غير متاح
                 </Button>
               </div>
             )}
@@ -1576,25 +1572,17 @@ export default function ClientPortalUnifiedView({
 
             {/* Registered Devices List & Sign out */}
             <Card className="rounded-2xl p-4 shadow-xs space-y-3">
-              <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">الأجهزة المصرح لها بالوصول:</h4>
-              <div className="p-3 rounded-xl border bg-slate-50 dark:bg-slate-900 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  <Smartphone className="h-4 w-4 text-emerald-600" />
-                  <div>
-                    <span className="font-bold block">هذا الجهاز (المتصفح الحالي)</span>
-                    <span className="text-[10px] text-emerald-600">نشط الآن • يتذكر لمدة 30 يوماً</span>
-                  </div>
-                </div>
-                <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700">الحالي</Badge>
-              </div>
-
+              <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">الوصول عبر رابط الدعوة:</h4>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                من يحمل هذا الرابط يستطيع الوصول إلى البوابة حتى انتهاء صلاحيته أو إلغائه من المكتب. لا تتم إدارة جلسات أجهزة منفصلة لهذا الرابط.
+              </p>
               <Button
                 variant="outline"
                 size="sm"
                 className="w-full text-xs text-rose-600 hover:text-rose-700 border-rose-200 hover:bg-rose-50"
                 onClick={handleSignOutAll}
               >
-                تسجيل الخروج من كافة الأجهزة
+                كيفية إلغاء الوصول
               </Button>
             </Card>
 
@@ -1926,12 +1914,12 @@ export default function ClientPortalUnifiedView({
                 </Button>
                 <Button
                   size="sm"
-                  disabled={!reachedLastPage && docPage !== docTotalPages}
+                  disabled
                   className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 text-xs font-bold"
                   onClick={() => setShowSignModal(true)}
                 >
                   <PenTool className="h-3.5 w-3.5" />
-                  <span>اعتماد وتوقيع المستند</span>
+                  <span>التوقيع الإلكتروني غير متاح حالياً</span>
                 </Button>
               </div>
             </div>
@@ -2056,7 +2044,7 @@ export default function ClientPortalUnifiedView({
             <div className="flex items-center justify-between pb-2 border-b">
               <div className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5 text-emerald-600" />
-                <h3 className="font-bold text-sm">سداد فاتورة أتعاب إلكترونية</h3>
+                <h3 className="font-bold text-sm">الدفع الإلكتروني غير متاح حالياً</h3>
               </div>
               <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setSelectedInvoiceForPay(null)}>
                 <X className="h-4 w-4" />
@@ -2082,6 +2070,7 @@ export default function ClientPortalUnifiedView({
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
+                    disabled
                     onClick={() => setPaymentMethod('mada')}
                     className={`p-2.5 rounded-xl border text-center font-bold text-xs transition-all cursor-pointer ${
                       paymentMethod === 'mada'
@@ -2093,6 +2082,7 @@ export default function ClientPortalUnifiedView({
                   </button>
                   <button
                     type="button"
+                    disabled
                     onClick={() => setPaymentMethod('apple_pay')}
                     className={`p-2.5 rounded-xl border text-center font-bold text-xs transition-all cursor-pointer ${
                       paymentMethod === 'apple_pay'
@@ -2104,6 +2094,7 @@ export default function ClientPortalUnifiedView({
                   </button>
                   <button
                     type="button"
+                    disabled
                     onClick={() => setPaymentMethod('sadad')}
                     className={`p-2.5 rounded-xl border text-center font-bold text-xs transition-all cursor-pointer ${
                       paymentMethod === 'sadad'
@@ -2128,11 +2119,11 @@ export default function ClientPortalUnifiedView({
               </Button>
               <Button
                 size="sm"
-                disabled={payingBusy}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
+                disabled
+                className="bg-emerald-600 text-white font-bold text-xs"
                 onClick={handleConfirmPayment}
               >
-                {payingBusy ? 'جارٍ تأكيد الدفع...' : `سداد (${selectedInvoiceForPay.total.toLocaleString('ar-SA')} ر.س)`}
+                الدفع غير متاح
               </Button>
             </div>
           </div>

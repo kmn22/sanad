@@ -84,7 +84,7 @@ describe('portal zero-jargon glossary (Client-Portal-UX-Spec Section 05)', () =>
 })
 
 describe('portal API actions (F-08 & F-09)', () => {
-  it('handles simulated payment and document signing for demo portal', async () => {
+  it('rejects payment, signing, and OTP actions without configured providers', async () => {
     process.env.ENABLE_DEMO_PORTAL = 'true'
     const { POST } = await import('../src/app/api/portal/[token]/route')
     const { NextRequest } = await import('next/server')
@@ -96,10 +96,9 @@ describe('portal API actions (F-08 & F-09)', () => {
       body: JSON.stringify({ action: 'pay_invoice', invoiceId: 'inv-demo-1', paymentMethod: 'mada' }),
     })
     const payRes = await POST(payReq, { params: Promise.resolve({ token: 'demo-token' }) })
-    expect(payRes.status).toBe(200)
+    expect(payRes.status).toBe(503)
     const payData = await payRes.json()
-    expect(payData.success).toBe(true)
-    expect(payData.invoiceId).toBe('inv-demo-1')
+    expect(payData.code).toBe('PAYMENT_PROVIDER_NOT_CONFIGURED')
 
     // 2. Sign document action
     const signReq = new NextRequest('http://localhost:3000/api/portal/demo-token', {
@@ -113,10 +112,9 @@ describe('portal API actions (F-08 & F-09)', () => {
       }),
     })
     const signRes = await POST(signReq, { params: Promise.resolve({ token: 'demo-token' }) })
-    expect(signRes.status).toBe(200)
+    expect(signRes.status).toBe(503)
     const signData = await signRes.json()
-    expect(signData.success).toBe(true)
-    expect(signData.documentId).toBe('doc-demo-1')
+    expect(signData.code).toBe('SIGNATURE_PROVIDER_NOT_CONFIGURED')
 
     // 3. OTP verification action
     const otpReq = new NextRequest('http://localhost:3000/api/portal/demo-token', {
@@ -125,9 +123,9 @@ describe('portal API actions (F-08 & F-09)', () => {
       body: JSON.stringify({ action: 'verify_otp', code: '9876' }),
     })
     const otpRes = await POST(otpReq, { params: Promise.resolve({ token: 'demo-token' }) })
-    expect(otpRes.status).toBe(200)
+    expect(otpRes.status).toBe(503)
     const otpData = await otpRes.json()
-    expect(otpData.verified).toBe(true)
+    expect(otpData.code).toBe('OTP_PROVIDER_NOT_CONFIGURED')
   })
 })
 

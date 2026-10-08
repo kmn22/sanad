@@ -64,6 +64,16 @@ async function main() {
     ?? (await db.client.create({ data: { workspaceId: ws.id, name: 'عميل اختبار آلي', type: 'individual', phone: '+966500000001' } }))
   const kase = (await db.legalCase.findFirst({ where: { workspaceId: ws.id, title: 'قضية اختبار E2E' } }))
     ?? (await db.legalCase.create({ data: { workspaceId: ws.id, title: 'قضية اختبار E2E', clientId: client.id, clientName: client.name, caseType: 'litigation', stage: 'intake', priority: 'normal' } }))
+  await db.invoice.upsert({
+    where: { number: 'E2E-DRAFT-0001' },
+    create: { number: 'E2E-DRAFT-0001', workspaceId: ws.id, clientId: client.id, caseId: kase.id, subtotal: 100, vatRate: 15, vatAmount: 15, total: 115, status: 'draft' },
+    update: { workspaceId: ws.id, clientId: client.id, caseId: kase.id, subtotal: 100, vatRate: 15, vatAmount: 15, total: 115, status: 'draft', paidAmount: 0, paidAt: null },
+  })
+  await db.invoice.upsert({
+    where: { number: 'E2E-PAID-0001' },
+    create: { number: 'E2E-PAID-0001', workspaceId: ws.id, clientId: client.id, caseId: kase.id, subtotal: 100, vatRate: 15, vatAmount: 15, total: 115, status: 'paid', paidAmount: 115, paidAt: new Date() },
+    update: { workspaceId: ws.id, clientId: client.id, caseId: kase.id, subtotal: 100, vatRate: 15, vatAmount: 15, total: 115, status: 'paid', paidAmount: 115, paidAt: new Date() },
+  })
   await db.task.create({ data: { workspaceId: ws.id, title: 'مهمة اختبار E2E', status: 'todo', priority: 'normal', caseId: kase.id } }).catch(() => {})
 
   console.log(JSON.stringify({ workspaceId: ws.id, ownerEmail: E2E.ownerEmail, lawyerEmail: E2E.lawyerEmail }))

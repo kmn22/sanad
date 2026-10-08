@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getSessionWorkspaceId, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
+import { getAuthContext, getSessionWorkspaceId, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
+import { canAccessCase, canWrite, denyUnless, enforceMutationBudget, caseLinkedAccessWhere } from '@/lib/auth/capabilities'
 
 export async function GET() {
-  const workspaceId = await getSessionWorkspaceId()
-  if (!workspaceId) return unauthorizedJson()
+  const auth = await getAuthContext()
+  if (!auth) return unauthorizedJson()
+  const workspaceId = auth.workspaceId
   const entries = await db.timeEntry.findMany({
-    where: { workspaceId },
+    where: { workspaceId, deletedAt: null, ...caseLinkedAccessWhere(auth) },
     orderBy: { date: 'desc' },
     take: 50,
     include: { case: true },
@@ -16,13 +18,18 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const workspaceId = await getSessionWorkspaceId()
-    if (!workspaceId) return unauthorizedJson()
+    const auth = await getAuthContext()
+    if (!auth) return unauthorizedJson()
+    const denied = denyUnless(auth, canWrite(auth))
+    if (denied) return denied
+    const budgeted = await enforceMutationBudget(auth)
+    if (budgeted) return budgeted
+    const workspaceId = auth.workspaceId
     const body = await req.json()
     const { caseId, description, durationSec, billable, hourlyRate, invoiced, invoiceId, sessionType, date } = body
     if (caseId) {
-      const legalCase = await db.legalCase.findFirst({ where: { id: caseId, workspaceId }, select: { id: true } })
-      if (!legalCase) return notFoundJson()
+      const legalCase = await db.legalCase.findFirst({ where: { id: caseId, workspaceId, deletedAt: null }, select: { id: true } })
+      if (!legalCase || !(await canAccessCase(auth, legalCase.id))) return notFoundJson()
     }
     if (invoiceId) {
       const invoice = await db.invoice.findFirst({ where: { id: invoiceId, workspaceId }, select: { id: true } })

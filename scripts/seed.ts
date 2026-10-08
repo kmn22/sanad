@@ -14,6 +14,19 @@ function daysFromNow(days: number, hour = 0): Date {
 }
 
 async function main() {
+  const databaseUrl = process.env.DATABASE_URL
+  let databaseHost = ''
+  try {
+    databaseHost = databaseUrl ? new URL(databaseUrl).hostname : ''
+  } catch {}
+  if (
+    process.env.NODE_ENV === 'production' ||
+    process.env.SANAD_ALLOW_DESTRUCTIVE_SEED !== '1' ||
+    !['localhost', '127.0.0.1', '::1', 'db', 'postgres'].includes(databaseHost)
+  ) {
+    throw new Error('Refusing to run destructive demo seed. Explicit opt-in and a local database are required; production is never allowed.')
+  }
+
   // Wipe in dependency order
   await db.notification.deleteMany()
   await db.communication.deleteMany()

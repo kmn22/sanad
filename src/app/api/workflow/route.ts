@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { forbiddenJson, getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 import { CASE_ASSIGNMENT_ROLES, CASE_STAGES, activeCaseUserIds, canManageWorkflow, notifyUsers, recordWorkflowEvent } from '@/lib/workflow'
+import { caseAccessWhere, caseLinkedAccessWhere } from '@/lib/auth/capabilities'
 import { hasEntitlement } from '@/lib/saas/entitlements'
 
 export async function GET() {
@@ -12,7 +13,7 @@ export async function GET() {
   }
   const [cases, events, requests, tasks] = await Promise.all([
     db.legalCase.findMany({
-      where: { workspaceId: auth.workspaceId },
+      where: { workspaceId: auth.workspaceId, deletedAt: null, ...caseAccessWhere(auth) },
       orderBy: { updatedAt: 'desc' },
       take: 100,
       include: {
@@ -22,7 +23,7 @@ export async function GET() {
     }),
     db.workflowEvent.findMany({ where: { workspaceId: auth.workspaceId }, orderBy: { createdAt: 'desc' }, take: 100, include: { actor: { select: { id: true, name: true } } } }),
     db.portalRequest.findMany({ where: { workspaceId: auth.workspaceId }, orderBy: { updatedAt: 'desc' }, take: 100, include: { client: { select: { id: true, name: true } }, case: { select: { id: true, title: true } }, assignedTo: { select: { id: true, name: true } } } }),
-    db.task.findMany({ where: { workspaceId: auth.workspaceId, status: { not: 'done' } }, orderBy: { dueDate: 'asc' }, take: 100, include: { assignedTo: { select: { id: true, name: true, role: true } } } }),
+    db.task.findMany({ where: { workspaceId: auth.workspaceId, deletedAt: null, status: { not: 'done' }, ...caseLinkedAccessWhere(auth) }, orderBy: { dueDate: 'asc' }, take: 100, include: { assignedTo: { select: { id: true, name: true, role: true } } } }),
   ])
   return NextResponse.json({ cases, events, requests, tasks })
 }

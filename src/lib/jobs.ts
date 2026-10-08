@@ -2,7 +2,7 @@ import { db } from '@/lib/db'
 import { emailConfigured, sendTransactionalEmail } from '@/lib/email'
 import { incrementUsage } from '@/lib/saas/entitlements'
 
-export type JobType = 'email.send' | 'notification.email' | 'reminders.sweep'
+export type JobType = 'email.send' | 'notification.email' | 'reminders.sweep' | 'retention.sweep'
 
 const MAX_BATCH = 50
 
@@ -124,6 +124,12 @@ async function handleJob(job: { id: string; type: string; payload: string; works
     return
   }
 
+  if (job.type === 'retention.sweep') {
+    const { runRetentionSweep } = await import('@/lib/retention')
+    await runRetentionSweep()
+    return
+  }
+
   throw new Error(`Unsupported job type: ${job.type}`)
 }
 
@@ -132,6 +138,10 @@ export async function ensureRecurringJobs() {
   const pending = await db.backgroundJob.findFirst({ where: { type: 'reminders.sweep', status: { in: ['queued', 'processing'] } }, select: { id: true } })
   if (!pending) {
     await enqueueJob('reminders.sweep', {}, { runAt: new Date(Date.now() + 15 * 60_000), maxAttempts: 3 })
+  }
+  const pendingRetention = await db.backgroundJob.findFirst({ where: { type: 'retention.sweep', status: { in: ['queued', 'processing'] } }, select: { id: true } })
+  if (!pendingRetention) {
+    await enqueueJob('retention.sweep', {}, { runAt: new Date(Date.now() + 60 * 60_000), maxAttempts: 3 })
   }
 }
 

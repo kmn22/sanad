@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getSessionWorkspaceId, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
+import { getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
+import { canWriteAcademic, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const workspaceId = await getSessionWorkspaceId()
-  if (!workspaceId) return unauthorizedJson()
+  const auth = await getAuthContext()
+  if (!auth) return unauthorizedJson()
+  const denied = denyUnless(auth, canWriteAcademic(auth))
+  if (denied) return denied
+  const budgeted = await enforceMutationBudget(auth)
+  if (budgeted) return budgeted
+  const workspaceId = auth.workspaceId
   const { id } = await params
   const existing = await db.academicDeadline.findFirst({ where: { id, workspaceId }, select: { id: true } })
   if (!existing) return notFoundJson()
@@ -18,8 +24,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const workspaceId = await getSessionWorkspaceId()
-  if (!workspaceId) return unauthorizedJson()
+  const auth = await getAuthContext()
+  if (!auth) return unauthorizedJson()
+  const denied = denyUnless(auth, canWriteAcademic(auth))
+  if (denied) return denied
+  const budgeted = await enforceMutationBudget(auth)
+  if (budgeted) return budgeted
+  const workspaceId = auth.workspaceId
   const { id } = await params
   const result = await db.academicDeadline.deleteMany({ where: { id, workspaceId } })
   if (!result.count) return notFoundJson()

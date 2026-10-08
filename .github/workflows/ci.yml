@@ -1,5 +1,8 @@
 name: CI
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main, master]
@@ -10,6 +13,19 @@ jobs:
   validate:
     name: Build & Test
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-bookworm
+        env:
+          POSTGRES_DB: sanad
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d sanad"
+          --health-interval 10s --health-timeout 5s --health-retries 5
 
     env:
       DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/sanad?schema=public"
@@ -30,11 +46,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Generate Prisma client
         run: npx prisma generate
 
       - name: Typecheck (tsc)
         run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy
 
       - name: Unit & Integration tests
         run: npm test
@@ -111,10 +136,12 @@ jobs:
       - name: Run Playwright suite
         run: npx playwright test
 
-      - name: Upload server log on failure
+      - name: Upload browser traces and server log on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-server-log
-          path: server.log
+          name: e2e-failure-artifacts
+          path: |
+            server.log
+            test-results/
           retention-days: 7

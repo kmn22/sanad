@@ -57,7 +57,7 @@ test.describe('deep workspace flows', () => {
     await login(page, OWNER_EMAIL!, OWNER_PASSWORD!)
     const clients = await api(page, '/api/clients')
     expect(clients.status).toBe(200)
-    const clientId = clients.body.items?.[0]?.id ?? clients.body[0]?.id
+    const clientId = clients.body.items?.find((client: { name: string }) => client.name === 'عميل اختبار آلي')?.id
     expect(clientId).toBeTruthy()
 
     const link = await api(page, '/api/portal-links', {
@@ -67,17 +67,33 @@ test.describe('deep workspace flows', () => {
     expect(link.status).toBe(201)
     expect(link.body.url).toContain('/portal/')
 
+    const portalPath = new URL(link.body.url).pathname
+    const portalApiPath = `/api${portalPath}`
+    for (const [action, code] of [
+      ['pay_invoice', 'PAYMENT_PROVIDER_NOT_CONFIGURED'],
+      ['sign_document', 'SIGNATURE_PROVIDER_NOT_CONFIGURED'],
+      ['request_otp', 'OTP_PROVIDER_NOT_CONFIGURED'],
+      ['verify_otp', 'OTP_PROVIDER_NOT_CONFIGURED'],
+    ]) {
+      const response = await api(page, portalApiPath, {
+        method: 'POST',
+        body: JSON.stringify({ action, invoiceId: 'missing', documentId: 'missing', code: '123456' }),
+      })
+      expect(response.status).toBe(503)
+      expect(response.body.code).toBe(code)
+    }
+
     const client = await (await browser.newContext()).newPage()
-    await client.goto(new URL(link.body.url).pathname)
+    await client.goto(portalPath)
     await client.waitForLoadState('networkidle')
-    await expect(client.locator('body')).toContainText('عميل اختبار آلي')
+    await expect(client.locator('body')).toContainText('مكتب الاختبار الآلي')
 
     const filePath = join(tmpdir(), 'e2e-upload.txt')
     writeFileSync(filePath, 'e2e staging upload — مرفق اختبار')
-    await client.getByText('الرفع', { exact: false }).first().click()
+    await client.getByRole('button', { name: 'مراسلة المكتب' }).click()
+    const uploadResponse = client.waitForResponse((response) => response.url().includes(portalApiPath) && response.request().method() === 'POST')
     await client.locator('input[type="file"]').setInputFiles(filePath)
-    await client.getByRole('button', { name: 'رفع الملف' }).click()
-    await expect(client.locator('body')).toContainText('e2e-upload.txt', { timeout: 15000 })
+    expect((await uploadResponse).status()).toBe(201)
     await client.context().close()
   })
 

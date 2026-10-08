@@ -211,15 +211,16 @@ model Notification {
 
 // ===== Client management (CRM) =====
 model Client {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   name        String
-  type        String   @default("individual") // individual | corporate
+  type        String    @default("individual") // individual | corporate
   phone       String?
   email       String?
   nationalId  String? // هوية وطنية أو سجل تجاري
   address     String?
   company     String? // company name if corporate
   notes       String?
+  deletedAt   DateTime? // soft-delete — retention sweep purges after policy
   workspaceId String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -239,15 +240,16 @@ model Client {
 
 // Compliance Tracker — Iqama, CR, employee contracts, licenses
 model ComplianceItem {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   title       String
   category    String // iqama | cr | contract | license | tax | gosi
   entityName  String // employee name, company name, etc.
   issueDate   DateTime
   expiryDate  DateTime
-  status      String   @default("active") // active | expiring | expired | renewed
+  status      String    @default("active") // active | expiring | expired | renewed
   notes       String?
-  notifyDays  Int      @default(30)
+  notifyDays  Int       @default(30)
+  deletedAt   DateTime?
   workspaceId String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -269,11 +271,15 @@ model LegalCase {
   priority      String    @default("normal") // low | normal | high | urgent
   dueDate       DateTime?
   hearingDate   DateTime? // next court hearing
-  value         Float? // estimated value / billing amount
+  value         Decimal? @db.Decimal(14, 2) // estimated value / billing amount
   caseNumber    String? // رقم القضية في المحكمة
   court         String? // المحكمة
   opposingParty String? // الخصم
   notes         String?
+  // Confidential matters are visible only to owners/admins and assigned
+  // members — see canAccessCase in lib/auth/capabilities.
+  confidential  Boolean   @default(false)
+  deletedAt     DateTime?
   templateId    String?
   workspaceId   String
   createdAt     DateTime  @default(now())
@@ -284,6 +290,8 @@ model LegalCase {
   client         Client?           @relation(fields: [clientId], references: [id], onDelete: SetNull)
   approvals      Approval[]
   timeEntries    TimeEntry[]
+  tasks          Task[]
+  documents      LegalDocument[]
   communications Communication[]
   invoices       Invoice[]
   assignments    CaseAssignment[]
@@ -297,6 +305,8 @@ model LegalCase {
   @@index([stage])
   @@index([caseNumber])
   @@index([templateId])
+  @@index([confidential])
+  @@index([deletedAt])
 }
 
 // Document Lifecycle
@@ -317,12 +327,14 @@ model LegalDocument {
   checksumSha256 String?
   uploadedBy   String? // user | client_portal | system
   visibility   String    @default("internal") // internal | client
+  deletedAt    DateTime?
   workspaceId  String
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
   workspace   Workspace         @relation(fields: [workspaceId], references: [id])
   client      Client?           @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  case        LegalCase?        @relation(fields: [caseId], references: [id], onDelete: SetNull)
   portalFiles PortalFile[]
   versions    DocumentVersion[]
   approvals   Approval[]
@@ -421,11 +433,13 @@ model Task {
   caseId       String?
   assignedToId String?
   autoGen      Boolean   @default(false)
+  deletedAt    DateTime?
   workspaceId  String
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
   workspace  Workspace  @relation(fields: [workspaceId], references: [id])
+  case       LegalCase? @relation(fields: [caseId], references: [id], onDelete: SetNull)
   assignedTo User?      @relation("TaskAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
   events     WorkflowEvent[]
   approvals  Approval[]
@@ -577,11 +591,12 @@ model TimeEntry {
   description String
   durationSec Int
   billable    Boolean  @default(false)
-  hourlyRate  Float?
+  hourlyRate  Decimal? @db.Decimal(10, 2)
   invoiced    Boolean  @default(false) // true once attached to an invoice
   invoiceId   String? // link to invoice
   sessionType String   @default("focus") // focus | billable | meeting | break
   date        DateTime @default(now())
+  deletedAt   DateTime?
   workspaceId String
   createdAt   DateTime @default(now())
 
@@ -634,23 +649,24 @@ model ResearchItem {
 // ===== Invoicing =====
 model Invoice {
   id          String    @id @default(cuid())
-  number      String    @unique // INV-2026-001
+  number      String // unique per workspace — INV-2026-001
   clientId    String?
   caseId      String?
   issueDate   DateTime  @default(now())
   dueDate     DateTime?
   status      String    @default("draft") // draft | sent | paid | overdue | cancelled
-  subtotal    Float     @default(0)
-  vatRate     Float     @default(15) // Saudi VAT
-  vatAmount   Float     @default(0)
-  total       Float     @default(0)
-  paidAmount  Float     @default(0)
+  subtotal    Decimal   @default(0) @db.Decimal(14, 2)
+  vatRate     Decimal   @default(15) @db.Decimal(5, 2) // Saudi VAT
+  vatAmount   Decimal   @default(0) @db.Decimal(14, 2)
+  total       Decimal   @default(0) @db.Decimal(14, 2)
+  paidAmount  Decimal   @default(0) @db.Decimal(14, 2)
   paidAt      DateTime?
   notes       String?
   paymentUrl  String?
   zatcaHash   String?
   zatcaXml    String?
-  zatcaStatus String    @default("not_submitted") // not_submitted | submitted | valid | rejected
+  zatcaStatus String    @default("not_submitted") // not_submitted | preview | submitted | valid | rejected
+  deletedAt   DateTime?
   workspaceId String
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -660,10 +676,12 @@ model Invoice {
   case        LegalCase?  @relation(fields: [caseId], references: [id], onDelete: SetNull)
   timeEntries TimeEntry[]
 
+  @@unique([workspaceId, number])
   @@index([workspaceId])
   @@index([clientId])
   @@index([caseId])
   @@index([status])
+  @@index([deletedAt])
 }
 
 // ===== Communications log =====
@@ -678,6 +696,7 @@ model Communication {
   body        String
   durationMin Int? // for calls/meetings
   date        DateTime @default(now())
+  deletedAt   DateTime?
   createdAt   DateTime @default(now())
 
   client    Client?    @relation(fields: [clientId], references: [id], onDelete: SetNull)
@@ -885,13 +904,15 @@ model Plan {
   id               String   @id @default(cuid())
   code             String   @unique // trial | starter | professional | enterprise
   name             String
-  price             Float
+  price             Decimal  @db.Decimal(12, 2)
   billingInterval   String   @default("month")
   seatLimit         Int      @default(3)
   storageLimitMb    Int      @default(1024)
   aiRequestLimit    Int      @default(100)
   portalUploadLimit Int      @default(100)
   features          String // JSON entitlement map
+  // Stripe Price (price_...) backing paid checkout; null = not purchasable
+  stripePriceId     String?
   active            Boolean  @default(true)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -1117,17 +1138,6 @@ model BillingWebhookEvent {
   @@index([status])
 }
 
-model DocumentSignature {
-  id          String    @id @default(cuid())
-  documentId  String
-  signerName  String
-  signerId    String // National ID for Nafath
-  status      String    @default("pending") // pending | signed | rejected
-  nafathReqId String? // Nafath request reference
-  signedAt    DateTime?
-  ipAddress   String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  @@index([documentId])
-}
+// Digital-signing requests will be modeled when a real signing provider is
+// integrated — the previous standalone DocumentSignature table had no
+// workspace scope or document relation and has been removed.

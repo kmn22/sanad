@@ -13,6 +13,7 @@ RUN cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/
 FROM node:22-slim
 WORKDIR /app
 RUN apt-get update && apt-get install -y openssl libpq5 libzstd1 liblz4-1 && rm -rf /var/lib/apt/lists/*
+RUN npm install --global prisma@6.19.3
 COPY --from=postgres-tools /usr/lib/postgresql/16/bin/pg_dump /usr/local/bin/pg_dump
 COPY --from=builder /app/.next/standalone ./
 # Copy Prisma schema + migrations so `prisma migrate deploy` works at runtime

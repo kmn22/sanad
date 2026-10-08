@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { forbiddenJson, getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
+import { canWrite, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
 import { notifyUsers, recordWorkflowEvent } from '@/lib/workflow'
 import { hasEntitlement } from '@/lib/saas/entitlements'
 import { rateLimit } from '@/lib/rate-limit'
@@ -32,6 +33,10 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const auth = await getAuthContext()
   if (!auth) return unauthorizedJson()
+  const denied = denyUnless(auth, canWrite(auth))
+  if (denied) return denied
+  const budgeted = await enforceMutationBudget(auth)
+  if (budgeted) return budgeted
   if (!(await hasEntitlement(auth.workspaceId, 'workflow'))) return forbiddenJson()
   const limited = await rateLimit(`approval:create:${auth.userId}`, 30, 60 * 60 * 1000)
   if (!limited.success) return NextResponse.json({ error: 'Too many requests' }, { status: 429 })

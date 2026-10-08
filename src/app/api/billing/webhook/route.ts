@@ -11,6 +11,26 @@ function subscriptionIdFromInvoice(invoice: Stripe.Invoice): string | null {
 }
 
 async function processEvent(event: Stripe.Event) {
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object as Stripe.Checkout.Session
+    // Link the Stripe subscription + plan to our Subscription row. The
+    // reference is our internal id — a tampered value simply matches nothing.
+    const internalId = session.client_reference_id || session.metadata?.subscriptionId
+    const stripeSubscriptionId = typeof session.subscription === 'string' ? session.subscription : session.subscription?.id
+    const planId = session.metadata?.planId
+    if (internalId && stripeSubscriptionId) {
+      await db.subscription.updateMany({
+        where: { id: internalId },
+        data: {
+          stripeSubscriptionId,
+          status: 'active',
+          ...(planId ? { planId } : {}),
+        },
+      })
+    }
+    return
+  }
+
   if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.created') {
     const subscription = event.data.object as Stripe.Subscription
     const periodEnd = (subscription as any).current_period_end

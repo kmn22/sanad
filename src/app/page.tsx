@@ -402,10 +402,10 @@ export default function LandingPage() {
                       <Receipt className="w-5 h-5 text-emerald-400" />
                       محرك فواتير تجريبي (غير مدمج حالياً مع منصة فاتورة)
                     </h3>
-                    <p className="text-xs text-slate-400">توليد فوري للأختام المشفرة TLV وفق متطلبات هيئة الزكاة والضريبة والجمارك</p>
+                    <p className="text-xs text-slate-400">معاينة تعليمية فقط؛ لا ترسل الفواتير إلى الهيئة ولا تثبت الامتثال أو الاعتماد الضريبي</p>
                   </div>
                   <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs">
-                    مختومة ومشفرة بترميز TLV القياسي
+                    نموذج غير مرتبط بالهيئة
                   </Badge>
                 </div>
 
@@ -413,12 +413,12 @@ export default function LandingPage() {
                   <div className="md:col-span-7 space-y-4">
                     <div className="bg-slate-950/60 p-5 rounded-2xl border border-white/5 space-y-3">
                       <div className="flex justify-between items-center text-sm border-b border-white/5 pb-2">
-                        <span className="text-slate-400">رقم الفاتورة الضريبية:</span>
+                        <span className="text-slate-400">رقم نموذج الفاتورة:</span>
                         <span className="font-mono font-bold text-white">INV-2026-0042</span>
                       </div>
                       <div className="flex justify-between items-center text-sm border-b border-white/5 pb-2">
-                        <span className="text-slate-400">الرقم الضريبي للمنشأة:</span>
-                        <span className="font-mono text-emerald-300">310123456700003</span>
+                        <span className="text-slate-400">رقم التسجيل الضريبي:</span>
+                        <span className="font-mono text-emerald-300">غير مهيأ — بيانات توضيحية</span>
                       </div>
                       <div className="flex justify-between items-center text-sm border-b border-white/5 pb-2">
                         <span className="text-slate-400">بيان الأتعاب القانونية:</span>
@@ -448,7 +448,7 @@ export default function LandingPage() {
                       <ShieldCheck className="w-4 h-4" /> رمز استجابة سريع تجريبي غير معتمد
                     </span>
                     <p className="text-[11px] text-slate-500 mt-1 max-w-xs">
-                      يحتوي الرمز على: اسم المورد، الرقم الضريبي، الطابع الزمني، إجمالي الفاتورة، ومبلغ الضريبة.
+                      هذه أيقونة توضيحية وليست رمزاً قابلاً للمسح، ولا تحتوي بيانات تسجيل أو اعتماد حقيقية.
                     </p>
                   </div>
                 </div>

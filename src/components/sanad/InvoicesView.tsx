@@ -58,14 +58,9 @@ import {
   Eye,
   Printer,
   ShieldCheck,
-  FileCode,
-  Copy,
-  Download,
-  Loader2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLang } from '@/lib/sanad/i18n'
-import { generateZatcaQr } from '@/lib/zatca'
 import {
   formatSAR,
   formatDate,
@@ -234,8 +229,8 @@ export function InvoicesView({ invoices, clients, cases, timeEntries, stats, onC
               </p>
               <p className="text-[11px] text-amber-800/80 dark:text-amber-400/80 mt-0.5">
                 {lang === 'ar'
-                  ? `يوجد ${formatDuration(stats.uninvoicedSec, lang)} بقيمة ${formatSAR(stats.uninvoicedSAR, lang)} مسجلة بالنظام يمكن إصدار فاتورة ضريبية إلكترونية فورية لها بموجب متطلبات هيئة الزكاة (ZATCA)`
-                  : `${formatDuration(stats.uninvoicedSec, lang)} totaling ${formatSAR(stats.uninvoicedSAR, lang)} can be converted into a ZATCA tax invoice in one click`}
+                  ? `يوجد ${formatDuration(stats.uninvoicedSec, lang)} بقيمة ${formatSAR(stats.uninvoicedSAR, lang)} يمكن إعدادها كمسودة فاتورة أتعاب.`
+                  : `${formatDuration(stats.uninvoicedSec, lang)} totaling ${formatSAR(stats.uninvoicedSAR, lang)} can be prepared as a draft legal-fees invoice.`}
               </p>
             </div>
           </div>
@@ -248,7 +243,7 @@ export function InvoicesView({ invoices, clients, cases, timeEntries, stats, onC
             className="bg-amber-600 hover:bg-amber-700 text-white shrink-0 self-start sm:self-auto gap-1 text-xs"
           >
             <Plus className="mx-1 h-3.5 w-3.5" />
-            {lang === 'ar' ? 'إصدار فاتورة بالساعات الآن' : 'Bill All Uninvoiced Hours'}
+            {lang === 'ar' ? 'إعداد مسودة فاتورة بالساعات' : 'Draft Invoice for Hours'}
           </Button>
         </div>
       )}
@@ -336,7 +331,6 @@ export function InvoicesView({ invoices, clients, cases, timeEntries, stats, onC
         open={previewOpen}
         onOpenChange={setPreviewOpen}
         inv={activeInvoice}
-        onZatcaUpdated={onChange}
       />
     </div>
   )
@@ -976,40 +970,12 @@ function InvoicePreviewDialog({
   open,
   onOpenChange,
   inv,
-  onZatcaUpdated,
 }: {
   open: boolean
   onOpenChange: (v: boolean) => void
   inv: Invoice | null
-  onZatcaUpdated?: () => void
 }) {
   const { lang, t } = useLang()
-  const [submittingZatca, setSubmittingZatca] = useState(false)
-  const [zatcaStatus, setZatcaStatus] = useState<string | null>(null)
-  const [zatcaHash, setZatcaHash] = useState<string | null>(null)
-  const [zatcaXml, setZatcaXml] = useState<string | null>(null)
-  const [zatcaQrBase64, setZatcaQrBase64] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (inv) {
-      setZatcaStatus(inv.zatcaStatus || null)
-      setZatcaHash(inv.zatcaHash || null)
-      setZatcaXml(inv.zatcaXml || null)
-      setZatcaQrBase64(null)
-    }
-  }, [inv])
-
-  const qrBase64 = useMemo(() => {
-    if (zatcaQrBase64) return zatcaQrBase64
-    if (!inv) return ''
-    return generateZatcaQr(
-      "مكتب سند للمحاماة والاستشارات القانونية",
-      "310122456700003",
-      inv.issueDate ? new Date(inv.issueDate).toISOString() : new Date().toISOString(),
-      inv.total,
-      inv.vatAmount
-    )
-  }, [inv, zatcaQrBase64])
 
   if (!inv) return null
 
@@ -1017,52 +983,6 @@ function InvoicePreviewDialog({
     window.print()
   }
 
-  const handleZatcaClearance = async () => {
-    try {
-      setSubmittingZatca(true)
-      const res = await fetch('/api/zatca', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ invoiceId: inv.id }),
-      })
-      const data = await res.json()
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Failed to submit to ZATCA')
-      }
-      setZatcaStatus(data.zatca.status)
-      setZatcaHash(data.zatca.hashHex)
-      setZatcaXml(data.invoice.zatcaXml)
-      setZatcaQrBase64(data.zatca.qrCodeBase64)
-      toast.success(lang === 'ar' ? 'تم اعتماد الفاتورة وتوليد التوقيع الرقمي (Phase 2) بنجاح!' : 'Invoice cleared with ZATCA Phase 2!')
-      onZatcaUpdated?.()
-    } catch (err: any) {
-      toast.error(err.message || 'ZATCA submission failed')
-    } finally {
-      setSubmittingZatca(false)
-    }
-  }
-
-  const handleDownloadXml = () => {
-    if (!zatcaXml) return
-    const blob = new Blob([zatcaXml], { type: 'application/xml;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${inv.number}-zatca-ubl2.1.xml`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-    toast.success(lang === 'ar' ? 'تم تنزيل ملف UBL 2.1 XML' : 'UBL 2.1 XML downloaded')
-  }
-
-  const handleCopyHash = () => {
-    if (!zatcaHash) return
-    navigator.clipboard.writeText(zatcaHash)
-    toast.success(lang === 'ar' ? 'تم نسخ الهاش الرقمي' : 'Invoice hash copied')
-  }
-
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(qrBase64)}`
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -1081,44 +1001,24 @@ function InvoicePreviewDialog({
         </DialogHeader>
 
         {/* ZATCA Phase 2 Compliance Status Box */}
-        <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl border bg-muted/40 print:hidden">
-          <div className="flex items-center gap-2.5">
-            <div className={`p-2 rounded-lg ${zatcaStatus === 'cleared' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'}`}>
-              <ShieldCheck className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-foreground">
-                  {lang === 'ar' ? 'منظومة الفوترة الإلكترونية (ZATCA Phase 2)' : 'ZATCA Phase 2 E-Invoicing'}
-                </span>
-                <Badge variant={zatcaStatus === 'cleared' ? 'default' : 'secondary'} className={zatcaStatus === 'cleared' ? 'bg-emerald-600 text-white hover:bg-emerald-700 text-[10px]' : 'bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[10px]'}>
-                  {zatcaStatus === 'cleared' ? (lang === 'ar' ? 'معتمدة ومطابقة (Phase 2)' : 'Cleared') : (lang === 'ar' ? 'بانتظار الاعتماد' : 'Pending Clearance')}
-                </Badge>
-              </div>
-              {zatcaHash && (
-                <p className="text-[10px] text-muted-foreground font-mono mt-0.5 flex items-center gap-1.5">
-                  <span>SHA-256: {zatcaHash.slice(0, 16)}...{zatcaHash.slice(-8)}</span>
-                  <button onClick={handleCopyHash} className="hover:text-foreground cursor-pointer" title="Copy Hash">
-                    <Copy className="h-3 w-3" />
-                  </button>
-                </p>
-              )}
-            </div>
+        <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3.5 print:hidden">
+          <div className="rounded-lg bg-amber-500/10 p-2 text-amber-600">
+            <ShieldCheck className="h-5 w-5" />
           </div>
-
-          <div className="flex items-center gap-2">
-            {zatcaXml && (
-              <Button variant="outline" size="sm" onClick={handleDownloadXml} className="h-8 text-xs gap-1.5 cursor-pointer">
-                <FileCode className="h-3.5 w-3.5 text-primary" />
-                <span>{lang === 'ar' ? 'تحميل UBL XML' : 'Download XML'}</span>
-              </Button>
-            )}
-            {zatcaStatus !== 'cleared' && (
-              <Button size="sm" onClick={handleZatcaClearance} disabled={submittingZatca} className="h-8 text-xs gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer">
-                {submittingZatca ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />}
-                <span>{submittingZatca ? (lang === 'ar' ? 'جاري الاعتماد...' : 'Clearing...') : (lang === 'ar' ? 'اعتماد الفاتورة (Phase 2)' : 'Submit to ZATCA')}</span>
-              </Button>
-            )}
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-foreground">
+                {lang === 'ar' ? 'ربط الفوترة الإلكترونية مع هيئة الزكاة' : 'ZATCA e-invoicing integration'}
+              </span>
+              <Badge variant="secondary" className="bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[10px]">
+                {lang === 'ar' ? 'غير مفعّل' : 'Not configured'}
+              </Badge>
+            </div>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              {lang === 'ar'
+                ? 'هذه مسودة داخلية فقط. لم تُرسل الفاتورة إلى الهيئة ولم يصدر عنها اعتماد أو رمز إلكتروني رسمي.'
+                : 'This is an internal draft only. The invoice has not been submitted to ZATCA and has no official clearance or QR code.'}
+            </p>
           </div>
         </div>
 
@@ -1128,20 +1028,16 @@ function InvoicePreviewDialog({
           {/* Header section */}
           <div className="flex flex-col gap-4 sm:flex-row sm:justify-between items-start border-b pb-4">
             <div>
-              <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1">
                 <div className="h-8 w-8 rounded-lg bg-primary text-primary-foreground grid place-items-center font-bold text-lg">س</div>
-                <h3 className="text-lg font-bold text-primary">مكتب سند للمحاماة</h3>
+                <h3 className="text-lg font-bold text-primary">{lang === 'ar' ? 'بيانات جهة الإصدار' : 'Issuer details'}</h3>
               </div>
-              <p className="text-xs text-muted-foreground">Sanad Legal & Consultation Practice</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                الرقم الضريبي / VAT:{' '}
-                <span className="font-mono">310122456700003</span>
-              </p>
+              <p className="text-xs text-muted-foreground">{lang === 'ar' ? 'بيانات المنشأة غير مهيأة لهذه الفاتورة' : 'Business details are not configured for this invoice'}</p>
               <p className="text-xs text-muted-foreground">الرياض، المملكة العربية السعودية</p>
             </div>
             <div className="text-start sm:rtl:text-end sm:ltr:text-start">
               <h2 className="text-lg font-bold tracking-tight text-primary">
-                {lang === 'ar' ? 'فاتورة ضريبية مبسطة' : 'Simplified Tax Invoice'}
+                {lang === 'ar' ? 'فاتورة أتعاب — مسودة غير معتمدة ضريبياً' : 'Legal fees invoice — draft, not tax-certified'}
               </h2>
               <div className="mt-2 space-y-1 text-xs">
                 <p>
@@ -1226,12 +1122,11 @@ function InvoicePreviewDialog({
           <div className="flex flex-col-reverse sm:flex-row justify-between gap-6 pt-2">
             
             {/* ZATCA Compliant QR Code */}
-            <div className="flex flex-col items-center sm:items-start justify-center border p-3 rounded-lg bg-white dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800 w-fit">
-              <img src={qrUrl} alt="ZATCA QR Code" className="h-32 w-32 object-contain" />
-              <p className="text-[9px] text-muted-foreground mt-1 text-center sm:text-start">
+            <div className="flex max-w-xs items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-center">
+              <p className="text-xs leading-relaxed text-muted-foreground">
                 {lang === 'ar'
-                  ? 'رمز استجابة سريع متوافق مع هيئة الزكاة والضريبة والجمارك'
-                  : 'ZATCA Compliant QR Code'}
+                  ? 'لا يتوفر رمز ضريبي رسمي قبل تهيئة الربط واعتماد الفاتورة من الهيئة.'
+                  : 'No official tax QR code is available until the integration is configured and the authority clears the invoice.'}
               </p>
             </div>
 

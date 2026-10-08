@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
+import { canAccessCase } from '@/lib/auth/capabilities'
 import { requestIp, writeDataAccess } from '@/lib/audit'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -8,12 +9,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!auth) return unauthorizedJson()
   const workspaceId = auth.workspaceId
   const { id } = await params
+  if (!(await canAccessCase(auth, id))) return notFoundJson()
   const caseData = await db.legalCase.findFirst({
-    where: { id, workspaceId },
+    where: { id, workspaceId, deletedAt: null },
     include: {
       client: true,
-      timeEntries: { where: { workspaceId }, orderBy: { date: 'desc' }, include: { invoice: { select: { id: true, number: true } } } },
+      timeEntries: { where: { workspaceId, deletedAt: null }, orderBy: { date: 'desc' }, include: { invoice: { select: { id: true, number: true } } } },
       communications: {
+        where: { deletedAt: null },
         include: { client: { select: { name: true } } },
         orderBy: { date: 'desc' },
         take: 20,
@@ -37,10 +40,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const billableSec = caseData.timeEntries.filter((t) => t.billable).reduce((s, t) => s + t.durationSec, 0)
   const billableSAR = caseData.timeEntries
     .filter((t) => t.billable)
-    .reduce((s, t) => s + (t.durationSec / 3600) * (t.hourlyRate || 0), 0)
+    .reduce((s, t) => s + (t.durationSec / 3600) * Number(t.hourlyRate || 0), 0)
   const uninvoicedSAR = caseData.timeEntries
     .filter((t) => t.billable && !t.invoiced)
-    .reduce((s, t) => s + (t.durationSec / 3600) * (t.hourlyRate || 0), 0)
+    .reduce((s, t) => s + (t.durationSec / 3600) * Number(t.hourlyRate || 0), 0)
 
   return NextResponse.json({
     ...caseData,

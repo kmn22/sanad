@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test'
 
 const OWNER_EMAIL = process.env.E2E_OWNER_EMAIL
 const OWNER_PASSWORD = process.env.E2E_OWNER_PASSWORD
+const LAWYER_EMAIL = process.env.E2E_LAWYER_EMAIL
 const authed = OWNER_EMAIL && OWNER_PASSWORD
 
 async function login(page: import('@playwright/test').Page, email: string, password: string) {
@@ -46,6 +47,66 @@ test.describe('authenticated workspace experience', () => {
     expect(status).toBe(200)
     expect(body).toHaveProperty('subscription')
     expect(body).toHaveProperty('usage')
+  })
+
+  test('ZATCA submission never reports clearance without a provider', async ({ page }) => {
+    await login(page, OWNER_EMAIL!, OWNER_PASSWORD!)
+    const result = await page.evaluate(async () => {
+      const response = await fetch('/api/zatca', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoiceId: 'e2e-not-a-real-invoice' }),
+      })
+      return { status: response.status, body: await response.json() }
+    })
+    expect(result.status).toBe(503)
+    expect(result.body.code).toBe('ZATCA_PROVIDER_NOT_CONFIGURED')
+  })
+
+  test('invoice settlement requires finance roles and paid invoices cannot be deleted', async ({ page, browser }) => {
+    test.skip(!LAWYER_EMAIL, 'E2E_LAWYER_EMAIL not set')
+    const lawyer = await (await browser.newContext()).newPage()
+    await login(lawyer, LAWYER_EMAIL!, OWNER_PASSWORD!)
+    const lawyerInvoices = await lawyer.evaluate(async () => {
+      const response = await fetch('/api/invoices')
+      return response.json()
+    })
+    const draft = lawyerInvoices.items.find((invoice: { number: string }) => invoice.number === 'E2E-DRAFT-0001')
+    expect(draft).toBeTruthy()
+    const forbiddenSettlement = await lawyer.evaluate(async (invoiceId) => {
+      const response = await fetch(`/api/invoices/${invoiceId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'paid' }),
+      })
+      return response.status
+    }, draft.id)
+    expect(forbiddenSettlement).toBe(403)
+    await lawyer.context().close()
+
+    await login(page, OWNER_EMAIL!, OWNER_PASSWORD!)
+    const ownerInvoices = await page.evaluate(async () => {
+      const response = await fetch('/api/invoices')
+      return response.json()
+    })
+    const paid = ownerInvoices.items.find((invoice: { number: string }) => invoice.number === 'E2E-PAID-0001')
+    expect(paid).toBeTruthy()
+    const rejectedDelete = await page.evaluate(async (invoiceId) => {
+      const response = await fetch(`/api/invoices/${invoiceId}`, { method: 'DELETE' })
+      return { status: response.status, body: await response.json() }
+    }, paid.id)
+    expect(rejectedDelete.status).toBe(409)
+    expect(rejectedDelete.body.code).toBe('PAID_INVOICE_IMMUTABLE')
+    const rejectedCorrection = await page.evaluate(async (invoiceId) => {
+      const response = await fetch(`/api/invoices/${invoiceId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ total: 999 }),
+      })
+      return { status: response.status, body: await response.json() }
+    }, paid.id)
+    expect(rejectedCorrection.status).toBe(409)
+    expect(rejectedCorrection.body.code).toBe('PAID_INVOICE_IMMUTABLE')
   })
 
   test('wrong password is rejected with an inline error', async ({ page }) => {

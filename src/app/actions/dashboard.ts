@@ -1,7 +1,8 @@
 'use server'
 
 import { db } from '@/lib/db'
-import { communicationWorkspaceWhere, getSessionWorkspaceId } from '@/lib/auth/workspace'
+import { communicationWorkspaceWhere, getAuthContext } from '@/lib/auth/workspace'
+import { caseAccessWhere, caseLinkedAccessWhere } from '@/lib/auth/capabilities'
 import { filterTaskStats } from '@/lib/sanad/task-stats'
 
 function emptyDashboard() {
@@ -43,10 +44,11 @@ function emptyDashboard() {
 }
 
 export async function getLawyerDashboard() {
-  const workspaceId = await getSessionWorkspaceId()
-  if (!workspaceId) return emptyDashboard()
+  const auth = await getAuthContext()
+  if (!auth) return emptyDashboard()
+  const workspaceId = auth.workspaceId
 
-  const wsWhere = { workspaceId }
+  const wsWhere = { workspaceId, deletedAt: null }
   const communicationWhere = communicationWorkspaceWhere(workspaceId)
 
   const now = new Date()
@@ -54,14 +56,14 @@ export async function getLawyerDashboard() {
 
   const [complianceItems, cases, documents, tasks, briefs, timeEntries, clients, invoices, communications] = await Promise.all([
     db.complianceItem.findMany({ where: wsWhere, orderBy: { expiryDate: 'asc' } }),
-    db.legalCase.findMany({ where: wsWhere, orderBy: { updatedAt: 'desc' }, include: { client: { select: { id: true, name: true } } } }),
-    db.legalDocument.findMany({ where: wsWhere, orderBy: { updatedAt: 'desc' } }),
-    db.task.findMany({ where: wsWhere, orderBy: { dueDate: 'asc' } }),
+    db.legalCase.findMany({ where: { ...wsWhere, ...caseAccessWhere(auth) }, orderBy: { updatedAt: 'desc' }, include: { client: { select: { id: true, name: true } } } }),
+    db.legalDocument.findMany({ where: { ...wsWhere, ...caseLinkedAccessWhere(auth) }, orderBy: { updatedAt: 'desc' } }),
+    db.task.findMany({ where: { ...wsWhere, ...caseLinkedAccessWhere(auth) }, orderBy: { dueDate: 'asc' } }),
     db.dailyBrief.findMany({ orderBy: { publishedAt: 'desc' }, take: 6 }),
-    db.timeEntry.findMany({ where: wsWhere, orderBy: { date: 'desc' }, take: 30, include: { case: true } }),
+    db.timeEntry.findMany({ where: { ...wsWhere, ...caseLinkedAccessWhere(auth) }, orderBy: { date: 'desc' }, take: 30, include: { case: true } }),
     db.client.findMany({ where: wsWhere, include: { _count: { select: { cases: true, invoices: true, communications: true } } }, orderBy: { createdAt: 'desc' } }),
-    db.invoice.findMany({ where: wsWhere, include: { client: { select: { name: true, company: true } }, case: { select: { title: true } } }, orderBy: { createdAt: 'desc' } }),
-    db.communication.findMany({ where: communicationWhere, include: { client: { select: { name: true } }, case: { select: { title: true } } }, orderBy: { date: 'desc' }, take: 20 }),
+    db.invoice.findMany({ where: { ...wsWhere, ...caseLinkedAccessWhere(auth) }, include: { client: { select: { name: true, company: true } }, case: { select: { title: true } } }, orderBy: { createdAt: 'desc' } }),
+    db.communication.findMany({ where: { AND: [communicationWhere, caseLinkedAccessWhere(auth)] }, include: { client: { select: { name: true } }, case: { select: { title: true } } }, orderBy: { date: 'desc' }, take: 20 }),
   ])
 
   const expiringSoon = complianceItems.filter(
@@ -89,17 +91,17 @@ export async function getLawyerDashboard() {
     .reduce((sum, t) => sum + t.durationSec, 0)
   const billableTodaySAR = todaysEntries
     .filter((t) => t.billable)
-    .reduce((sum, t) => sum + (t.durationSec / 3600) * (t.hourlyRate || 0), 0)
+    .reduce((sum, t) => sum + (t.durationSec / 3600) * Number(t.hourlyRate || 0), 0)
 
   const outstandingInvoices = invoices.filter((i) => i.status === 'sent' || i.status === 'overdue')
-  const outstandingSAR = outstandingInvoices.reduce((s, i) => s + (i.total - (i.paidAmount || 0)), 0)
+  const outstandingSAR = outstandingInvoices.reduce((s, i) => s + (Number(i.total) - Number(i.paidAmount || 0)), 0)
   const paidThisMonthSAR = invoices
     .filter((i) => i.status === 'paid' && i.paidAt && new Date(i.paidAt).getMonth() === now.getMonth())
-    .reduce((s, i) => s + (i.paidAmount || 0), 0)
+    .reduce((s, i) => s + Number(i.paidAmount || 0), 0)
   const uninvoicedSec = timeEntries.filter((t) => t.billable && !t.invoiced).reduce((s, t) => s + t.durationSec, 0)
   const uninvoicedSAR = timeEntries
     .filter((t) => t.billable && !t.invoiced)
-    .reduce((s, t) => s + (t.durationSec / 3600) * (t.hourlyRate || 0), 0)
+    .reduce((s, t) => s + (t.durationSec / 3600) * Number(t.hourlyRate || 0), 0)
 
   const commToday = communications.filter((c) => new Date(c.date).toDateString() === today)
 
@@ -125,7 +127,7 @@ export async function getLawyerDashboard() {
       uninvoicedSAR,
       communicationsToday: commToday.length,
       winRate: 87,
-      revenueForecast: outstandingSAR + uninvoicedSAR + activeCases.reduce((sum, c) => sum + (c.value || 0), 0) * 0.4,
+      revenueForecast: outstandingSAR + uninvoicedSAR + activeCases.reduce((sum, c) => sum + Number(c.value || 0), 0) * 0.4,
     },
     monthlyRevenue: [
       { month: 'Jan', revenue: 15000 },

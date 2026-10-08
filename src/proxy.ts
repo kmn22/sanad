@@ -7,6 +7,12 @@ import { canAccessPortal, homePathFor, portalForPath } from '@/lib/auth/portals'
 const secureCookie = process.env.NODE_ENV === 'production'
 const authSecret = process.env.NEXTAUTH_SECRET
 
+// Global request-body ceilings — applied before any route parses a body.
+// Multipart uploads are allowed up to the 10 MB file cap plus form overhead;
+// everything else (JSON) is far smaller.
+const MAX_JSON_BODY_BYTES = 256 * 1024
+const MAX_MULTIPART_BODY_BYTES = 12 * 1024 * 1024
+
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl
 
@@ -41,6 +47,14 @@ export async function proxy(req: NextRequest) {
   const role = (token?.role as string | undefined) || undefined
 
   if (isApi) {
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      const isMultipart = (req.headers.get('content-type') || '').includes('multipart/form-data')
+      const ceiling = isMultipart ? MAX_MULTIPART_BODY_BYTES : MAX_JSON_BODY_BYTES
+      const declared = Number(req.headers.get('content-length') || 0)
+      if (declared > ceiling) {
+        return NextResponse.json({ error: 'Request body is too large' }, { status: 413 })
+      }
+    }
     if (isPublicApi) return NextResponse.next()
     if (!token) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })

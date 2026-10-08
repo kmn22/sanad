@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { INITIAL_RESEARCH_ITEMS } from '@/lib/sanad/research/seedData'
-import { getSessionWorkspaceId, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
+import { getAuthContext, getSessionWorkspaceId, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
+import { canWriteAcademic, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
 
 // GET /api/research?q=...&category=...&type=...
 export async function GET(req: NextRequest) {
@@ -72,8 +73,13 @@ export async function GET(req: NextRequest) {
 // POST /api/research - Save a new research item or bookmark
 export async function POST(req: NextRequest) {
   try {
-    const workspaceId = await getSessionWorkspaceId()
-    if (!workspaceId) return unauthorizedJson()
+    const auth = await getAuthContext()
+    if (!auth) return unauthorizedJson()
+    const denied = denyUnless(auth, canWriteAcademic(auth))
+    if (denied) return denied
+    const budgeted = await enforceMutationBudget(auth)
+    if (budgeted) return budgeted
+    const workspaceId = auth.workspaceId
     const body = await req.json()
     const { title, content, type = 'note', category = 'general', source, tags, notes, caseId, url, isPinned = false } = body
     if (caseId) {

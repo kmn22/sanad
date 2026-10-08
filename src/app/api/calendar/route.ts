@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { communicationWorkspaceWhere, getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
+import { communicationWorkspaceWhere, getAuthContext, unauthorizedJson } from '@/lib/auth/workspace'
+import { caseAccessWhere, caseLinkedAccessWhere } from '@/lib/auth/capabilities'
 
 // GET /api/calendar — unified calendar view of all dated events
 export async function GET() {
-  const workspaceId = await getSessionWorkspaceId()
-  if (!workspaceId) return unauthorizedJson()
+  const auth = await getAuthContext()
+  if (!auth) return unauthorizedJson()
+  const workspaceId = auth.workspaceId
   const now = new Date()
   const in60 = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000)
   const ago30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
@@ -14,6 +16,8 @@ export async function GET() {
     db.legalCase.findMany({
       where: {
         workspaceId,
+        deletedAt: null,
+        ...caseAccessWhere(auth),
         OR: [
           { dueDate: { gte: ago30, lte: in60 } },
           { hearingDate: { gte: ago30, lte: in60 } },
@@ -22,14 +26,14 @@ export async function GET() {
       include: { client: { select: { name: true } } },
     }),
     db.task.findMany({
-      where: { workspaceId, dueDate: { gte: ago30, lte: in60 } },
+      where: { workspaceId, deletedAt: null, ...caseLinkedAccessWhere(auth), dueDate: { gte: ago30, lte: in60 } },
     }),
     db.complianceItem.findMany({
-      where: { workspaceId, expiryDate: { gte: ago30, lte: in60 } },
+      where: { workspaceId, deletedAt: null, expiryDate: { gte: ago30, lte: in60 } },
     }),
     db.communication.findMany({
       where: {
-        AND: [communicationWorkspaceWhere(workspaceId), { date: { gte: ago30, lte: in60 } }],
+        AND: [communicationWorkspaceWhere(workspaceId), { deletedAt: null }, caseLinkedAccessWhere(auth), { date: { gte: ago30, lte: in60 } }],
       },
       include: { client: { select: { name: true } } },
       take: 50,

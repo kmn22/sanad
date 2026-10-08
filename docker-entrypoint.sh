@@ -3,7 +3,7 @@ set -e
 
 if [ -n "$DATABASE_URL" ]; then
   echo "[entrypoint] Applying database migrations via prisma migrate deploy..."
-  npx prisma migrate deploy || {
+  prisma migrate deploy || {
     echo "[entrypoint] Migration failed. Exiting."
     exit 1
   }

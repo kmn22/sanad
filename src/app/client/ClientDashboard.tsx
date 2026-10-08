@@ -65,7 +65,7 @@ export function ClientDashboard({ data }: { data: ClientPortalData }) {
 
         <Card>
           <CardHeader><CardTitle className="flex items-center gap-2"><ReceiptText className="h-5 w-5" />الفواتير</CardTitle></CardHeader>
-          <CardContent className="space-y-2">{data.invoices.map((invoice) => <div key={invoice.id} className="flex items-center justify-between gap-3 rounded-lg border p-3"><div><p className="text-sm font-medium">{invoice.number}</p><p className="text-xs text-muted-foreground">{new Date(invoice.issueDate).toLocaleDateString('ar-SA')} — {invoice.status}</p></div><div className="text-left"><p className="font-semibold">{invoice.total.toLocaleString('ar-SA')} ر.س</p>{invoice.paymentUrl && <a href={invoice.paymentUrl} rel="noreferrer" target="_blank" className="text-xs text-primary underline">بوابة الدفع المعتمدة</a>}</div></div>)}{!data.invoices.length && <p className="text-sm text-muted-foreground">لا توجد فواتير مرسلة.</p>}</CardContent>
+          <CardContent className="space-y-2">{data.invoices.map((invoice) => <div key={invoice.id} className="flex items-center justify-between gap-3 rounded-lg border p-3"><div><p className="text-sm font-medium">{invoice.number}</p><p className="text-xs text-muted-foreground">{new Date(invoice.issueDate).toLocaleDateString('ar-SA')} — {invoice.status}</p></div><div className="text-left"><p className="font-semibold">{Number(invoice.total).toLocaleString('ar-SA')} ر.س</p>{invoice.paymentUrl && <a href={invoice.paymentUrl} rel="noreferrer" target="_blank" className="text-xs text-primary underline">بوابة الدفع المعتمدة</a>}</div></div>)}{!data.invoices.length && <p className="text-sm text-muted-foreground">لا توجد فواتير مرسلة.</p>}</CardContent>
         </Card>
       </section>
 

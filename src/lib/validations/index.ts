@@ -42,6 +42,7 @@ export const createCaseSchema = z.object({
   court: z.string().optional().nullable(),
   opposingParty: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
+  confidential: z.boolean().optional(),
 })
 
 export const updateCaseSchema = createCaseSchema.partial()

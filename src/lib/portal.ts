@@ -134,7 +134,7 @@ export async function getPortalAccess(token: string) {
           notes: true,
           workspaceId: true,
           invoices: {
-            where: { status: { in: ['sent', 'paid', 'overdue'] } },
+            where: { status: { in: ['sent', 'paid', 'overdue'] }, deletedAt: null },
             orderBy: { createdAt: 'desc' },
             select: {
               id: true,
@@ -148,8 +148,6 @@ export async function getPortalAccess(token: string) {
               total: true,
               paidAmount: true,
               paidAt: true,
-              zatcaStatus: true,
-              zatcaHash: true,
             },
           },
         },
@@ -172,6 +170,7 @@ export async function getPortalAccess(token: string) {
   const documents = await db.legalDocument.findMany({
     where: {
       workspaceId: access.workspaceId,
+      deletedAt: null,
       visibility: 'client',
       status: { notIn: ['draft', 'received'] },
       OR: [

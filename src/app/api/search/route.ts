@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { communicationWorkspaceWhere, getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
+import { communicationWorkspaceWhere, getAuthContext, unauthorizedJson } from '@/lib/auth/workspace'
+import { caseAccessWhere, caseLinkedAccessWhere } from '@/lib/auth/capabilities'
 
 // GET /api/search?q=query — global search across all entities
 export async function GET(req: NextRequest) {
-  const workspaceId = await getSessionWorkspaceId()
-  if (!workspaceId) return unauthorizedJson()
+  const auth = await getAuthContext()
+  if (!auth) return unauthorizedJson()
+  const workspaceId = auth.workspaceId
   const { searchParams } = new URL(req.url)
   const q = searchParams.get('q')?.trim() || ''
 
@@ -17,6 +19,7 @@ export async function GET(req: NextRequest) {
     db.client.findMany({
       where: {
         workspaceId,
+        deletedAt: null,
         OR: [
           { name: { contains: q } },
           { phone: { contains: q } },
@@ -31,6 +34,8 @@ export async function GET(req: NextRequest) {
     db.legalCase.findMany({
       where: {
         workspaceId,
+        deletedAt: null,
+        ...caseAccessWhere(auth),
         OR: [
           { title: { contains: q } },
           { clientName: { contains: q } },
@@ -46,6 +51,8 @@ export async function GET(req: NextRequest) {
     db.legalDocument.findMany({
       where: {
         workspaceId,
+        deletedAt: null,
+        ...caseLinkedAccessWhere(auth),
         OR: [
           { title: { contains: q } },
           { parties: { contains: q } },
@@ -57,6 +64,8 @@ export async function GET(req: NextRequest) {
     db.invoice.findMany({
       where: {
         workspaceId,
+        deletedAt: null,
+        ...caseLinkedAccessWhere(auth),
         OR: [
           { number: { contains: q } },
           { notes: { contains: q } },
@@ -70,6 +79,8 @@ export async function GET(req: NextRequest) {
       where: {
         AND: [
           communicationWorkspaceWhere(workspaceId),
+          { deletedAt: null },
+          caseLinkedAccessWhere(auth),
           {
             OR: [
               { subject: { contains: q } },
@@ -85,6 +96,8 @@ export async function GET(req: NextRequest) {
     db.task.findMany({
       where: {
         workspaceId,
+        deletedAt: null,
+        ...caseLinkedAccessWhere(auth),
         OR: [
           { title: { contains: q } },
           { description: { contains: q } },
@@ -95,6 +108,7 @@ export async function GET(req: NextRequest) {
     db.complianceItem.findMany({
       where: {
         workspaceId,
+        deletedAt: null,
         OR: [
           { title: { contains: q } },
           { entityName: { contains: q } },

@@ -2,6 +2,7 @@
 
 import { db } from '@/lib/db'
 import { getAuthContext } from '@/lib/auth/workspace'
+import { caseAccessWhere, caseLinkedAccessWhere } from '@/lib/auth/capabilities'
 
 const ACTIVE_STAGES_EXCLUDED = ['closed']
 
@@ -75,7 +76,7 @@ export async function getFirmDashboard(): Promise<FirmDashboard | null> {
       select: { id: true, name: true, email: true, role: true, mfaEnabled: true, createdAt: true },
     }),
     db.legalCase.findMany({
-      where: { workspaceId },
+      where: { workspaceId, deletedAt: null, ...caseAccessWhere(auth) },
       orderBy: { updatedAt: 'desc' },
       select: {
         id: true,
@@ -88,13 +89,13 @@ export async function getFirmDashboard(): Promise<FirmDashboard | null> {
         assignments: { where: { active: true }, select: { userId: true, role: true, user: { select: { name: true } } } },
       },
     }),
-    db.task.findMany({ where: { workspaceId, status: { not: 'done' } }, select: { assignedToId: true, dueDate: true } }),
+    db.task.findMany({ where: { workspaceId, deletedAt: null, status: { not: 'done' }, ...caseLinkedAccessWhere(auth) }, select: { assignedToId: true, dueDate: true } }),
     db.invoice.findMany({
-      where: { workspaceId, OR: [{ issueDate: { gte: sixMonthsAgo } }, { status: { in: ['sent', 'overdue'] } }] },
+      where: { workspaceId, deletedAt: null, ...caseLinkedAccessWhere(auth), OR: [{ issueDate: { gte: sixMonthsAgo } }, { status: { in: ['sent', 'overdue'] } }] },
       select: { status: true, total: true, paidAmount: true, paidAt: true, issueDate: true, dueDate: true },
     }),
-    db.timeEntry.findMany({ where: { workspaceId, billable: true, date: { gte: lastMonthStart } }, select: { durationSec: true, hourlyRate: true, invoiced: true, date: true } }),
-    db.client.count({ where: { workspaceId } }),
+    db.timeEntry.findMany({ where: { workspaceId, deletedAt: null, ...caseLinkedAccessWhere(auth), billable: true, date: { gte: lastMonthStart } }, select: { durationSec: true, hourlyRate: true, invoiced: true, date: true } }),
+    db.client.count({ where: { workspaceId, deletedAt: null } }),
     db.user.findMany({ where: { workspaceId, role: 'client', disabledAt: null, clientId: { not: null } }, select: { clientId: true }, distinct: ['clientId'] }),
     db.invitation.findMany({
       where: { workspaceId, acceptedAt: null, expiresAt: { gt: now } },
@@ -132,23 +133,23 @@ export async function getFirmDashboard(): Promise<FirmDashboard | null> {
   for (const inv of invoices) {
     if (inv.status !== 'cancelled' && inv.status !== 'draft') {
       const m = byMonth.get(monthKey(inv.issueDate))
-      if (m) m.invoiced += inv.total
+      if (m) m.invoiced += Number(inv.total)
     }
     if (inv.status === 'paid' && inv.paidAt) {
       const m = byMonth.get(monthKey(inv.paidAt))
-      if (m) m.revenue += inv.paidAmount || inv.total
-      if (inv.paidAt >= monthStart) revenueThisMonth += inv.paidAmount || inv.total
-      else if (inv.paidAt >= lastMonthStart) revenueLastMonth += inv.paidAmount || inv.total
+      if (m) m.revenue += Number(inv.paidAmount || inv.total)
+      if (inv.paidAt >= monthStart) revenueThisMonth += Number(inv.paidAmount || inv.total)
+      else if (inv.paidAt >= lastMonthStart) revenueLastMonth += Number(inv.paidAmount || inv.total)
     }
     if (inv.status === 'sent' || inv.status === 'overdue') {
-      outstanding += Math.max(0, inv.total - (inv.paidAmount || 0))
+      outstanding += Math.max(0, Number(inv.total) - Number(inv.paidAmount || 0))
       if (inv.status === 'overdue' || (inv.dueDate && inv.dueDate < now)) overdueInvoices++
     }
   }
 
   const monthEntries = timeEntries.filter((te) => te.date >= monthStart)
   const billableHoursMonth = Math.round((monthEntries.reduce((s, te) => s + te.durationSec, 0) / 3600) * 10) / 10
-  const uninvoicedValue = Math.round(timeEntries.filter((te) => !te.invoiced).reduce((s, te) => s + (te.durationSec / 3600) * (te.hourlyRate || 0), 0))
+  const uninvoicedValue = Math.round(timeEntries.filter((te) => !te.invoiced).reduce((s, te) => s + (te.durationSec / 3600) * Number(te.hourlyRate || 0), 0))
 
   const stageCounts = new Map<string, number>()
   for (const c of cases) stageCounts.set(c.stage, (stageCounts.get(c.stage) || 0) + 1)

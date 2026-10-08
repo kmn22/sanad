@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getSessionWorkspaceId, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
+import { forbiddenJson, getAuthContext, hasRole, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 import { parsePagination, paginatedResponse } from '@/lib/http'
+import { canAccessCase, caseLinkedAccessWhere } from '@/lib/auth/capabilities'
 
 export async function GET(req: NextRequest) {
-  const workspaceId = await getSessionWorkspaceId()
-  if (!workspaceId) return unauthorizedJson()
+  const auth = await getAuthContext()
+  if (!auth) return unauthorizedJson()
+  const workspaceId = auth.workspaceId
   const { limit, cursor } = parsePagination(new URL(req.url))
   const [rows, total] = await Promise.all([
     db.invoice.findMany({
-      where: { workspaceId },
+      where: { workspaceId, deletedAt: null, ...caseLinkedAccessWhere(auth) },
       include: {
         client: { select: { id: true, name: true, company: true } },
         case: { select: { id: true, title: true } },
@@ -19,14 +21,16 @@ export async function GET(req: NextRequest) {
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     }),
-    db.invoice.count({ where: { workspaceId } }),
+    db.invoice.count({ where: { workspaceId, deletedAt: null, ...caseLinkedAccessWhere(auth) } }),
   ])
   return NextResponse.json(paginatedResponse(rows, limit, { total }))
 }
 
 export async function POST(req: NextRequest) {
-  const workspaceId = await getSessionWorkspaceId()
-  if (!workspaceId) return unauthorizedJson()
+  const auth = await getAuthContext()
+  if (!auth) return unauthorizedJson()
+  if (!hasRole(auth, ['admin', 'workspace_owner', 'lawyer', 'staff'])) return forbiddenJson()
+  const workspaceId = auth.workspaceId
   const body = await req.json()
   const { timeEntryIds, clientId, caseId, dueDate, notes } = body
   const entryIds = Array.isArray(timeEntryIds) ? timeEntryIds : []
@@ -36,17 +40,17 @@ export async function POST(req: NextRequest) {
     if (!client) return notFoundJson()
   }
   if (caseId) {
-    const legalCase = await db.legalCase.findFirst({ where: { id: caseId, workspaceId }, select: { id: true } })
-    if (!legalCase) return notFoundJson()
+    const legalCase = await db.legalCase.findFirst({ where: { id: caseId, workspaceId, deletedAt: null }, select: { id: true } })
+    if (!legalCase || !(await canAccessCase(auth, legalCase.id))) return notFoundJson()
   }
 
   // Fetch time entries
   const timeEntries = await db.timeEntry.findMany({
-    where: { id: { in: entryIds }, workspaceId },
+    where: { id: { in: entryIds }, workspaceId, deletedAt: null, ...caseLinkedAccessWhere(auth) },
   })
   if (timeEntries.length !== new Set(entryIds).size) return notFoundJson()
 
-  const subtotal = timeEntries.reduce((s, t) => s + (t.durationSec / 3600) * (t.hourlyRate || 0), 0)
+  const subtotal = timeEntries.reduce((s, t) => s + (t.durationSec / 3600) * Number(t.hourlyRate || 0), 0)
   const vatAmount = subtotal * 0.15
   const total = subtotal + vatAmount
 

@@ -3,6 +3,17 @@ import { isFeatureEnabled } from '@/lib/feature-flags'
 
 export type EntitlementKey = 'cases' | 'clients' | 'workflow' | 'portal' | 'ai'
 
+const ACTIVE_SUBSCRIPTION_STATUSES = new Set(['trialing', 'active'])
+
+export function isSubscriptionActive(subscription: { status: string; currentPeriodEnd: Date; trialEndsAt: Date | null } | null | undefined, now = new Date()) {
+  return Boolean(
+    subscription &&
+      ACTIVE_SUBSCRIPTION_STATUSES.has(subscription.status) &&
+      subscription.currentPeriodEnd > now &&
+      (!subscription.trialEndsAt || subscription.status !== 'trialing' || subscription.trialEndsAt > now),
+  )
+}
+
 const defaultEntitlements: Record<EntitlementKey, boolean> = {
   cases: true,
   clients: true,
@@ -18,6 +29,10 @@ export async function getWorkspacePlan(workspaceId: string) {
   })
   if (!workspace) return null
   const plan = workspace.subscription?.plan
+  const subscription = workspace.subscription
+  // Workspaces created before billing was introduced retain the legacy trial
+  // behavior until an explicit subscription is attached.
+  const subscriptionActive = !subscription || isSubscriptionActive(subscription)
   let entitlements = defaultEntitlements
   if (plan?.features) {
     try {
@@ -29,12 +44,13 @@ export async function getWorkspacePlan(workspaceId: string) {
   const activeSeats = await db.workspaceMembership.count({ where: { workspaceId, status: 'active', user: { role: { not: 'client' } } } })
   return {
     workspace: { id: workspace.id, name: workspace.name, domain: workspace.domain, type: workspace.type, status: workspace.status, onboardingStatus: workspace.onboardingStatus },
-    subscription: workspace.subscription ? {
-      id: workspace.subscription.id,
-      status: workspace.subscription.status,
-      trialEndsAt: workspace.subscription.trialEndsAt,
-      currentPeriodEnd: workspace.subscription.currentPeriodEnd,
-      cancelAtPeriodEnd: workspace.subscription.cancelAtPeriodEnd,
+    subscription: subscription ? {
+      id: subscription.id,
+      status: subscription.status,
+      trialEndsAt: subscription.trialEndsAt,
+      currentPeriodEnd: subscription.currentPeriodEnd,
+      cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+      active: subscriptionActive,
     } : null,
     plan: plan ? {
       code: plan.code,
@@ -44,7 +60,7 @@ export async function getWorkspacePlan(workspaceId: string) {
       aiRequestLimit: plan.aiRequestLimit,
       portalUploadLimit: plan.portalUploadLimit,
     } : { code: 'trial', name: 'Trial', seatLimit: 3, storageLimitMb: 1024, aiRequestLimit: 100, portalUploadLimit: 100 },
-    entitlements,
+    entitlements: subscriptionActive && workspace.status === 'active' ? entitlements : Object.fromEntries(Object.keys(defaultEntitlements).map((key) => [key, false])) as Record<EntitlementKey, boolean>,
     usage: { seats: activeSeats },
   }
 }
@@ -77,6 +93,7 @@ export async function checkAiUsage(workspaceId: string): Promise<UsageCheck> {
   const plan = await getWorkspacePlan(workspaceId)
   const fail = (code: string): UsageCheck => ({ allowed: false, code, used: 0, limit: plan?.plan.aiRequestLimit ?? null })
   if (!plan || plan.workspace.status !== 'active') return fail('WORKSPACE_INACTIVE')
+  if (plan.subscription && !plan.subscription.active) return fail('SUBSCRIPTION_INACTIVE')
   if (!plan.entitlements.ai) return fail('AI_NOT_INCLUDED')
   if (!(await isFeatureEnabled(workspaceId, 'ai_drafting'))) return fail('AI_FLAG_DISABLED')
   const limit = plan.plan.aiRequestLimit
@@ -91,6 +108,7 @@ export async function checkAiUsage(workspaceId: string): Promise<UsageCheck> {
 export async function checkStorageUsage(workspaceId: string, sizeBytes: number): Promise<UsageCheck> {
   const plan = await getWorkspacePlan(workspaceId)
   if (!plan || plan.workspace.status !== 'active') return { allowed: false, code: 'WORKSPACE_INACTIVE', used: 0, limit: null }
+  if (plan.subscription && !plan.subscription.active) return { allowed: false, code: 'SUBSCRIPTION_INACTIVE', used: 0, limit: null }
   const storageLimit = plan.plan.storageLimitMb
   if (storageLimit > 0) {
     const usedBytes = await storageBytesUsed(workspaceId)
@@ -105,6 +123,7 @@ export async function checkPortalUpload(workspaceId: string, sizeBytes: number):
   const plan = await getWorkspacePlan(workspaceId)
   const fail = (code: string): UsageCheck => ({ allowed: false, code, used: 0, limit: null })
   if (!plan || plan.workspace.status !== 'active') return fail('WORKSPACE_INACTIVE')
+  if (plan.subscription && !plan.subscription.active) return fail('SUBSCRIPTION_INACTIVE')
   if (!plan.entitlements.portal) return fail('PORTAL_NOT_INCLUDED')
   if (!(await isFeatureEnabled(workspaceId, 'client_portal'))) return fail('PORTAL_FLAG_DISABLED')
   const uploadLimit = plan.plan.portalUploadLimit
@@ -151,5 +170,5 @@ export async function incrementUsage(workspaceId: string, metric: string, amount
 
 export async function hasEntitlement(workspaceId: string, key: EntitlementKey) {
   const plan = await getWorkspacePlan(workspaceId)
-  return Boolean(plan && plan.workspace.status === 'active' && plan.entitlements[key])
+  return Boolean(plan && plan.workspace.status === 'active' && (!plan.subscription || plan.subscription.active) && plan.entitlements[key])
 }

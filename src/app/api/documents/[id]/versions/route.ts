@@ -2,6 +2,7 @@ import { randomBytes } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
+import { canWrite, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
 import { MAX_UPLOAD_BYTES, checksum, sanitizeFilename, storeEncryptedFile, validateUpload } from '@/lib/file-storage'
 import { checkStorageUsage } from '@/lib/saas/entitlements'
 import { recordWorkflowEvent } from '@/lib/workflow'
@@ -25,6 +26,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await getAuthContext()
   if (!auth) return unauthorizedJson()
+  const denied = denyUnless(auth, canWrite(auth))
+  if (denied) return denied
+  const budgeted = await enforceMutationBudget(auth)
+  if (budgeted) return budgeted
   const { id } = await params
   const document = await db.legalDocument.findFirst({ where: { id, workspaceId: auth.workspaceId }, select: { id: true, title: true, caseId: true } })
   if (!document) return notFoundJson()

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
+import { getAuthContext, getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
+import { canWriteAcademic, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
 
 // GET /api/student/review-sessions — list past sessions for stats
 export async function GET() {
@@ -34,8 +35,13 @@ export async function GET() {
 
 // POST /api/student/review-sessions — save a completed session
 export async function POST(req: NextRequest) {
-  const workspaceId = await getSessionWorkspaceId()
-  if (!workspaceId) return unauthorizedJson()
+  const auth = await getAuthContext()
+  if (!auth) return unauthorizedJson()
+  const denied = denyUnless(auth, canWriteAcademic(auth))
+  if (denied) return denied
+  const budgeted = await enforceMutationBudget(auth)
+  if (budgeted) return budgeted
+  const workspaceId = auth.workspaceId
   const body = await req.json()
   const session = await db.reviewSession.create({
     data: {

@@ -17,10 +17,10 @@ export async function getClientPortalData(ctx: ClientAuthContext) {
   const now = new Date()
 
   const [client, workspace, cases, invoices, requests, files] = await Promise.all([
-    db.client.findFirst({ where: { id: ctx.clientId, workspaceId: ctx.workspaceId }, select: { id: true, name: true, type: true, email: true, phone: true, company: true } }),
+    db.client.findFirst({ where: { id: ctx.clientId, workspaceId: ctx.workspaceId, deletedAt: null }, select: { id: true, name: true, type: true, email: true, phone: true, company: true } }),
     db.workspace.findUnique({ where: { id: ctx.workspaceId }, select: { name: true } }),
     db.legalCase.findMany({
-      where: scope,
+      where: { ...scope, deletedAt: null },
       orderBy: [{ hearingDate: 'asc' }, { updatedAt: 'desc' }],
       select: {
         id: true,
@@ -37,7 +37,7 @@ export async function getClientPortalData(ctx: ClientAuthContext) {
       },
     }),
     db.invoice.findMany({
-      where: { ...scope, status: { notIn: ['draft', 'cancelled'] } },
+      where: { ...scope, status: { notIn: ['draft', 'cancelled'] }, deletedAt: null },
       orderBy: { issueDate: 'desc' },
       take: 50,
       select: { id: true, number: true, issueDate: true, dueDate: true, status: true, total: true, paidAmount: true, paidAt: true, paymentUrl: true, caseId: true },
@@ -61,6 +61,7 @@ export async function getClientPortalData(ctx: ClientAuthContext) {
     where: {
       workspaceId: ctx.workspaceId,
       status: { not: 'draft' },
+      deletedAt: null,
       OR: [{ clientId: ctx.clientId }, { caseId: { in: cases.map((c) => c.id) } }],
     },
     orderBy: { updatedAt: 'desc' },
@@ -70,7 +71,7 @@ export async function getClientPortalData(ctx: ClientAuthContext) {
 
   const outstanding = invoices
     .filter((i) => i.status === 'sent' || i.status === 'overdue')
-    .reduce((s, i) => s + Math.max(0, i.total - (i.paidAmount || 0)), 0)
+    .reduce((s, i) => s + Math.max(0, Number(i.total) - Number(i.paidAmount || 0)), 0)
 
   return {
     client,
@@ -103,7 +104,7 @@ export type ClientPortalData = Awaited<ReturnType<typeof getClientPortalData>>
  */
 export async function createClientCaseSession(ctx: ClientAuthContext, caseId: string | null) {
   if (caseId) {
-    const legalCase = await db.legalCase.findFirst({ where: { id: caseId, workspaceId: ctx.workspaceId, clientId: ctx.clientId }, select: { id: true } })
+    const legalCase = await db.legalCase.findFirst({ where: { id: caseId, workspaceId: ctx.workspaceId, clientId: ctx.clientId, deletedAt: null }, select: { id: true } })
     if (!legalCase) return null
   }
   const token = randomBytes(32).toString('hex')
