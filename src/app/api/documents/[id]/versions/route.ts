@@ -2,7 +2,8 @@ import { randomBytes } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
-import { canWrite, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
+import { canAccessCase, canWrite, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
+import { isFeatureEnabled } from '@/lib/feature-flags'
 import { MAX_UPLOAD_BYTES, checksum, sanitizeFilename, storeEncryptedFile, validateUpload } from '@/lib/file-storage'
 import { checkStorageUsage } from '@/lib/saas/entitlements'
 import { recordWorkflowEvent } from '@/lib/workflow'
@@ -13,8 +14,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const auth = await getAuthContext()
   if (!auth) return unauthorizedJson()
   const { id } = await params
-  const document = await db.legalDocument.findFirst({ where: { id, workspaceId: auth.workspaceId }, select: { id: true } })
+  const document = await db.legalDocument.findFirst({ where: { id, workspaceId: auth.workspaceId, deletedAt: null }, select: { id: true, caseId: true } })
   if (!document) return notFoundJson()
+  if (document.caseId && !(await canAccessCase(auth, document.caseId))) return notFoundJson()
   const versions = await db.documentVersion.findMany({
     where: { documentId: id, workspaceId: auth.workspaceId },
     orderBy: { version: 'desc' },
@@ -30,9 +32,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (denied) return denied
   const budgeted = await enforceMutationBudget(auth)
   if (budgeted) return budgeted
+  if (!(await isFeatureEnabled(auth.workspaceId, 'document_versions'))) return NextResponse.json({ error: 'Document versioning is disabled for this workspace', code: 'FLAG_DISABLED' }, { status: 403 })
   const { id } = await params
-  const document = await db.legalDocument.findFirst({ where: { id, workspaceId: auth.workspaceId }, select: { id: true, title: true, caseId: true } })
+  const document = await db.legalDocument.findFirst({ where: { id, workspaceId: auth.workspaceId, deletedAt: null }, select: { id: true, title: true, caseId: true } })
   if (!document) return notFoundJson()
+  if (document.caseId && !(await canAccessCase(auth, document.caseId))) return notFoundJson()
 
   const form = await req.formData()
   const file = form.get('file')

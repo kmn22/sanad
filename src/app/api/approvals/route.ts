@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { forbiddenJson, getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
-import { canWrite, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
+import { canAccessCase, canWrite, caseLinkedAccessWhere, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
+import { isFeatureEnabled } from '@/lib/feature-flags'
 import { notifyUsers, recordWorkflowEvent } from '@/lib/workflow'
 import { hasEntitlement } from '@/lib/saas/entitlements'
 import { rateLimit } from '@/lib/rate-limit'
@@ -11,10 +12,16 @@ export async function GET(req: NextRequest) {
   if (!auth) return unauthorizedJson()
   if (!(await hasEntitlement(auth.workspaceId, 'workflow'))) return forbiddenJson()
   const scope = new URL(req.url).searchParams.get('scope')
+  const linkedAccess = caseLinkedAccessWhere(auth)
   const where = {
     workspaceId: auth.workspaceId,
     ...(scope === 'approver' ? { approverId: auth.userId, status: 'pending' } : {}),
     ...(scope === 'requester' ? { requestedById: auth.userId } : {}),
+    AND: [
+      linkedAccess,
+      { OR: [{ documentId: null }, { document: linkedAccess }] },
+      { OR: [{ taskId: null }, { task: linkedAccess }] },
+    ],
   }
   const approvals = await db.approval.findMany({
     where,
@@ -38,6 +45,7 @@ export async function POST(req: NextRequest) {
   const budgeted = await enforceMutationBudget(auth)
   if (budgeted) return budgeted
   if (!(await hasEntitlement(auth.workspaceId, 'workflow'))) return forbiddenJson()
+  if (!(await isFeatureEnabled(auth.workspaceId, 'workflow_approvals'))) return forbiddenJson()
   const limited = await rateLimit(`approval:create:${auth.userId}`, 30, 60 * 60 * 1000)
   if (!limited.success) return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
 
@@ -59,16 +67,17 @@ export async function POST(req: NextRequest) {
   if (!approver) return notFoundJson()
 
   if (caseId) {
-    const legalCase = await db.legalCase.findFirst({ where: { id: caseId, workspaceId: auth.workspaceId }, select: { id: true } })
-    if (!legalCase) return notFoundJson()
+    if (!(await canAccessCase(auth, caseId))) return notFoundJson()
   }
   if (documentId) {
-    const document = await db.legalDocument.findFirst({ where: { id: documentId, workspaceId: auth.workspaceId }, select: { id: true } })
+    const document = await db.legalDocument.findFirst({ where: { id: documentId, workspaceId: auth.workspaceId, deletedAt: null }, select: { id: true, caseId: true } })
     if (!document) return notFoundJson()
+    if (document.caseId && !(await canAccessCase(auth, document.caseId))) return notFoundJson()
   }
   if (taskId) {
-    const task = await db.task.findFirst({ where: { id: taskId, workspaceId: auth.workspaceId }, select: { id: true } })
+    const task = await db.task.findFirst({ where: { id: taskId, workspaceId: auth.workspaceId, deletedAt: null }, select: { id: true, caseId: true } })
     if (!task) return notFoundJson()
+    if (task.caseId && !(await canAccessCase(auth, task.caseId))) return notFoundJson()
   }
 
   const approval = await db.$transaction(async (tx) => {

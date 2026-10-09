@@ -5,6 +5,7 @@ import { forbiddenJson, getAuthContext, notFoundJson, unauthorizedJson } from '@
 import { emailConfigured, publicAppUrl, sendTransactionalEmail } from '@/lib/email'
 import { hashPortalToken } from '@/lib/portal'
 import { rateLimit } from '@/lib/rate-limit'
+import { canAccessCase, caseLinkedAccessWhere } from '@/lib/auth/capabilities'
 import { hasEntitlement } from '@/lib/saas/entitlements'
 
 export async function GET() {
@@ -12,7 +13,7 @@ export async function GET() {
   if (!auth) return unauthorizedJson()
   if (!['admin', 'workspace_owner', 'lawyer'].includes(auth.role)) return forbiddenJson()
   const links = await db.portalAccess.findMany({
-    where: { workspaceId: auth.workspaceId },
+    where: { workspaceId: auth.workspaceId, ...caseLinkedAccessWhere(auth) },
     orderBy: { createdAt: 'desc' },
     take: 100,
     include: {
@@ -47,8 +48,9 @@ export async function POST(req: NextRequest) {
   const client = await db.client.findFirst({ where: { id: clientId, workspaceId: auth.workspaceId }, select: { id: true, name: true, email: true } })
   if (!client) return notFoundJson()
   if (caseId) {
-    const legalCase = await db.legalCase.findFirst({ where: { id: caseId, workspaceId: auth.workspaceId }, select: { id: true, clientId: true } })
+    const legalCase = await db.legalCase.findFirst({ where: { id: caseId, workspaceId: auth.workspaceId, deletedAt: null }, select: { id: true, clientId: true } })
     if (!legalCase || (legalCase.clientId && legalCase.clientId !== client.id)) return notFoundJson()
+    if (!(await canAccessCase(auth, caseId))) return notFoundJson()
   }
 
   const token = randomBytes(32).toString('hex')

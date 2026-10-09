@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
-import { canWrite, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
+import { canAccessCase, canWrite, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
 import { notifyUsers, recordWorkflowEvent } from '@/lib/workflow'
 
 const STATUSES = new Set(['open', 'answered', 'closed'])
@@ -18,6 +18,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const body = await req.json().catch(() => null)
   const existing = await db.portalRequest.findFirst({ where: { id, workspaceId: auth.workspaceId } })
   if (!existing) return notFoundJson()
+  if (existing.caseId && !(await canAccessCase(auth, existing.caseId))) return notFoundJson()
 
   const data: { status?: string; assignedToId?: string | null; priority?: string; dueDate?: Date | null } = {}
   if (body?.status !== undefined) {

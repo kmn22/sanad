@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
-import { canWrite, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
+import { canAccessCase, canWrite, caseLinkedAccessWhere, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
 import { notifyUsers, recordWorkflowEvent } from '@/lib/workflow'
 
 const PRIORITIES = new Set(['low', 'normal', 'high', 'urgent'])
@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   if (!auth) return unauthorizedJson()
   const mine = req.nextUrl.searchParams.get('mine') === '1'
   const requests = await db.portalRequest.findMany({
-    where: { workspaceId: auth.workspaceId, ...(mine ? { assignedToId: auth.userId } : {}) },
+    where: { workspaceId: auth.workspaceId, ...(mine ? { assignedToId: auth.userId } : {}), ...caseLinkedAccessWhere(auth) },
     orderBy: [{ dueDate: 'asc' }, { updatedAt: 'desc' }],
     take: 100,
     include: {
@@ -46,8 +46,9 @@ export async function POST(req: NextRequest) {
   const client = await db.client.findFirst({ where: { id: clientId, workspaceId: auth.workspaceId }, select: { id: true, name: true } })
   if (!client) return notFoundJson()
   if (caseId) {
-    const legalCase = await db.legalCase.findFirst({ where: { id: caseId, clientId, workspaceId: auth.workspaceId }, select: { id: true } })
+    const legalCase = await db.legalCase.findFirst({ where: { id: caseId, clientId, workspaceId: auth.workspaceId, deletedAt: null }, select: { id: true } })
     if (!legalCase) return notFoundJson()
+    if (!(await canAccessCase(auth, caseId))) return notFoundJson()
   }
   if (assignedToId) {
     const member = await db.user.findFirst({ where: { id: assignedToId, workspaceId: auth.workspaceId, disabledAt: null, role: { not: 'client' } }, select: { id: true } })

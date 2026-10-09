@@ -25,7 +25,14 @@ import { canAccessCase, caseAccessWhere, caseLinkedAccessWhere } from '../src/li
 import { runRetentionSweep } from '../src/lib/retention'
 
 // Skip this entire suite when there is no database configured (unit-only CI).
-const hasDb = Boolean(process.env.DATABASE_URL)
+// SAFETY: these tests write fixtures — refuse to run against anything that
+// does not look like a disposable test/staging database.
+function isTestDatabase(url: string | undefined) {
+  if (!url) return false
+  const name = (url.split('/').pop() || '').split('?')[0]
+  return /test|staging|e2e/i.test(name)
+}
+const hasDb = isTestDatabase(process.env.DATABASE_URL)
 const describeWithDb = hasDb ? describe : describe.skip
 
 

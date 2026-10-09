@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { createClientSchema } from '@/lib/validations'
 import { getAuthContext, getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
 import { canWrite, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
+import { hasEntitlement } from '@/lib/saas/entitlements'
 import { parsePagination, paginatedResponse } from '@/lib/http'
 
 export async function GET(req: NextRequest) {
@@ -32,6 +33,9 @@ export async function POST(req: NextRequest) {
   if (denied) return denied
   const budgeted = await enforceMutationBudget(auth)
   if (budgeted) return budgeted
+  if (!(await hasEntitlement(auth.workspaceId, 'clients'))) {
+    return NextResponse.json({ error: 'Client management is not included in the current plan', code: 'CLIENTS_NOT_INCLUDED' }, { status: 403 })
+  }
   const workspaceId = auth.workspaceId
 
   let body: unknown

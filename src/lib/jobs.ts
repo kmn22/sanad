@@ -95,6 +95,10 @@ async function handleJob(job: { id: string; type: string; payload: string; works
 
   if (job.type === 'notification.email') {
     if (!emailConfigured()) return
+    if (job.workspaceId) {
+      const { isFeatureEnabled } = await import('@/lib/feature-flags')
+      if (!(await isFeatureEnabled(job.workspaceId, 'email_notifications'))) return
+    }
     const userIds = Array.isArray(payload.userIds) ? (payload.userIds as string[]) : []
     const users = await db.user.findMany({ where: { id: { in: userIds }, disabledAt: null }, select: { id: true, email: true } })
     for (const user of users) {

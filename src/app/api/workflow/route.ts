@@ -21,8 +21,8 @@ export async function GET() {
         assignments: { where: { active: true }, include: { user: { select: { id: true, name: true, email: true, role: true } } } },
       },
     }),
-    db.workflowEvent.findMany({ where: { workspaceId: auth.workspaceId }, orderBy: { createdAt: 'desc' }, take: 100, include: { actor: { select: { id: true, name: true } } } }),
-    db.portalRequest.findMany({ where: { workspaceId: auth.workspaceId }, orderBy: { updatedAt: 'desc' }, take: 100, include: { client: { select: { id: true, name: true } }, case: { select: { id: true, title: true } }, assignedTo: { select: { id: true, name: true } } } }),
+    db.workflowEvent.findMany({ where: { workspaceId: auth.workspaceId, ...caseLinkedAccessWhere(auth) }, orderBy: { createdAt: 'desc' }, take: 100, include: { actor: { select: { id: true, name: true } } } }),
+    db.portalRequest.findMany({ where: { workspaceId: auth.workspaceId, ...caseLinkedAccessWhere(auth) }, orderBy: { updatedAt: 'desc' }, take: 100, include: { client: { select: { id: true, name: true } }, case: { select: { id: true, title: true } }, assignedTo: { select: { id: true, name: true } } } }),
     db.task.findMany({ where: { workspaceId: auth.workspaceId, deletedAt: null, status: { not: 'done' }, ...caseLinkedAccessWhere(auth) }, orderBy: { dueDate: 'asc' }, take: 100, include: { assignedTo: { select: { id: true, name: true, role: true } } } }),
   ])
   return NextResponse.json({ cases, events, requests, tasks })
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
   const action = typeof body?.action === 'string' ? body.action : ''
   const caseId = typeof body?.caseId === 'string' ? body.caseId : ''
   const note = typeof body?.note === 'string' ? body.note.trim().slice(0, 1000) : null
-  const legalCase = await db.legalCase.findFirst({ where: { id: caseId, workspaceId: auth.workspaceId }, select: { id: true, title: true, stage: true, clientId: true, templateId: true } })
+  const legalCase = await db.legalCase.findFirst({ where: { id: caseId, workspaceId: auth.workspaceId, deletedAt: null }, select: { id: true, title: true, stage: true, clientId: true, templateId: true } })
   if (!legalCase) return notFoundJson()
   if (!(await canActOnCase(auth, legalCase.id))) return forbiddenJson()
 
