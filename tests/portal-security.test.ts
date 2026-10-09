@@ -46,6 +46,25 @@ describe('portal token and upload security', () => {
     expect(validateUpload('evidence.pdf', 'application/pdf', Buffer.from('MZpayload'))).toMatch(/Executable/i)
   })
 
+  it('rejects files whose content does not match their extension', () => {
+    const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10])
+    expect(validateUpload('renamed.pdf', 'application/pdf', jpeg)).toMatch(/does not match its extension/i)
+    expect(validateUpload('archive.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', jpeg)).toMatch(/does not match its extension/i)
+    expect(validateUpload('scan.png', 'image/png', Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a]))).toBeNull()
+    expect(validateUpload('report.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', Buffer.from([0x50, 0x4b, 0x03, 0x04, 0x14]))).toBeNull()
+  })
+
+  it('rejects binary payloads disguised as text and accepts UTF-16 text', () => {
+    expect(validateUpload('notes.txt', 'text/plain', Buffer.from('plain text'))).toBeNull()
+    expect(validateUpload('notes.txt', 'text/plain', Buffer.concat([Buffer.from('MZ'), Buffer.alloc(32)]))).toMatch(/binary content|Executable/i)
+    expect(validateUpload('notes.txt', 'text/plain', Buffer.from([0xff, 0xfe, 0x41, 0x00, 0x42, 0x00]))).toBeNull()
+  })
+
+  it('rejects Mach-O executables regardless of extension', () => {
+    expect(validateUpload('photo.png', 'image/png', Buffer.from([0xfe, 0xed, 0xfa, 0xce, 0x00, 0x01]))).toMatch(/Executable/i)
+    expect(validateUpload('photo.png', 'image/png', Buffer.from([0xcf, 0xfa, 0xed, 0xfe, 0x00, 0x01]))).toMatch(/Executable/i)
+  })
+
   it('enforces the upload size boundary', () => {
     expect(validateUpload('large.pdf', 'application/pdf', Buffer.alloc(MAX_UPLOAD_BYTES + 1))).toMatch(/10 MB/i)
   })

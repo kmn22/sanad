@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { forbiddenJson, getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 import { CASE_ASSIGNMENT_ROLES, CASE_STAGES, activeCaseUserIds, canManageWorkflow, notifyUsers, recordWorkflowEvent } from '@/lib/workflow'
-import { caseAccessWhere, caseLinkedAccessWhere } from '@/lib/auth/capabilities'
+import { canAccessCase, caseAccessWhere, caseLinkedAccessWhere } from '@/lib/auth/capabilities'
 import { hasEntitlement } from '@/lib/saas/entitlements'
 
 export async function GET() {
@@ -46,6 +46,9 @@ export async function POST(req: NextRequest) {
   const note = typeof body?.note === 'string' ? body.note.trim().slice(0, 1000) : null
   const legalCase = await db.legalCase.findFirst({ where: { id: caseId, workspaceId: auth.workspaceId, deletedAt: null }, select: { id: true, title: true, stage: true, clientId: true, templateId: true } })
   if (!legalCase) return notFoundJson()
+  // Manage-level roles may run workflow actions, but confidential matters are
+  // still closed to members without a case assignment.
+  if (!(await canAccessCase(auth, legalCase.id))) return notFoundJson()
   if (!(await canActOnCase(auth, legalCase.id))) return forbiddenJson()
 
   if (action === 'assign' || action === 'unassign') {

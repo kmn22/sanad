@@ -104,7 +104,9 @@ test.describe('deep workspace flows', () => {
     expect(lawyer).toBeTruthy()
 
     const cases = await api(page, '/api/cases')
-    const caseId = cases.body.items?.[0]?.id ?? cases.body[0]?.id
+    // Only a non-confidential matter is safe to attach here — confidential
+    // cases are invisible to members without a case assignment.
+    const caseId = cases.body.items?.find((c: { confidential?: boolean }) => !c.confidential)?.id ?? cases.body.find((c: { confidential?: boolean }) => !c.confidential)?.id
     expect(caseId).toBeTruthy()
 
     const created = await api(page, '/api/approvals', {

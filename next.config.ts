@@ -5,6 +5,42 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
+  // file-storage.ts resolves upload paths from env at runtime, which makes
+  // Turbopack trace the whole project into the standalone output. Exclude the
+  // non-runtime directories explicitly to keep the deployed image lean.
+  outputFileTracingExcludes: {
+    "/*": [
+      "./src/**",
+      "./e2e/**",
+      "./tests/**",
+      "./scripts/**",
+      "./backups/**",
+      "./logs/**",
+      "./download/**",
+      "./db/**",
+      "./docs/**",
+      "./tool-results/**",
+           "./uploads/**",
+      "./upload/**",
+      "./*.pdf",
+      "./*.log",
+      "./AGENTS.md",
+      "./CLAUDE.md",
+      "./PITCH.md",
+      "./README.md",
+      "./Dockerfile",
+      "./docker-compose*.yml",
+      "./docker-*.sh",
+      "./tsconfig*",
+      "./package-lock.json",
+      "./eslint.config.mjs",
+      "./playwright.config.ts",
+      "./postcss.config.mjs",
+      "./tailwind.config.ts",
+      "./vitest.config.mts",
+      "./components.json",
+    ],
+  },
   async headers() {
     return [
       {

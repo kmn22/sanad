@@ -21,7 +21,32 @@ const EXECUTABLE_SIGNATURES = [
   Buffer.from('MZ'),
   Buffer.from([0x7f, 0x45, 0x4c, 0x46]),
   Buffer.from('#!'),
+  Buffer.from([0xfe, 0xed, 0xfa, 0xce]),
+  Buffer.from([0xfe, 0xed, 0xfa, 0xcf]),
+  Buffer.from([0xcf, 0xfa, 0xed, 0xfe]),
+  Buffer.from([0xca, 0xfe, 0xba, 0xbe]),
 ]
+
+/**
+ * Magic bytes that must appear at the start of a file for each allowed
+ * binary extension, so a renamed executable or script cannot masquerade
+ * as a document by its file name alone.
+ */
+const MAGIC_SIGNATURES: Record<string, Buffer[]> = {
+  '.pdf': [Buffer.from('%PDF-')],
+  '.jpg': [Buffer.from([0xff, 0xd8, 0xff])],
+  '.jpeg': [Buffer.from([0xff, 0xd8, 0xff])],
+  '.png': [Buffer.from([0x89, 0x50, 0x4e, 0x47])],
+  '.docx': [Buffer.from([0x50, 0x4b, 0x03, 0x04])],
+  '.xlsx': [Buffer.from([0x50, 0x4b, 0x03, 0x04])],
+  '.doc': [Buffer.from([0xd0, 0xcf, 0x11, 0xe0])],
+  '.xls': [Buffer.from([0xd0, 0xcf, 0x11, 0xe0])],
+}
+
+/** UTF-16 text starts with a byte-order mark and legitimately contains NUL bytes. */
+function looksUtf16(bytes: Buffer) {
+  return (bytes[0] === 0xff && bytes[1] === 0xfe) || (bytes[0] === 0xfe && bytes[1] === 0xff)
+}
 
 function uploadRoot() {
   if (process.env.UPLOAD_ROOT) return process.env.UPLOAD_ROOT
@@ -47,6 +72,13 @@ export function validateUpload(name: string, mimeType: string, bytes: Buffer) {
   if (mimeType && !ALLOWED_TYPES.has(mimeType)) return 'File type is not allowed'
   if (EXECUTABLE_SIGNATURES.some((signature) => bytes.subarray(0, signature.length).equals(signature))) {
     return 'Executable files are not allowed'
+  }
+  const expected = MAGIC_SIGNATURES[extension]
+  if (expected && !expected.some((signature) => bytes.subarray(0, signature.length).equals(signature))) {
+    return 'File content does not match its extension'
+  }
+  if (extension === '.txt' && !looksUtf16(bytes) && bytes.includes(0)) {
+    return 'Text files may not contain binary content'
   }
   return null
 }

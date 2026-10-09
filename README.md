@@ -91,6 +91,23 @@ AES-256-GCM + SHA-256 manifest).
 
 Monitoring: Uptime Kuma at `http://localhost:3002`. Health endpoint: `/api/health`.
 
+## Restore drill
+
+Rehearse full disaster recovery against an isolated instance (never touches
+production data):
+
+```bash
+scripts/restore-drill.sh                       # fresh backup → restore → verify
+scripts/restore-drill.sh backups/postgres/sanad-20260909-030001.dump.enc  # older backup
+```
+
+The drill takes an encrypted backup, restores it into a throwaway postgres
+container, compares per-table row counts against the live database, confirms
+every applied migration is present, and decrypts a stored document with the
+production file-encryption key (a synthetic AES-256-GCM round-trip when no
+files are stored yet). Run it after infrastructure changes and at least
+quarterly.
+
 ---
 
 ## Testing
