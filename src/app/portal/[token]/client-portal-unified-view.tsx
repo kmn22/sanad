@@ -1289,10 +1289,10 @@ export default function ClientPortalUnifiedView({
                         <button
                           onClick={() => setSelectedInvoiceForQr(inv)}
                           className="p-1.5 rounded-lg border hover:bg-slate-50 text-slate-600 text-xs flex items-center gap-1 cursor-pointer"
-                          title="عرض رمز الاستجابة السريع ZATCA QR"
+                          title="حالة الربط الضريبي ZATCA"
                         >
                           <QrCode className="h-4 w-4" />
-                          <span className="text-[10px] hidden sm:inline">رمز ZATCA</span>
+                          <span className="text-[10px] hidden sm:inline">حالة ZATCA</span>
                         </button>
                       </div>
 
@@ -2107,9 +2107,9 @@ export default function ClientPortalUnifiedView({
                 </div>
               </div>
 
-              <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl text-muted-foreground text-[11px] space-y-1">
-                <p>• يتم الدفع مباشرة إلى الحساب البنكي المعتمد لمكتب المحاماة.</p>
-                <p>• يصدر إشعار ZATCA فوري ومخالصة مالية ترسل لملفك.</p>
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-[11px] space-y-1">
+                <p className="font-semibold">⚠️ بوابة الدفع الإلكتروني غير مهيأة في هذه البيئة.</p>
+                <p>• يُرجى التنسيق المباشر مع مكتب المحاماة للسداد عبر التحويل المصرفي أو بمقر المكتب.</p>
               </div>
             </div>
 
@@ -2120,10 +2120,9 @@ export default function ClientPortalUnifiedView({
               <Button
                 size="sm"
                 disabled
-                className="bg-emerald-600 text-white font-bold text-xs"
-                onClick={handleConfirmPayment}
+                className="bg-emerald-600 text-white font-bold text-xs opacity-50 cursor-not-allowed"
               >
-                الدفع غير متاح
+                الدفع الإلكتروني غير متاح
               </Button>
             </div>
           </div>
@@ -2131,35 +2130,35 @@ export default function ClientPortalUnifiedView({
       )}
 
       {/* ========================================================
-          MODAL: FULL-SCREEN ZATCA QR CODE VIEW
+          MODAL: ZATCA COMPLIANCE STATUS VIEW
          ======================================================== */}
       {selectedInvoiceForQr && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4" dir="rtl">
           <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-sm w-full p-6 text-center space-y-4 border shadow-2xl animate-in zoom-in-95">
             <div className="flex justify-between items-center border-b pb-2">
-              <span className="font-bold text-sm">رمز التحقق الضريبي ZATCA</span>
+              <span className="font-bold text-sm">حالة الربط الضريبي ZATCA</span>
               <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setSelectedInvoiceForQr(null)}>
                 <X className="h-4 w-4" />
               </Button>
             </div>
 
-            <div className="p-4 bg-white rounded-2xl border-2 border-emerald-500 inline-block shadow-inner">
-              {/* ZATCA QR Visual simulation */}
-              <div className="w-48 h-48 bg-slate-900 flex flex-col items-center justify-center text-white p-3 rounded-lg relative overflow-hidden">
-                <QrCode className="w-36 h-36 text-emerald-400" />
-                <span className="text-[9px] font-mono text-emerald-300 mt-1">ZATCA-PHASE2-COMPLIANT</span>
+            <div className="p-4 bg-amber-50 dark:bg-amber-950/30 rounded-2xl border border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300 inline-block shadow-inner w-full">
+              <div className="flex flex-col items-center justify-center p-3 text-center gap-2">
+                <AlertTriangle className="w-10 h-10 text-amber-600 dark:text-amber-400" />
+                <span className="text-xs font-bold text-amber-900 dark:text-amber-200">الربط الضريبي غير مفعّل</span>
+                <span className="text-[11px] text-amber-800/90 dark:text-amber-300/90 leading-tight">هذه مسودة أتعاب داخلية فقط ولا تحمل اعتماداً ضريبياً رسمياً بعد</span>
               </div>
             </div>
 
             <div className="space-y-1 text-xs">
               <p className="font-bold text-slate-800 dark:text-slate-200">فاتورة رقم: {selectedInvoiceForQr.number}</p>
               <p className="text-muted-foreground text-[11px]">
-                رمز الاستجابة السريع مشفر بتقنية Base64 متضمن اسم المورد، الرقم الضريبي، والضريبة المحتسبة (15%).
+                لم يتم إرسال هذه الفاتورة إلى منصة فاتورة (ZATCA Phase 2) لعدم تهيئة الربط المباشر في بيئة التشغيل الحالية.
               </p>
             </div>
 
-            <Button size="sm" className="w-full bg-emerald-600 text-white text-xs" onClick={() => setSelectedInvoiceForQr(null)}>
-              تم التحقق
+            <Button size="sm" className="w-full bg-slate-800 hover:bg-slate-900 text-white text-xs" onClick={() => setSelectedInvoiceForQr(null)}>
+              إغلاق
             </Button>
           </div>
         </div>

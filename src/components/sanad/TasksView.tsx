@@ -90,13 +90,19 @@ export function TasksView({ tasks, cases, onChange }: Props) {
 
   const toggleDone = async (task: Task) => {
     const newStatus = task.status === 'done' ? 'todo' : 'done'
-    await fetch(`/api/tasks/${task.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus }),
-    })
-    toast.success(newStatus === 'done' ? t('tasks.completed') : t('tasks.reopened'))
-    onChange()
+    try {
+      const res = await fetch(`/api/tasks/${task.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      })
+      const result = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(result.error || t('common.failed'))
+      toast.success(newStatus === 'done' ? t('tasks.completed') : t('tasks.reopened'))
+      onChange()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('common.failed'))
+    }
   }
 
   const handleDragStart = (e: any) => {
@@ -115,15 +121,17 @@ export function TasksView({ tasks, cases, onChange }: Props) {
     if (!task || task.status === newStatus) return
 
     try {
-      await fetch(`/api/tasks/${taskId}`, {
+      const res = await fetch(`/api/tasks/${taskId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify({ status: newStatus }),
       })
+      const result = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(result.error || t('common.failed'))
       toast.success(t('common.saved'))
       onChange()
-    } catch {
-      toast.error('Failed to move task')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('common.failed'))
     }
   }
 
@@ -360,26 +368,38 @@ function AddTaskDialog({
 }) {
   const { t } = useLang()
   const [form, setForm] = useState({ title: '', description: '', priority: 'normal', dueDate: '', caseId: '' })
-
+  const [saving, setSaving] = useState(false)
   const submit = async () => {
-    if (!form.title) {
+    if (saving) return
+    if (!form.title.trim()) {
       toast.error(t('tasks.title'))
       return
     }
-    await fetch('/api/tasks', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...form,
-        dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
-        caseId: form.caseId || null,
-        status: 'todo',
-        autoGen: false,
-      }),
-    })
-    toast.success(t('tasks.added'))
-    setForm({ title: '', description: '', priority: 'normal', dueDate: '', caseId: '' })
-    onSaved()
+    setSaving(true)
+    try {
+      const res = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...form,
+          title: form.title.trim(),
+          dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
+          caseId: form.caseId || null,
+          status: 'todo',
+          autoGen: false,
+        }),
+      })
+      const result = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(result.error || t('common.failed'))
+      toast.success(t('tasks.added'))
+      setForm({ title: '', description: '', priority: 'normal', dueDate: '', caseId: '' })
+      onSaved()
+      onOpenChange(false)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('common.failed'))
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -428,8 +448,8 @@ function AddTaskDialog({
           </div>
         </div>
         <DialogFooter>
-          <DialogClose asChild><Button variant="outline">{t('comp.cancel')}</Button></DialogClose>
-          <Button onClick={submit}>{t('tasks.create')}</Button>
+          <DialogClose asChild><Button variant="outline" disabled={saving}>{t('comp.cancel')}</Button></DialogClose>
+          <Button onClick={submit} disabled={saving}>{t('tasks.create')}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

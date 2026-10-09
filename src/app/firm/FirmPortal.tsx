@@ -418,7 +418,7 @@ export function FirmTeamPage() {
                     key={r}
                     id={`firm-invite-role-${r}`}
                     onClick={() => setRole(r)}
-                    className={`text-xs py-1.5 rounded-lg border transition-all ${role === r ? 'bg-amber-600 text-white border-amber-600' : 'border-border hover:bg-muted'}`}
+                    className={`text-xs py-1.5 rounded-lg border transition-all ${role === r ? 'bg-amber-700 text-white border-amber-700' : 'border-border hover:bg-muted'}`}
                   >
                     {L(ROLE_LABELS[r])}
                   </button>
@@ -657,7 +657,7 @@ export function FirmSettingsPage() {
           <label className="space-y-1.5"><span className="text-xs font-medium text-muted-foreground">{L({ ar: 'اسم المكتب', en: 'Firm name' })}</span><Input value={name} onChange={(event) => setName(event.target.value)} minLength={2} maxLength={120} required /></label>
           <label className="space-y-1.5"><span className="text-xs font-medium text-muted-foreground">{L({ ar: 'النطاق الموثق', en: 'Verified domain' })}</span><Input value={domain} onChange={(event) => setDomain(event.target.value)} dir="ltr" placeholder="lawfirm.sa" maxLength={253} /></label>
         </div>
-        <div className="mt-4 flex items-center justify-between gap-3"><p className="text-[11px] text-muted-foreground">{L({ ar: 'تغييرات الهوية تسجّل في سجل التدقيق.', en: 'Identity changes are recorded in the audit log.' })}</p><Button type="submit" disabled={saving || name.trim().length < 2} className="bg-amber-600 text-white hover:bg-amber-500">{saving ? L({ ar: 'جارٍ الحفظ...', en: 'Saving...' }) : L({ ar: 'حفظ بيانات المكتب', en: 'Save firm details' })}</Button></div>
+        <div className="mt-4 flex items-center justify-between gap-3"><p className="text-[11px] text-muted-foreground">{L({ ar: 'تغييرات الهوية تسجّل في سجل التدقيق.', en: 'Identity changes are recorded in the audit log.' })}</p><Button type="submit" disabled={saving || name.trim().length < 2} className="bg-amber-700 text-white hover:bg-amber-600">{saving ? L({ ar: 'جارٍ الحفظ...', en: 'Saving...' }) : L({ ar: 'حفظ بيانات المكتب', en: 'Save firm details' })}</Button></div>
       </form>
       <div className="mb-5 rounded-2xl border border-rose-500/20 bg-card/70 p-5 shadow-sm">
         <div className="mb-4"><h2 className="font-semibold">{L({ ar: 'ملكية المكتب', en: 'Workspace ownership' })}</h2><p className="mt-1 text-xs text-muted-foreground">{L({ ar: 'انقل صلاحيات المالك إلى عضو نشط وموثوق. يتطلب ذلك تفعيل MFA وينهي جلسة المالك الحالي.', en: 'Transfer ownership to a trusted active member. MFA is required and the current owner session will end.' })}</p></div>

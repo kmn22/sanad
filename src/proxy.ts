@@ -31,8 +31,12 @@ export async function proxy(req: NextRequest) {
 
   const isApi = pathname.startsWith('/api/')
   const portal = portalForPath(pathname)
+  const legacySection = ['cases', 'clients', 'tasks', 'documents', 'invoices', 'compliance', 'calendar', 'communications'].find(
+    (s) => pathname === `/${s}` || pathname.startsWith(`/${s}/`),
+  )
   const isProtectedPage =
     portal !== null ||
+    legacySection !== undefined ||
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/settings') ||
     pathname.startsWith('/admin') ||
@@ -84,6 +88,10 @@ export async function proxy(req: NextRequest) {
       return NextResponse.redirect(new URL('/privacy/accept', req.url))
     }
     const home = homePathFor(role)
+    // Legacy practice paths → current portal's section.
+    if (legacySection) {
+      return NextResponse.redirect(new URL(`${home}/${legacySection}`, req.url))
+    }
     // Legacy single dashboard → the user's own portal.
     if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
       return NextResponse.redirect(new URL(home, req.url))
@@ -119,6 +127,14 @@ export const config = {
     '/lawyer/:path*', '/lawyer',
     '/firm/:path*', '/firm',
     '/client/:path*', '/client',
+    '/cases/:path*', '/cases',
+    '/clients/:path*', '/clients',
+    '/tasks/:path*', '/tasks',
+    '/documents/:path*', '/documents',
+    '/invoices/:path*', '/invoices',
+    '/compliance/:path*', '/compliance',
+    '/calendar/:path*', '/calendar',
+    '/communications/:path*', '/communications',
     '/settings/:path*', '/admin/:path*', '/admin', '/workflow/:path*', '/workflow',
     '/privacy/accept', '/login', '/register',
   ],

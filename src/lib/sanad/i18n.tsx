@@ -130,6 +130,11 @@ const translations = {
     'stage.client_review': 'مراجعة العميل',
     'stage.filed': 'مرفوعة',
     'stage.closed': 'مغلقة',
+    'stage.intake': 'استقبال',
+    'stage.pleading': 'مرافعة',
+    'stage.hearing': 'جلسات',
+    'stage.appeal': 'استئناف',
+    'stage.enforcement': 'تنفيذ',
 
     // Case types
     'ctype.litigation': 'تقاضٍ',
@@ -781,6 +786,11 @@ const translations = {
     'stage.client_review': 'Client Review',
     'stage.filed': 'Filed',
     'stage.closed': 'Closed',
+    'stage.intake': 'Intake',
+    'stage.pleading': 'Pleading',
+    'stage.hearing': 'Hearings',
+    'stage.appeal': 'Appeal',
+    'stage.enforcement': 'Enforcement',
 
     'ctype.litigation': 'Litigation',
     'ctype.contract': 'Contract',

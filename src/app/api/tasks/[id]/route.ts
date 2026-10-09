@@ -42,7 +42,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         actorId: auth.userId,
         title: 'تم تعيين مهمة لك',
         message: updated.title,
-        link: '/tasks',
+        link: '/lawyer/tasks',
         entityType: 'Task',
         entityId: updated.id,
       })

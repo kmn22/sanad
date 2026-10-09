@@ -369,11 +369,12 @@ function ClientFormDialog({
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
           })
-      if (!res.ok) throw new Error('save failed')
+      const result = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(result.error || t('common.failed'))
       toast.success(isEdit ? t('clients.updated') : t('clients.added'))
       onSaved()
-    } catch {
-      toast.error(isEdit ? t('clients.updated') : t('clients.added'))
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('common.failed'))
     } finally {
       setSaving(false)
     }

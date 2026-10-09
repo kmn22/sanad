@@ -81,5 +81,5 @@ graphify-out/20*/
 .aider*
 
 # Playwright
-test-results/
+test-results*/
 playwright-report/

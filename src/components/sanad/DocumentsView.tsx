@@ -72,13 +72,19 @@ export function DocumentsView({ documents, cases, onChange }: Props) {
   STATUSES.forEach((s) => { counts[s] = documents.filter((d) => d.status === s).length })
 
   const updateStatus = async (doc: LegalDocument, status: string) => {
-    await fetch(`/api/documents/${doc.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
-    })
-    toast.success(`${doc.title} → ${t(`dstatus.${status}`)}`)
-    onChange()
+    try {
+      const res = await fetch(`/api/documents/${doc.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      })
+      const result = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(result.error || t('common.failed'))
+      toast.success(`${doc.title} → ${t(`dstatus.${status}`)}`)
+      onChange()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('common.failed'))
+    }
   }
 
   return (
@@ -288,25 +294,38 @@ function AddDocDialog({
     caseId: '',
     notes: '',
   })
+  const [saving, setSaving] = useState(false)
 
   const submit = async () => {
-    if (!form.title || !form.parties) {
+    if (saving) return
+    if (!form.title.trim() || !form.parties.trim()) {
       toast.error(t('docs.req_fields'))
       return
     }
-    await fetch('/api/documents', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...form,
-        signedDate: form.signedDate ? new Date(form.signedDate).toISOString() : null,
-        expiryDate: form.expiryDate ? new Date(form.expiryDate).toISOString() : null,
-        caseId: form.caseId || null,
-      }),
-    })
-    toast.success(t('docs.added'))
-    setForm({ title: '', docType: 'nda', status: 'draft', parties: '', signedDate: '', expiryDate: '', caseId: '', notes: '' })
-    onSaved()
+    setSaving(true)
+    try {
+      const res = await fetch('/api/documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...form,
+          title: form.title.trim(),
+          parties: form.parties.trim(),
+          signedDate: form.signedDate ? new Date(form.signedDate).toISOString() : null,
+          expiryDate: form.expiryDate ? new Date(form.expiryDate).toISOString() : null,
+          caseId: form.caseId || null,
+        }),
+      })
+      const result = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(result.error || t('common.failed'))
+      toast.success(t('docs.added'))
+      setForm({ title: '', docType: 'nda', status: 'draft', parties: '', signedDate: '', expiryDate: '', caseId: '', notes: '' })
+      onSaved()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('common.failed'))
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -375,8 +394,8 @@ function AddDocDialog({
           <p className="text-[11px] text-muted-foreground bg-muted/40 rounded px-2 py-1.5">{t('docs.autonote')}</p>
         </div>
         <DialogFooter>
-          <DialogClose asChild><Button variant="outline">{t('comp.cancel')}</Button></DialogClose>
-          <Button onClick={submit}>{t('docs.create')}</Button>
+          <DialogClose asChild><Button variant="outline" disabled={saving}>{t('comp.cancel')}</Button></DialogClose>
+          <Button onClick={submit} disabled={saving}>{t('docs.create')}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

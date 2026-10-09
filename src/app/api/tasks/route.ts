@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
         actorId: auth.userId,
         title: 'مهمة جديدة',
         message: task.title,
-        link: '/tasks',
+        link: '/lawyer/tasks',
         entityType: 'Task',
         entityId: task.id,
       })

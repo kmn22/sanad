@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
       actorId: auth.userId,
       title: action === 'assign' ? 'تم تعيينك على قضية' : 'تم إلغاء تعيينك من قضية',
       message: legalCase.title,
-      link: `/cases/${legalCase.id}`,
+      link: '/lawyer/cases',
       entityType: 'LegalCase',
       entityId: legalCase.id,
     })
@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
       actorId: auth.userId,
       title: 'تحديث مرحلة القضية',
       message: `${legalCase.title}: ${previous} → ${stage}`,
-      link: `/cases/${legalCase.id}`,
+      link: '/lawyer/cases',
       entityType: 'LegalCase',
       entityId: legalCase.id,
     })

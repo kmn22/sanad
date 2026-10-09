@@ -142,22 +142,28 @@ export function InvoicesView({ invoices, clients, cases, timeEntries, stats, onC
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       })
-      if (!res.ok) throw new Error('patch failed')
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || (lang === 'ar' ? 'فشل تحديث حالة الفاتورة' : 'Failed to update invoice status'))
+      }
       toast.success(status === 'paid' ? t('invoices.marked_paid') : t('invoices.marked_sent'))
       onChange()
-    } catch {
-      toast.error(t('invoices.delete'))
+    } catch (err: any) {
+      toast.error(err.message || (lang === 'ar' ? 'فشل تحديث حالة الفاتورة' : 'Failed to update invoice status'))
     }
   }
 
   const handleDelete = async (inv: Invoice) => {
     try {
       const res = await fetch(`/api/invoices/${inv.id}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error('delete failed')
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || (lang === 'ar' ? 'فشل حذف الفاتورة' : 'Failed to delete invoice'))
+      }
       toast.success(t('invoices.deleted'))
       onChange()
-    } catch {
-      toast.error(t('invoices.delete'))
+    } catch (err: any) {
+      toast.error(err.message || (lang === 'ar' ? 'فشل حذف الفاتورة' : 'Failed to delete invoice'))
     }
   }
 
@@ -742,12 +748,15 @@ function CreateInvoiceDialog({
           notes: notes.trim() || undefined,
         }),
       })
-      if (!res.ok) throw new Error('create failed')
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || (lang === 'ar' ? 'فشل إنشاء الفاتورة' : 'Failed to create invoice'))
+      }
       toast.success(t('invoices.created'))
       reset()
       onSaved()
-    } catch {
-      toast.error(t('invoices.created'))
+    } catch (err: any) {
+      toast.error(err.message || (lang === 'ar' ? 'حدث خطأ أثناء إنشاء الفاتورة' : 'Failed to create invoice'))
     } finally {
       setSaving(false)
     }

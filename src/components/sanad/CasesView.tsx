@@ -70,7 +70,7 @@ interface Props {
   onChange: () => void
 }
 
-const STAGES: string[] = ['drafting', 'client_review', 'pleading', 'filed', 'closed']
+const STAGES: string[] = ['intake', 'drafting', 'client_review', 'pleading', 'filed', 'hearing', 'appeal', 'enforcement', 'closed']
 const CASE_TYPES = [
   'commercial',
   'labor',
@@ -109,25 +109,29 @@ export function CasesView({ cases, clients = [], onChange }: Props) {
     if (!caseItem || caseItem.stage === newStage) return
 
     try {
-      await fetch(`/api/cases/${caseItem.id}`, {
+      const response = await fetch(`/api/cases/${caseItem.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ stage: newStage }),
       })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(result.error || t('common.failed'))
       toast.success(t('cases.moved', { stage: t(`stage.${newStage}`) }))
       onChange()
-    } catch {
-      toast.error('Failed to move case')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('common.failed'))
     }
   }
 
   const deleteCase = async (id: string) => {
     try {
-      await fetch(`/api/cases/${id}`, { method: 'DELETE' })
+      const response = await fetch(`/api/cases/${id}`, { method: 'DELETE' })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(result.error || t('common.failed'))
       toast.success(t('common.deleted'))
       onChange()
-    } catch {
-      toast.error(t('common.failed'))
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('common.failed'))
     }
   }
 
@@ -568,7 +572,9 @@ function AddCaseDialog({
   clients?: Client[]
   editingCase?: LegalCase | null
 }) {
-  const { t } = useLang()
+  const { lang, t } = useLang()
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
   const [form, setForm] = useState({
     title: editingCase?.title || '',
     clientId: editingCase?.clientId || '',
@@ -583,13 +589,16 @@ function AddCaseDialog({
     court: editingCase?.court || '',
     opposingParty: editingCase?.opposingParty || '',
     notes: editingCase?.notes || '',
+    confidential: editingCase?.confidential ?? false,
   })
 
   const isEdit = !!editingCase
 
   const submit = async () => {
-    if (!form.title) {
-      toast.error(t('cases.req_fields'))
+    if (saving) return
+    setError('')
+    if (!form.title.trim() || (!form.clientId && !form.clientName.trim())) {
+      setError(t('cases.req_fields'))
       return
     }
     const payload = {
@@ -601,22 +610,22 @@ function AddCaseDialog({
       value: form.value ? parseFloat(form.value) : null,
     }
 
-    if (isEdit && editingCase) {
-      await fetch(`/api/cases/${editingCase.id}`, {
-        method: 'PATCH',
+    setSaving(true)
+    try {
+      const response = await fetch(editingCase ? `/api/cases/${editingCase.id}` : '/api/cases', {
+        method: isEdit ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
-      toast.success(t('common.updated'))
-    } else {
-      await fetch('/api/cases', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-      toast.success(t('cases.added'))
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(result.error || t('common.failed'))
+      toast.success(isEdit ? t('common.updated') : t('cases.added'))
+      onSaved()
+    } catch (error) {
+      setError(error instanceof Error ? error.message : t('common.failed'))
+    } finally {
+      setSaving(false)
     }
-    onSaved()
   }
 
   return (
@@ -717,14 +726,22 @@ function AddCaseDialog({
               <Input id="case-value" type="number" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} />
             </div>
           </div>
+          <label className="flex items-start gap-3 rounded-xl border p-3" htmlFor="case-confidential">
+            <input id="case-confidential" type="checkbox" className="mt-1" checked={form.confidential} onChange={(event) => setForm({ ...form, confidential: event.target.checked })} />
+            <span className="text-sm">
+              <span className="font-medium">{lang === 'ar' ? 'قضية سرية' : 'Confidential matter'}</span>
+              <span className="mt-1 block text-xs text-muted-foreground">{lang === 'ar' ? 'متاحة لمالك المكتب والإدارة والفريق المعيّن فقط. عيّن الفريق من صفحة توزيع القضايا.' : 'Only owners, administrators and assigned members can access this matter. Assign the team on the case assignments page.'}</span>
+            </span>
+          </label>
           <div className="space-y-1.5">
             <Label htmlFor="case-notes">{t('cases.f_notes')}</Label>
             <Textarea id="case-notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} />
           </div>
         </div>
+        {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
         <DialogFooter>
-          <DialogClose asChild><Button variant="outline">{t('comp.cancel')}</Button></DialogClose>
-          <Button onClick={submit}>{isEdit ? t('common.edit') : t('cases.create')}</Button>
+          <DialogClose asChild><Button variant="outline" disabled={saving}>{t('comp.cancel')}</Button></DialogClose>
+          <Button onClick={submit} disabled={saving}>{isEdit ? t('common.edit') : t('cases.create')}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

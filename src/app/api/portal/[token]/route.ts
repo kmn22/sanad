@@ -148,7 +148,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
       type: 'portal',
       title: 'ملف جديد من العميل',
       body: `قام ${access.client.name} برفع ${originalName}`,
-      link: access.caseId ? `/cases/${access.caseId}` : '/documents',
+      link: access.caseId ? '/lawyer/cases' : '/lawyer/documents',
       entityType: 'PortalFile',
       entityId: stored.id,
     })
@@ -200,7 +200,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
       type: 'portal',
       title: `ملاحظة من العميل على مستند: ${doc.title}`,
       body: `${access.client.name} أضاف ملاحظة على الصفحة ${pageNumber}: "${commentText}"`,
-      link: access.caseId ? `/cases/${access.caseId}` : '/documents',
+      link: access.caseId ? '/lawyer/cases' : '/lawyer/documents',
       entityType: 'LegalDocument',
       entityId: doc.id,
     })
@@ -275,7 +275,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     type: 'portal',
     title: 'طلب جديد من العميل',
     body: `${access.client.name}: ${title}`,
-    link: access.caseId ? `/cases/${access.caseId}` : '/dashboard',
+    link: access.caseId ? '/lawyer/cases' : '/lawyer/workflow',
     entityType: 'PortalRequest',
     entityId: request.id,
   })

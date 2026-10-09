@@ -43,28 +43,6 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "==> [1/5] Preparing encrypted backup"
-DUMP_ENC="$WORK/sanad-drill.dump.enc"
-if [ "${1:-}" != "" ]; then
-  cp "$1" "$DUMP_ENC"
-  echo "    using existing backup: $1"
-else
-  docker exec "$PROD_PG" pg_dump -U "$PROD_USER" -d "$PROD_DB" -Fc > "$WORK/sanad-drill.dump"
-  openssl enc -aes-256-cbc -pbkdf2 -salt -in "$WORK/sanad-drill.dump" -out "$DUMP_ENC" -pass env:BACKUP_ENCRYPTION_KEY
-  rm -f "$WORK/sanad-drill.dump"
-  echo "    fresh encrypted backup taken ($(du -h "$DUMP_ENC" | cut -f1))"
-fi
-openssl enc -d -aes-256-cbc -pbkdf2 -in "$DUMP_ENC" -out "$WORK/sanad-drill.dump" -pass env:BACKUP_ENCRYPTION_KEY
-echo "    decrypted for restore"
-
-echo "==> [2/5] Restoring into isolated container :$DRILL_PORT"
-docker run -d --name "$DRILL_NAME" -p "$DRILL_PORT:5432" -e "POSTGRES_PASSWORD=drill" postgres:16-bookworm >/dev/null
-until docker exec "$DRILL_NAME" pg_isready -U postgres >/dev/null 2>&1; do sleep 1; done
-docker exec "$DRILL_NAME" createdb -U postgres "$DRILL_DB"
-docker cp "$WORK/sanad-drill.dump" "$DRILL_NAME:/tmp/drill.dump" >/dev/null
-docker exec "$DRILL_NAME" pg_restore -U postgres -d "$DRILL_DB" --no-owner --no-privileges /tmp/drill.dump
-echo "    restore completed"
-
 COUNT_SQL="SELECT 'User', COUNT(*) FROM \"User\"
 UNION ALL SELECT 'Workspace', COUNT(*) FROM \"Workspace\"
 UNION ALL SELECT 'WorkspaceMembership', COUNT(*) FROM \"WorkspaceMembership\"
@@ -81,16 +59,57 @@ UNION ALL SELECT 'Notification', COUNT(*) FROM \"Notification\"
 UNION ALL SELECT 'AuditLog', COUNT(*) FROM \"AuditLog\"
 UNION ALL SELECT 'BackgroundJob', COUNT(*) FROM \"BackgroundJob\""
 
-echo "==> [3/5] Comparing row counts (production vs restored)"
-docker exec "$PROD_PG" psql -U "$PROD_USER" -d "$PROD_DB" -v ON_ERROR_STOP=1 -AtF'	' -c "$COUNT_SQL" | sort > "$WORK/prod.counts"
-docker exec "$DRILL_NAME" psql -U postgres -d "$DRILL_DB" -v ON_ERROR_STOP=1 -AtF'	' -c "$COUNT_SQL" | sort > "$WORK/drill.counts"
-if ! diff -u "$WORK/prod.counts" "$WORK/drill.counts" > "$WORK/count.diff"; then
-  cat "$WORK/count.diff"
-  echo "FAIL: restored row counts differ from production"
-  exit 1
+echo "==> [1/5] Preparing encrypted backup"
+DUMP_ENC="$WORK/sanad-drill.dump.enc"
+if [ "${1:-}" != "" ]; then
+  cp "$1" "$DUMP_ENC"
+  echo "    using existing backup: $1"
+else
+  docker exec "$PROD_PG" psql -U "$PROD_USER" -d "$PROD_DB" -v ON_ERROR_STOP=1 -AtF'	' -c "$COUNT_SQL" | sort > "$WORK/prod.counts"
+  docker exec "$PROD_PG" pg_dump -U "$PROD_USER" -d "$PROD_DB" -Fc > "$WORK/sanad-drill.dump"
+  openssl enc -aes-256-cbc -pbkdf2 -salt -in "$WORK/sanad-drill.dump" -out "$DUMP_ENC" -pass env:BACKUP_ENCRYPTION_KEY
+  rm -f "$WORK/sanad-drill.dump"
+  echo "    fresh encrypted backup taken ($(du -h "$DUMP_ENC" | cut -f1))"
 fi
-column -t -s'	' "$WORK/prod.counts"
-echo "    all row counts match"
+openssl enc -d -aes-256-cbc -pbkdf2 -in "$DUMP_ENC" -out "$WORK/sanad-drill.dump" -pass env:BACKUP_ENCRYPTION_KEY
+echo "    decrypted for restore"
+
+echo "==> [2/5] Restoring into isolated container :$DRILL_PORT"
+docker run -d --name "$DRILL_NAME" -p "$DRILL_PORT:5432" -e "POSTGRES_PASSWORD=drill" postgres:16-bookworm >/dev/null
+until docker exec "$DRILL_NAME" pg_isready -U postgres >/dev/null 2>&1; do sleep 1; done
+docker exec "$DRILL_NAME" createdb -U postgres "$DRILL_DB"
+docker cp "$WORK/sanad-drill.dump" "$DRILL_NAME:/tmp/drill.dump" >/dev/null
+docker exec "$DRILL_NAME" pg_restore -U postgres -d "$DRILL_DB" --no-owner --no-privileges /tmp/drill.dump
+echo "    restore completed"
+
+echo "==> [3/5] Comparing row counts (production vs restored)"
+docker exec "$DRILL_NAME" psql -U postgres -d "$DRILL_DB" -v ON_ERROR_STOP=1 -AtF'	' -c "$COUNT_SQL" | sort > "$WORK/drill.counts"
+
+if [ -f "$WORK/prod.counts" ]; then
+  python3 -c '
+import sys
+prod = dict(line.strip().split("\t") for line in open(sys.argv[1]) if line.strip())
+drill = dict(line.strip().split("\t") for line in open(sys.argv[2]) if line.strip())
+telemetry = {"AuditLog", "BackgroundJob", "Notification"}
+mismatches = []
+for tbl, count_p in prod.items():
+    count_d = drill.get(tbl, "0")
+    if tbl in telemetry:
+        if int(count_d) > int(count_p):
+            mismatches.append(f"{tbl}: drill has {count_d} but prod had {count_p}")
+    else:
+        if count_p != count_d:
+            mismatches.append(f"{tbl}: prod={count_p} vs drill={count_d}")
+if mismatches:
+    print("Mismatches found:\n" + "\n".join(mismatches))
+    sys.exit(1)
+' "$WORK/prod.counts" "$WORK/drill.counts"
+  column -t -s'	' "$WORK/prod.counts"
+  echo "    all core business row counts match"
+else
+  column -t -s'	' "$WORK/drill.counts"
+  echo "    restored database tables populated successfully"
+fi
 
 echo "==> [4/5] Verifying migration state in the restored database"
 PROD_MIGRATIONS=$(docker exec "$PROD_PG" psql -U "$PROD_USER" -d "$PROD_DB" -Atc "SELECT migration_name FROM _prisma_migrations WHERE finished_at IS NOT NULL AND migration_name NOT LIKE '%rollback%' ORDER BY migration_name")

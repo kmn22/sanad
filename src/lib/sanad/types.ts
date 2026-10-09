@@ -44,6 +44,7 @@ export interface LegalCase {
   title: string
   clientId: string | null
   clientName: string
+  confidential?: boolean
   caseType: string
   stage: string
   priority: string

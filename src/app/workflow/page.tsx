@@ -69,11 +69,14 @@ export default function WorkflowPage() {
       if (responses.some((response) => !response.ok)) throw new Error('تعذر تحميل بيانات سير العمل')
       const [workflow, team, clientList, mine] = await Promise.all(responses.map((response) => response.json()))
       setData(workflow)
-      setMembers(team)
-      setClients(clientList)
-      setMyRequests(mine)
+      setMembers(Array.isArray(team) ? team : [])
+      setClients(Array.isArray(clientList) ? clientList : (clientList?.items || []))
+      setMyRequests(Array.isArray(mine) ? mine : [])
       const approvalsResponse = await fetch('/api/approvals')
-      if (approvalsResponse.ok) setApprovals(await approvalsResponse.json())
+      if (approvalsResponse.ok) {
+        const appr = await approvalsResponse.json()
+        setApprovals(Array.isArray(appr) ? appr : (appr?.items || []))
+      }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'تعذر تحميل سير العمل')
     } finally {
