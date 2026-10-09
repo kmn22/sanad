@@ -93,6 +93,30 @@ services:
         max-size: "50m"
         max-file: "3"
 
+  # Tailscale Funnel: exposes https://sanad.tail963524.ts.net -> http://app:3001
+  # IMPORTANT: ./ts-state holds the node identity + auth credentials + funnel
+  # config. Never delete it — deleting it forces interactive re-auth.
+  # Set TS_AUTHKEY (reusable, tagged auth key from the admin console) so the
+  # node can re-register automatically if the state is ever lost.
+  ts-sanad:
+    image: tailscale/tailscale:latest
+    container_name: sanad-ts
+    hostname: sanad
+    restart: unless-stopped
+    environment:
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_AUTHKEY: ${TS_AUTHKEY:-}
+      TS_EXTRA_ARGS: --hostname=sanad
+    volumes:
+      - /dev/net/tun:/dev/net/tun
+      - ./ts-state:/var/lib/tailscale
+      - ./ts-config:/config
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+
 volumes:
   sanad-postgres-data:
   sanad-uptime-kuma-data:
