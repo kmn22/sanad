@@ -160,19 +160,27 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
-  // Delete in reverse FK order — most restrictive first
-  await db.usageMetric.deleteMany({ where: { workspaceId: { in: [wsA.workspaceId, wsB.workspaceId] } } })
-  await db.portalFile.deleteMany({ where: { workspaceId: { in: [wsA.workspaceId, wsB.workspaceId] } } })
-  await db.portalRequest.deleteMany({ where: { workspaceId: { in: [wsA.workspaceId, wsB.workspaceId] } } })
-  await db.portalAccess.deleteMany({ where: { workspaceId: { in: [wsA.workspaceId, wsB.workspaceId] } } })
-  await db.invoice.deleteMany({ where: { workspaceId: { in: [wsA.workspaceId, wsB.workspaceId] } } })
-  await db.complianceItem.deleteMany({ where: { workspaceId: { in: [wsA.workspaceId, wsB.workspaceId] } } })
-  await db.legalDocument.deleteMany({ where: { workspaceId: { in: [wsA.workspaceId, wsB.workspaceId] } } })
-  await db.task.deleteMany({ where: { workspaceId: { in: [wsA.workspaceId, wsB.workspaceId] } } })
-  await db.legalCase.deleteMany({ where: { workspaceId: { in: [wsA.workspaceId, wsB.workspaceId] } } })
-  await db.client.deleteMany({ where: { workspaceId: { in: [wsA.workspaceId, wsB.workspaceId] } } })
-  await db.user.deleteMany({ where: { workspaceId: { in: [wsA.workspaceId, wsB.workspaceId] } } })
-  await db.workspace.deleteMany({ where: { id: { in: [wsA.workspaceId, wsB.workspaceId] } } })
+  // Delete in reverse FK order — most restrictive first. Covers every
+  // workspace-scoped table this suite (or helpers like runRetentionSweep)
+  // can create, so a mid-test failure cannot strand RESTRICT-guarded rows.
+  const wsIds = [wsA.workspaceId, wsB.workspaceId]
+  const userIds = [wsA.userId, wsB.userId]
+  await db.legalHold.deleteMany({ where: { workspaceId: { in: wsIds } } })
+  await db.retentionPolicy.deleteMany({ where: { workspaceId: { in: wsIds } } })
+  await db.notification.deleteMany({ where: { workspaceId: { in: wsIds } } })
+  await db.usageMetric.deleteMany({ where: { workspaceId: { in: wsIds } } })
+  await db.portalFile.deleteMany({ where: { workspaceId: { in: wsIds } } })
+  await db.portalRequest.deleteMany({ where: { workspaceId: { in: wsIds } } })
+  await db.portalAccess.deleteMany({ where: { workspaceId: { in: wsIds } } })
+  await db.invoice.deleteMany({ where: { workspaceId: { in: wsIds } } })
+  await db.complianceItem.deleteMany({ where: { workspaceId: { in: wsIds } } })
+  await db.legalDocument.deleteMany({ where: { workspaceId: { in: wsIds } } })
+  await db.task.deleteMany({ where: { workspaceId: { in: wsIds } } })
+  await db.legalCase.deleteMany({ where: { workspaceId: { in: wsIds } } })
+  await db.client.deleteMany({ where: { workspaceId: { in: wsIds } } })
+  await db.workspaceMembership.deleteMany({ where: { workspaceId: { in: wsIds } } })
+  await db.user.deleteMany({ where: { id: { in: userIds } } })
+  await db.workspace.deleteMany({ where: { id: { in: wsIds } } })
   await db.$disconnect()
 })
 
