@@ -16,11 +16,21 @@ if [ -z "${NEXTAUTH_SECRET:-}" ] || [ -z "${POSTGRES_PASSWORD:-}" ]; then
   exit 1
 fi
 
-# 2. Take safety backup of database
+# 2. Take safety backup of database (encrypted when BACKUP_ENCRYPTION_KEY is set)
 mkdir -p "$ROOT/../sanad_backups"
 docker compose up -d db
-docker exec sanad-postgres pg_dump -U sanad -d sanad -Fc > "$ROOT/../sanad_backups/sanad_${TIMESTAMP}.dump"
-echo "✓ Database backup saved to $ROOT/../sanad_backups/sanad_${TIMESTAMP}.dump"
+DUMP_FILE="$ROOT/../sanad_backups/sanad_${TIMESTAMP}.dump"
+docker exec sanad-postgres pg_dump -U sanad -d sanad -Fc > "$DUMP_FILE"
+if [ -n "${BACKUP_ENCRYPTION_KEY:-}" ]; then
+  openssl enc -aes-256-cbc -pbkdf2 -salt -in "$DUMP_FILE" -out "$DUMP_FILE.enc" -pass env:BACKUP_ENCRYPTION_KEY
+  rm -f "$DUMP_FILE"
+  echo "✓ Encrypted database backup saved to ${DUMP_FILE}.enc"
+else
+  echo "WARN: BACKUP_ENCRYPTION_KEY unset — pre-deploy dump left unencrypted on disk" >&2
+  echo "✓ Database backup saved to $DUMP_FILE"
+fi
+# Retain 30 days of pre-deploy dumps
+find "$ROOT/../sanad_backups" -type f \( -name 'sanad_*.dump' -o -name 'sanad_*.dump.enc' \) -mtime +30 -delete
 
 # 3. Pull latest code from GitHub (abort if the working tree is dirty)
 if [ -n "$(git status --porcelain)" ]; then

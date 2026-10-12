@@ -58,5 +58,26 @@ if [ -n "${S3_BACKUP_BUCKET:-}" ]; then
   fi
 fi
 
+# Provider-agnostic offload for non-S3 remotes (rclone, s3cmd, scp, ...).
+# BACKUP_OFFLOAD_CMD is a shell template: %f expands to the local file path,
+# %b to its basename. Example:
+#   BACKUP_OFFLOAD_CMD='rclone copyto "%f" remote:sanad-backups/%b'
+# Only encrypted artifacts are ever passed to it — same trust level as .env.
+if [ -n "${BACKUP_OFFLOAD_CMD:-}" ]; then
+  OFFLOAD_FILES=("$ENCRYPTED_FILE" "$ENCRYPTED_FILE.sha256")
+  if [ -f "$UPLOAD_ARCHIVE" ]; then
+    OFFLOAD_FILES+=("$UPLOAD_ARCHIVE" "$UPLOAD_ARCHIVE.sha256")
+  fi
+  for f in "${OFFLOAD_FILES[@]}"; do
+    cmd="${BACKUP_OFFLOAD_CMD//%f/$f}"
+    cmd="${cmd//%b/$(basename "$f")}"
+    if ! eval "$cmd"; then
+      echo "ERROR: BACKUP_OFFLOAD_CMD failed for $f" >&2
+      exit 1
+    fi
+  done
+  printf '[%s] Offloaded %d artifacts via BACKUP_OFFLOAD_CMD\n' "$(date --iso-8601=seconds)" "${#OFFLOAD_FILES[@]}"
+fi
+
 find "$BACKUP_DIR" -type f \( -name 'sanad-*.dump.enc' -o -name 'sanad-*.dump.enc.sha256' -o -name 'sanad-files-*.tar.gz' -o -name 'sanad-files-*.tar.gz.sha256' \) -mtime +30 -delete
 printf '[%s] Encrypted backup verified: %s (%s)\n' "$(date --iso-8601=seconds)" "$ENCRYPTED_FILE" "$(du -h "$ENCRYPTED_FILE" | cut -f1)"
