@@ -35,6 +35,6 @@ export async function POST(req: Request) {
     })
     return NextResponse.json({ success: true, request }, { status: 201 })
   } catch (error) {
-    return safeErrorResponse(error)
+    return safeErrorResponse(error, req, { route: 'POST /api/privacy/requests' })
   }
 }

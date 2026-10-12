@@ -1,3 +1,4 @@
+import { logEvent } from '@/lib/observability'
 export const ANALYTICS_EVENTS = {
   SIGNUP: 'signup',
   SANDBOX_DRAFT: 'sandbox_draft',
@@ -122,7 +123,7 @@ export async function trackEvent(event: AnalyticsEventInput) {
       console.info('[analytics] event', payload.event, payload);
     }
   } catch (error) {
-    console.warn('[analytics] failed to send event', error);
+    logEvent('warn', '[analytics] failed to send event', { errMessage: error instanceof Error ? error.message : String(error), action: 'analytics-send' });
   }
 }
 

@@ -5,6 +5,7 @@ import { INITIAL_RESEARCH_ITEMS } from '@/lib/sanad/research/seedData'
 import { getAuthContext, getSessionWorkspaceId, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 import { canWriteAcademic, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
 import { requireEducation } from '@/lib/saas/entitlements'
+import { logError } from '@/lib/observability'
 
 // GET /api/research?q=...&category=...&type=...
 export async function GET(req: NextRequest) {
@@ -70,7 +71,7 @@ export async function GET(req: NextRequest) {
       total: items.length,
     })
   } catch (err) {
-    console.error('Error fetching research items:', err)
+    logError(err, { req, msg: 'Error fetching research items', route: 'GET /api/research' })
     return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 })
   }
 }
@@ -116,7 +117,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, item })
   } catch (err) {
-    console.error('Error creating research item:', err)
+    logError(err, { req, msg: 'Error creating research item', route: 'POST /api/research' })
     return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 })
   }
 }

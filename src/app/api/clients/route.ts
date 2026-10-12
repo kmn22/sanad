@@ -5,6 +5,7 @@ import { getAuthContext, getSessionWorkspaceId, unauthorizedJson } from '@/lib/a
 import { canWrite, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
 import { hasEntitlement } from '@/lib/saas/entitlements'
 import { parsePagination, paginatedResponse } from '@/lib/http'
+import { logError } from '@/lib/observability'
 
 export async function GET(req: NextRequest) {
   const workspaceId = await getSessionWorkspaceId()
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(client)
   } catch (err) {
     // Log server-side; never echo internal/driver messages back to the caller.
-    console.error('Failed to create client:', err)
+    logError(err, { req, msg: 'Failed to create client', route: 'POST /api/clients' })
     return NextResponse.json({ error: 'Failed to create client' }, { status: 500 })
   }
 }

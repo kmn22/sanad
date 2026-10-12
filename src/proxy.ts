@@ -32,7 +32,19 @@ function requestIsHttps(req: NextRequest): boolean {
   return false
 }
 
-function withSecureHeaders(req: NextRequest, res: NextResponse): NextResponse {
+function requestIdFor(req: NextRequest): string {
+  const incoming = req.headers.get('x-request-id')
+  return incoming && incoming.length <= 128 ? incoming : crypto.randomUUID()
+}
+
+function nextWithRequestId(req: NextRequest, requestId: string): NextResponse {
+  const requestHeaders = new Headers(req.headers)
+  requestHeaders.set('x-request-id', requestId)
+  return NextResponse.next({ request: { headers: requestHeaders } })
+}
+
+function withSecureHeaders(req: NextRequest, requestId: string, res: NextResponse): NextResponse {
+  res.headers.set('x-request-id', requestId)
   if (requestIsHttps(req)) {
     res.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
     res.headers.append('Content-Security-Policy', 'upgrade-insecure-requests')
@@ -42,6 +54,7 @@ function withSecureHeaders(req: NextRequest, res: NextResponse): NextResponse {
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl
+  const requestId = requestIdFor(req)
 
   // Exact matches only — a prefix match would open every path sharing the
   // prefix (e.g. /api/billing/webhook-admin) to unauthenticated access.
@@ -71,7 +84,7 @@ export async function proxy(req: NextRequest) {
     pathname === '/privacy/accept'
   const isAuthPage = pathname === '/login' || pathname === '/register'
 
-  if (!isApi && !isProtectedPage && !isAuthPage) return withSecureHeaders(req, NextResponse.next())
+  if (!isApi && !isProtectedPage && !isAuthPage) return withSecureHeaders(req, requestId, nextWithRequestId(req, requestId))
 
   // Resolve the token once and reuse it for every branch below.
   const token = await getToken({ req, secret: authSecret, secureCookie })
@@ -83,25 +96,25 @@ export async function proxy(req: NextRequest) {
       const ceiling = isMultipart ? MAX_MULTIPART_BODY_BYTES : MAX_JSON_BODY_BYTES
       const declared = Number(req.headers.get('content-length') || 0)
       if (declared > ceiling) {
-        return withSecureHeaders(req, NextResponse.json({ error: 'Request body is too large' }, { status: 413 }))
+        return withSecureHeaders(req, requestId, NextResponse.json({ error: 'Request body is too large' }, { status: 413 }))
       }
     }
-    if (isPublicApi) return withSecureHeaders(req, NextResponse.next())
+    if (isPublicApi) return withSecureHeaders(req, requestId, nextWithRequestId(req, requestId))
     if (!token) {
-      return withSecureHeaders(req, NextResponse.json({ error: 'Authentication required' }, { status: 401 }))
+      return withSecureHeaders(req, requestId, NextResponse.json({ error: 'Authentication required' }, { status: 401 }))
     }
     if (token.privacyNoticeVersion !== PRIVACY_NOTICE_VERSION) {
-      return withSecureHeaders(req, NextResponse.json({ error: 'Current privacy notice acceptance is required', code: 'PRIVACY_NOTICE_REQUIRED' }, { status: 403 }))
+      return withSecureHeaders(req, requestId, NextResponse.json({ error: 'Current privacy notice acceptance is required', code: 'PRIVACY_NOTICE_REQUIRED' }, { status: 403 }))
     }
     // Client logins may only reach the client-scoped API surface. This is a
     // defence-in-depth layer on top of getAuthContext() rejecting clients.
     if (role === 'client' && !pathname.startsWith('/api/client/')) {
-      return withSecureHeaders(req, NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
+      return withSecureHeaders(req, requestId, NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
     }
     if (pathname.startsWith('/api/client/') && role !== 'client') {
-      return withSecureHeaders(req, NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
+      return withSecureHeaders(req, requestId, NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
     }
-    return withSecureHeaders(req, NextResponse.next())
+    return withSecureHeaders(req, requestId, nextWithRequestId(req, requestId))
   }
 
   if (isProtectedPage) {
@@ -109,41 +122,41 @@ export async function proxy(req: NextRequest) {
       const loginUrl = new URL('/login', req.url)
       // Preserve the query string so deep links survive the login round trip.
       loginUrl.searchParams.set('callbackUrl', pathname + req.nextUrl.search)
-      return withSecureHeaders(req, NextResponse.redirect(loginUrl))
+      return withSecureHeaders(req, requestId, NextResponse.redirect(loginUrl))
     }
     if (pathname !== '/privacy/accept' && token.privacyNoticeVersion !== PRIVACY_NOTICE_VERSION) {
-      return withSecureHeaders(req, NextResponse.redirect(new URL('/privacy/accept', req.url)))
+      return withSecureHeaders(req, requestId, NextResponse.redirect(new URL('/privacy/accept', req.url)))
     }
     const home = homePathFor(role)
     // Legacy practice paths → current portal's section.
     if (legacySection) {
-      return withSecureHeaders(req, NextResponse.redirect(new URL(`${home}/${legacySection}`, req.url)))
+      return withSecureHeaders(req, requestId, NextResponse.redirect(new URL(`${home}/${legacySection}`, req.url)))
     }
     // Legacy single dashboard → the user's own portal.
     if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
-      return withSecureHeaders(req, NextResponse.redirect(new URL(home, req.url)))
+      return withSecureHeaders(req, requestId, NextResponse.redirect(new URL(home, req.url)))
     }
     // Portal guard: wrong-role users are sent to their own portal.
     if (portal && !canAccessPortal(role, portal)) {
-      return withSecureHeaders(req, NextResponse.redirect(new URL(home, req.url)))
+      return withSecureHeaders(req, requestId, NextResponse.redirect(new URL(home, req.url)))
     }
     // Admin guard: only admin or workspace_owner can access /admin
     if (pathname.startsWith('/admin') && role !== 'admin' && role !== 'workspace_owner') {
-      return withSecureHeaders(req, NextResponse.redirect(new URL(home, req.url)))
+      return withSecureHeaders(req, requestId, NextResponse.redirect(new URL(home, req.url)))
     }
     // Workflow tooling is for practice staff only.
     if (pathname.startsWith('/workflow') && (role === 'client' || role === 'student')) {
-      return withSecureHeaders(req, NextResponse.redirect(new URL(home, req.url)))
+      return withSecureHeaders(req, requestId, NextResponse.redirect(new URL(home, req.url)))
     }
-    return withSecureHeaders(req, NextResponse.next())
+    return withSecureHeaders(req, requestId, nextWithRequestId(req, requestId))
   }
 
   // Authenticated users have no business on /login or /register.
   if (isAuthPage && token) {
-    return withSecureHeaders(req, NextResponse.redirect(new URL(homePathFor(role), req.url)))
+    return withSecureHeaders(req, requestId, NextResponse.redirect(new URL(homePathFor(role), req.url)))
   }
 
-  return withSecureHeaders(req, NextResponse.next())
+  return withSecureHeaders(req, requestId, nextWithRequestId(req, requestId))
 }
 
 export const config = {

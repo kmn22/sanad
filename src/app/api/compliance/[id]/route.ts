@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { updateComplianceSchema } from '@/lib/validations'
 import { getAuthContext, getSessionWorkspaceId, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 import { canWrite, denyUnless, enforceMutationBudget, legalHoldBlock } from '@/lib/auth/capabilities'
+import { logError } from '@/lib/observability'
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const workspaceId = await getSessionWorkspaceId()
@@ -37,7 +38,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (err?.name === 'ZodError') {
       return NextResponse.json({ error: 'Validation failed', details: err.errors }, { status: 400 })
     }
-    console.error('Failed to update compliance item:', err)
+    logError(err, { req, msg: 'Failed to update compliance item', route: 'PATCH /api/compliance/[id]' })
     return NextResponse.json({ error: 'Failed to update compliance item' }, { status: 500 })
   }
 }

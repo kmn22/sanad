@@ -5,6 +5,7 @@ import { getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/works
 import { canWrite, denyUnless, enforceMutationBudget, caseAccessWhere } from '@/lib/auth/capabilities'
 import { hasEntitlement } from '@/lib/saas/entitlements'
 import { parsePagination, paginatedResponse } from '@/lib/http'
+import { logError } from '@/lib/observability'
 
 export async function GET(req: NextRequest) {
   const auth = await getAuthContext()
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
     })
     return NextResponse.json(c)
   } catch (err) {
-    console.error('Failed to create case:', err)
+    logError(err, { req, msg: 'Failed to create case', route: 'POST /api/cases' })
     return NextResponse.json({ error: 'Failed to create case' }, { status: 500 })
   }
 }

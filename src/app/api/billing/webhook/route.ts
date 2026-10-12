@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
+import { logError } from '@/lib/observability'
 
 export const runtime = 'nodejs'
 
@@ -115,7 +116,7 @@ export async function POST(req: Request) {
     const stripe = new Stripe(apiKey)
     event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret, 300)
   } catch (error) {
-    console.error('Billing webhook signature verification failed:', error instanceof Error ? error.message : 'unknown error')
+    logError(error, { req, msg: 'Billing webhook signature verification failed', route: 'POST /api/billing/webhook' })
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
@@ -131,7 +132,7 @@ export async function POST(req: Request) {
     })
     return NextResponse.json({ received: true })
   } catch (error) {
-    console.error('Billing webhook processing failed:', error)
+    logError(error, { req, msg: 'Billing webhook processing failed', route: 'POST /api/billing/webhook' })
     await db.billingWebhookEvent.update({
       where: { id: event.id },
       data: { status: 'failed', error: 'Event processing failed' },

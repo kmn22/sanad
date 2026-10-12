@@ -142,7 +142,6 @@ export async function POST(req: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('ZATCA Phase 2 submission failed:', error)
-    return safeErrorResponse(error)
+        return safeErrorResponse(error, req, { route: 'POST /api/zatca' })
   }
 }

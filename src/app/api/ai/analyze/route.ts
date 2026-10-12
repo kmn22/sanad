@@ -65,7 +65,6 @@ export async function POST(req: Request) {
     
     return NextResponse.json({ result: data.response })
   } catch (error) {
-    console.error('AI Analysis Error:', error)
-    return safeErrorResponse(error)
+        return safeErrorResponse(error, req, { route: 'POST /api/ai/analyze' })
   }
 }

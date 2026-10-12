@@ -35,7 +35,6 @@ export async function POST(req: NextRequest) {
       retrievedCount: ragResult.totalRetrieved,
     })
   } catch (error) {
-    console.error('Advanced AI RAG Route failed:', error)
-    return safeErrorResponse(error)
+        return safeErrorResponse(error, req, { route: 'POST /api/ai/rag' })
   }
 }

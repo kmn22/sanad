@@ -7,6 +7,7 @@ import { emailConfigured, publicAppUrl, sendTransactionalEmail } from '@/lib/ema
 import { rateLimit } from '@/lib/rate-limit'
 import { PRIVACY_NOTICE_VERSION, privacyNoticeHash } from '@/lib/compliance'
 import { isAcademicEmail, getAcademicInstitutionName } from '@/lib/auth/academic'
+import { logError } from '@/lib/observability'
 
 function getClientIp(req: Request): string {
   return req.headers.get('x-forwarded-for')?.split(',')[0].trim() || req.headers.get('x-real-ip')?.trim() || 'unknown'
@@ -227,7 +228,7 @@ export async function POST(req: Request) {
       ...(delivery === 'manual' && process.env.NODE_ENV !== 'production' ? { devVerifyUrl: verifyUrl } : {}),
     }, { status: 201 })
   } catch (error) {
-    console.error('Registration error:', error)
+    logError(error, { req, msg: 'Registration error', route: 'POST /api/auth/register' })
     return NextResponse.json({ error: 'تعذر إتمام التسجيل في الوقت الحالي. يرجى المحاولة لاحقاً.' }, { status: 500 })
   }
 }

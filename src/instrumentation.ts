@@ -1,3 +1,4 @@
+import { logError } from '@/lib/observability'
 /**
  * Server startup hook — runs once per Node.js server instance.
  *
@@ -16,7 +17,7 @@ export async function register() {
   const { processDueJobs } = await import('@/lib/jobs')
   const tick = () => {
     processDueJobs().catch((error) => {
-      console.error('[jobs] scheduled sweep failed:', error)
+      logError(error, { msg: '[jobs] scheduled sweep failed', action: 'job-sweep' })
     })
   }
 

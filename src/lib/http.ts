@@ -1,3 +1,5 @@
+import { getRequestId, logError } from '@/lib/observability'
+
 export class RequestError extends Error {
   constructor(message: string, public status = 400) {
     super(message)
@@ -59,11 +61,20 @@ export async function readJsonLimited<T = unknown>(req: Request, maxBytes = 64 *
   }
 }
 
-export function safeErrorResponse(error: unknown) {
+export function safeErrorResponse(error: unknown, req?: Request, ctx: { route?: string } = {}) {
+  const requestId = getRequestId(req)
   if (error instanceof RequestError) {
-    return Response.json({ error: error.message }, { status: error.status })
+    return Response.json(
+      { error: error.message, requestId },
+      { status: error.status, headers: { 'x-request-id': requestId } },
+    )
   }
-  return Response.json({ error: 'Internal Server Error' }, { status: 500 })
+  // Server-side only: full detail goes to the structured log, never the client.
+  logError(error, { requestId, route: ctx.route })
+  return Response.json(
+    { error: 'Internal Server Error', requestId },
+    { status: 500, headers: { 'x-request-id': requestId } },
+  )
 }
 
 /**

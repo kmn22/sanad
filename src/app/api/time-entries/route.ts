@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthContext, getSessionWorkspaceId, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 import { canAccessCase, canWrite, denyUnless, enforceMutationBudget, caseLinkedAccessWhere } from '@/lib/auth/capabilities'
+import { logError } from '@/lib/observability'
 
 export async function GET() {
   const auth = await getAuthContext()
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
     })
     return NextResponse.json(te)
   } catch (error) {
-    console.error('Time entry creation error:', error)
+    logError(error, { req, msg: 'Time entry creation error', route: 'POST /api/time-entries' })
     return NextResponse.json({ error: 'Failed to create time entry' }, { status: 500 })
   }
 }

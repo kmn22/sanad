@@ -7,6 +7,7 @@ import {
   extractLegalCitations,
 } from '@/lib/ai/arabic-nlp'
 import { SAUDI_STATUTES, StatutoryArticle } from '@/lib/ai/saudi-statutes'
+import { logEvent } from '@/lib/observability'
 
 export interface RetrievedSource {
   id: string
@@ -249,7 +250,7 @@ export async function executeLegalRag(
       { role: 'user', content: query },
     ])
   } catch (error) {
-    console.warn('Ollama unavailable during RAG generation, returning structured retrieval fallback:', error)
+    logEvent('warn', 'Ollama unavailable during RAG generation, returning structured retrieval fallback', { errMessage: error instanceof Error ? error.message : String(error), action: 'rag-generate' })
 
     if (sources.length > 0) {
       const topSourcesList = sources

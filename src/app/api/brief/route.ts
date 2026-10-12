@@ -39,6 +39,6 @@ export async function POST(req: NextRequest) {
     const brief = await db.dailyBrief.create({ data: parsed.data })
     return NextResponse.json(brief, { status: 201 })
   } catch (error) {
-    return safeErrorResponse(error)
+    return safeErrorResponse(error, req, { route: 'POST /api/brief' })
   }
 }

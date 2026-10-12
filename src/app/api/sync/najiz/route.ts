@@ -4,6 +4,7 @@ import { db } from '@/lib/db'
 import { forbiddenJson, getAuthContext, unauthorizedJson } from '@/lib/auth/workspace'
 import { canManage } from '@/lib/auth/capabilities'
 import { CASE_STAGES } from '@/lib/workflow'
+import { logError } from '@/lib/observability'
 
 function secretsMatch(provided: string, expected: string) {
   const a = Buffer.from(provided)
@@ -61,7 +62,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, updatedCount: result.count })
   } catch (error) {
-    console.error('Najiz sync failed:', error)
+    logError(error, { req, msg: 'Najiz sync failed', route: 'POST /api/sync/najiz' })
     return NextResponse.json({ error: 'Failed to sync with Najiz' }, { status: 500 })
   }
 }

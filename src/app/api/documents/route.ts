@@ -4,6 +4,7 @@ import { createDocumentSchema } from '@/lib/validations'
 import { getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 import { canAccessCase, canWrite, denyUnless, enforceMutationBudget, caseLinkedAccessWhere } from '@/lib/auth/capabilities'
 import { parsePagination, paginatedResponse } from '@/lib/http'
+import { logError } from '@/lib/observability'
 
 export async function GET(req: NextRequest) {
   const auth = await getAuthContext()
@@ -83,7 +84,7 @@ export async function POST(req: NextRequest) {
     if (err?.name === 'ZodError') {
       return NextResponse.json({ error: 'Validation failed', details: err.errors }, { status: 400 })
     }
-    console.error('Failed to create document:', err)
+    logError(err, { req, msg: 'Failed to create document', route: 'POST /api/documents' })
     return NextResponse.json({ error: 'Failed to create document' }, { status: 500 })
   }
 }

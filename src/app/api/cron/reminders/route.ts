@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { runAutomatedReminders } from '@/lib/reminders'
 import { processDueJobs } from '@/lib/jobs'
 import { getAuthContext } from '@/lib/auth/workspace'
+import { logError } from '@/lib/observability'
 
 function isAuthorized(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET
@@ -43,7 +44,7 @@ export async function GET(req: NextRequest) {
       jobs,
     })
   } catch (error) {
-    console.error('Error running automated reminders:', error)
+    logError(error, { req, msg: 'Error running automated reminders', route: 'GET /api/cron/reminders' })
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Internal error' },
       { status: 500 }

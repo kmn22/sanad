@@ -5,6 +5,7 @@ import { clientIp, readJsonLimited, safeErrorResponse } from '@/lib/http'
 import { forgotPasswordSchema } from '@/lib/auth/schemas'
 import { TOKEN_TTL, expiresIn, generateToken, hashToken } from '@/lib/auth/tokens'
 import { emailConfigured, publicAppUrl, sendTransactionalEmail } from '@/lib/email'
+import { logError } from '@/lib/observability'
 
 /**
  * Issues a password-reset link. Always 200 for unknown addresses so the
@@ -69,7 +70,7 @@ export async function POST(req: Request) {
               actionLabel: 'إعادة تعيين كلمة المرور',
             })
           } catch (mailError) {
-            console.error('Password reset email failed:', mailError instanceof Error ? mailError.message : 'unknown error')
+            logError(mailError, { req, msg: 'Password reset email failed', route: 'POST /api/auth/password-reset/request' })
           }
         })
       }
@@ -88,6 +89,6 @@ export async function POST(req: Request) {
       message: 'إذا كان البريد مسجلاً لدينا، فستصلك رسالة لإعادة تعيين كلمة المرور.',
     })
   } catch (error) {
-    return safeErrorResponse(error)
+    return safeErrorResponse(error, req, { route: 'POST /api/auth/password-reset/request' })
   }
 }

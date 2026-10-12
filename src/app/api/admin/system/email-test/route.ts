@@ -4,6 +4,7 @@ import { emailConfigured, publicAppUrl, sendTransactionalEmail } from '@/lib/ema
 import { rateLimit } from '@/lib/rate-limit'
 import { requestIp, writeAudit } from '@/lib/audit'
 import { canManageUsers, forbiddenJson, getAuthContext, unauthorizedJson } from '@/lib/auth/workspace'
+import { logError } from '@/lib/observability'
 
 export async function POST(req: Request) {
   const auth = await getAuthContext()
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
     await writeAudit({ workspaceId: auth.workspaceId, userId: auth.userId, action: 'admin.email_test', ipAddress: requestIp(req) })
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('SMTP test failed:', error instanceof Error ? error.message : 'unknown error')
+    logError(error, { req, msg: 'SMTP test failed', route: 'POST /api/admin/system/email-test' })
     await writeAudit({ workspaceId: auth.workspaceId, userId: auth.userId, action: 'admin.email_test_failed', ipAddress: requestIp(req) })
     return NextResponse.json({ error: 'Email delivery failed. Check SMTP configuration and provider logs.' }, { status: 502 })
   }

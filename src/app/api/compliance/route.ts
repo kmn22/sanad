@@ -4,6 +4,7 @@ import { createComplianceSchema } from '@/lib/validations'
 import { getAuthContext, getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
 import { canWrite, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
 import { parsePagination, paginatedResponse } from '@/lib/http'
+import { logError } from '@/lib/observability'
 
 export async function GET(req: NextRequest) {
   const workspaceId = await getSessionWorkspaceId()
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
     if (err?.name === 'ZodError') {
       return NextResponse.json({ error: 'Validation failed', details: err.errors }, { status: 400 })
     }
-    console.error('Failed to create compliance item:', err)
+    logError(err, { req, msg: 'Failed to create compliance item', route: 'POST /api/compliance' })
     return NextResponse.json({ error: 'Failed to create compliance item' }, { status: 500 })
   }
 }

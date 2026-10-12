@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthContext } from '@/lib/auth/workspace'
+import { logError } from '@/lib/observability'
 
 export const dynamic = 'force-dynamic'
 
@@ -50,7 +51,7 @@ export async function GET(req: NextRequest) {
         })
         sendEvent('sync', { notifications: initial, unreadCount })
       } catch (err) {
-        console.error('SSE initial notification query failed:', err)
+        logError(err, { req, userId, workspaceId, msg: 'SSE initial notification query failed', route: 'GET /api/notifications/stream' })
       }
 
       // Polling loop inside stream (every 6 seconds)
@@ -89,7 +90,7 @@ export async function GET(req: NextRequest) {
           }
         } catch (err) {
           if (!isClosed) {
-            console.error('SSE polling loop error:', err)
+            logError(err, { req, userId, workspaceId, msg: 'SSE polling loop error', route: 'GET /api/notifications/stream' })
           }
         }
       }, 6000)

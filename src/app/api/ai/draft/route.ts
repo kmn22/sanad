@@ -4,6 +4,7 @@ import { readJsonLimited, safeErrorResponse } from '@/lib/http';
 import { getAuthContext, unauthorizedJson } from '@/lib/auth/workspace';
 import { canWrite, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities';
 import { checkAiUsage, incrementUsage } from '@/lib/saas/entitlements';
+import { logEvent } from '@/lib/observability'
 
 export async function POST(req: NextRequest) {
   const stream = req.nextUrl.searchParams.get('stream') === '1';
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
             }
             send('done', '');
           } catch (e: any) {
-            console.warn('Ollama stream failed, sending fallback as one chunk:', e?.message);
+            logEvent('warn', 'Ollama stream failed, sending fallback as one chunk', { req, errMessage: e?.message, route: 'POST /api/ai/draft' });
             send('token', simulateDraft(prompt));
             send('done', '');
           } finally {
@@ -65,13 +66,12 @@ export async function POST(req: NextRequest) {
     try {
       draftContent = await ollamaChat(messages);
     } catch (sdkError: any) {
-      console.warn('Ollama failed or unreachable. Falling back to default generated draft.', sdkError.message);
+      logEvent('warn', 'Ollama failed or unreachable. Falling back to default generated draft.', { req, errMessage: sdkError?.message, route: 'POST /api/ai/draft' });
       draftContent = simulateDraft(prompt);
     }
     return NextResponse.json({ success: true, draft: draftContent });
   } catch (error) {
-    console.error('AI Draft Route failed:', error);
-    return safeErrorResponse(error);
+        return safeErrorResponse(error, req, { route: 'POST /api/ai/draft' });
   }
 }
 

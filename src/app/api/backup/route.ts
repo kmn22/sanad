@@ -3,6 +3,7 @@ import util from 'util'
 import { NextResponse } from 'next/server'
 import { requestIp, writeAudit } from '@/lib/audit'
 import { canManageUsers, forbiddenJson, getAuthContext, unauthorizedJson } from '@/lib/auth/workspace'
+import { logError } from '@/lib/observability'
 
 const execPromise = util.promisify(exec)
 
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
     })
     return NextResponse.json({ success: true, message: 'Encrypted backup completed successfully' })
   } catch (error) {
-    console.error('[backup] failed:', error)
+    logError(error, { req, msg: 'Backup generation failed', route: 'POST /api/backup' })
     return NextResponse.json({ error: 'Backup failed' }, { status: 500 })
   }
 }

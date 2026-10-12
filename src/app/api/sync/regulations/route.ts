@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { OLLAMA_URL, OLLAMA_MODEL } from '@/lib/ai/ollama'
 import { db } from '@/lib/db'
 import { getAuthContext, hasRole, unauthorizedJson, forbiddenJson } from '@/lib/auth/workspace'
+import { logError } from '@/lib/observability'
 
 // Verified repository of recent official gazette (Umm Al-Qura) and ministerial updates
 const OFFICIAL_LEGAL_UPDATES = [
@@ -144,7 +145,7 @@ export async function POST(req: NextRequest) {
       briefs: allBriefs,
     })
   } catch (error: any) {
-    console.error('Regulations sync error:', error)
+    logError(error, { req, msg: 'Regulations sync error', route: 'POST /api/sync/regulations' })
     return NextResponse.json(
       { error: 'حدث خطأ أثناء مزامنة وتلخيص الأنظمة', details: error.message },
       { status: 500 }

@@ -3,6 +3,7 @@ import { ollamaChat, SAUDI_PROMPTS } from '@/lib/ai/ollama';
 import { db } from '@/lib/db';
 import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace';
 import { checkAiUsage, incrementUsage } from '@/lib/saas/entitlements';
+import { logError, logEvent } from '@/lib/observability'
 
 export async function POST(req: NextRequest) {
   try {
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
       const parsed = JSON.parse(content);
       generatedTerms = Array.isArray(parsed) ? parsed : (parsed.terms || parsed.items || []);
     } catch (sdkError: any) {
-      console.warn("Ollama failed or unreachable. Falling back to local card generation simulator.", sdkError.message);
+      logEvent('warn', 'Ollama failed or unreachable. Falling back to local card generation simulator.', { req, errMessage: sdkError?.message, route: 'POST /api/ai/generate-cards' });
       generatedTerms = simulateCardGeneration(notes, category);
     }
 
@@ -97,7 +98,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error("AI Card Generation Route failed:", error);
+    logError(error, { req, msg: 'AI Card Generation Route failed', route: 'POST /api/ai/generate-cards' });
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

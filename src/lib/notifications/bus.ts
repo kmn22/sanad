@@ -1,4 +1,5 @@
 import { db } from '@/lib/db';
+import { logError } from '@/lib/observability'
 
 export type NotificationChannel = 'in_app' | 'email' | 'sms' | 'whatsapp';
 
@@ -60,11 +61,7 @@ export async function publishNotification(
       await deliverToChannel(channel, recipients, payload, workspaceId);
       deliveredChannels.push(channel);
     } catch (error) {
-      console.error(`[notification-bus] failed to deliver via ${channel}`, {
-        workspaceId,
-        userIds: recipients,
-        error,
-      });
+      logError(error, { workspaceId, userIds: recipients, msg: `[notification-bus] failed to deliver via ${channel}`, action: 'notify-deliver' });
     }
   }
 

@@ -2,6 +2,7 @@ import { db } from '@/lib/db'
 import { emailConfigured, sendTransactionalEmail } from '@/lib/email'
 import { evaluateComplianceStatus } from '@/lib/sanad/compliance-calc'
 import { notifyUsers } from '@/lib/workflow'
+import { logError } from '@/lib/observability'
 
 export interface ReminderRunResult {
   complianceChecked: number
@@ -196,7 +197,7 @@ export async function runAutomatedReminders(now: Date = new Date()): Promise<Rem
                 })
                 result.emailsSent++
               } catch (err) {
-                console.error(`Failed to send compliance reminder email to ${user.email}:`, err)
+                logError(err, { userId: user.id, msg: 'Failed to send compliance reminder email', action: 'reminder-compliance' })
               }
             }
           }
@@ -279,7 +280,7 @@ export async function runAutomatedReminders(now: Date = new Date()): Promise<Rem
               })
               result.emailsSent++
             } catch (err) {
-              console.error(`Failed to send hearing reminder email to ${user.email}:`, err)
+              logError(err, { userId: user.id, msg: 'Failed to send hearing reminder email', action: 'reminder-hearing' })
             }
           }
         }
