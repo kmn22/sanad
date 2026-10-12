@@ -18,6 +18,8 @@ const nextConfig: NextConfig = {
       "./logs/**",
       "./download/**",
       "./db/**",
+      "./ts-state/**",
+      "./ts-config/**",
       "./docs/**",
       "./tool-results/**",
            "./uploads/**",

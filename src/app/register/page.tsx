@@ -71,6 +71,7 @@ export default function RegisterPage() {
   const [inviteError, setInviteError] = useState('')
   const [acceptPrivacy, setAcceptPrivacy] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [registrationError, setRegistrationError] = useState('')
   const [doneInfo, setDoneInfo] = useState<{ delivery?: string; devVerifyUrl?: string } | null>(null)
 
   useEffect(() => {
@@ -99,6 +100,13 @@ export default function RegisterPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
+    setRegistrationError('')
+
+    if (password.length < 12 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      setRegistrationError('كلمة المرور يجب أن تكون 12 خانة على الأقل وتحتوي على حروف وأرقام')
+      return
+    }
+
     setLoading(true)
     try {
       const res = await fetch('/api/auth/register', {
@@ -115,6 +123,7 @@ export default function RegisterPage() {
       })
       const data = await res.json()
       if (!res.ok) {
+        setRegistrationError(data.error || 'تعذر إتمام التسجيل. يرجى مراجعة البيانات.')
         toast.error(data.error || 'تعذر إتمام التسجيل. يرجى مراجعة البيانات.')
         setLoading(false)
         return
@@ -129,6 +138,7 @@ export default function RegisterPage() {
       router.push('/login?registered=1')
     } catch (err) {
       console.error('Registration failed:', err)
+      setRegistrationError('تعذر إنشاء الحساب. حاول مجدداً.')
       toast.error('تعذر إنشاء الحساب. حاول مجدداً.')
       setLoading(false)
     }
@@ -244,6 +254,16 @@ export default function RegisterPage() {
               </div>
 
               <form onSubmit={handleRegister} noValidate className="space-y-4">
+                {registrationError && (
+                  <div
+                    role="alert"
+                    aria-live="assertive"
+                    className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200"
+                  >
+                    {registrationError}
+                  </div>
+                )}
+
                 {inviteToken && (
                   invitation ? (
                     <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200">
@@ -272,6 +292,7 @@ export default function RegisterPage() {
 
                 <Field id="reg-password" label="كلمة المرور" icon={Lock}>
                   <Input id="reg-password" type="password" autoComplete="new-password" placeholder="12 خانة على الأقل" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={12} className={inputCls} />
+                  <p className="text-xs text-slate-500">12 خانة على الأقل، وتتضمن حروفاً وأرقاماً.</p>
                 </Field>
 
                 <label htmlFor="reg-privacy" className="flex items-start gap-3 text-sm text-slate-300 cursor-pointer">

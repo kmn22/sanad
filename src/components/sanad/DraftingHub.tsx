@@ -24,6 +24,7 @@ import {
   CheckCircle2,
   Copy,
   Download,
+  Printer,
   Save,
   ArrowRight,
   ArrowLeft,
@@ -224,17 +225,48 @@ ${JSON.stringify(answers, null, 2)}
     toast.success(isAr ? 'تم نسخ نص الوثيقة إلى الحافظة' : 'Copied to clipboard')
   }
 
-  const handleDownload = () => {
-    const blob = new Blob([generatedMarkdown], { type: 'text/markdown;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${currentTemplate.id}-${Date.now()}.md`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-    toast.success(isAr ? 'جاري تنزيل الملف' : 'Downloading file')
+  const requestSignature = async (operation: 'export' | 'print') => {
+    const response = await fetch('/api/documents/signature', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ documentId: `draft:${currentTemplate.id}`, content: generatedMarkdown, operation }),
+    })
+    const result = await response.json().catch(() => ({}))
+    if (!response.ok || typeof result.signature !== 'string') throw new Error(result.error || 'Unable to sign document output')
+    return result.signature as string
+  }
+
+  const handleDownload = async () => {
+    try {
+      const signature = await requestSignature('export')
+      const signedMarkdown = `${generatedMarkdown.trimEnd()}\n\n<!-- Sanad encrypted document signature: ${signature} -->\n`
+      const blob = new Blob([signedMarkdown], { type: 'text/markdown;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${currentTemplate.id}-${Date.now()}.md`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      toast.success(isAr ? 'جاري تنزيل الملف الموقّع' : 'Signed document is downloading')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : (isAr ? 'تعذر توقيع المستند' : 'Unable to sign document'))
+    }
+  }
+
+  const handlePrint = async () => {
+    try {
+      const signature = await requestSignature('print')
+      const printWindow = window.open('', '_blank', 'noopener,noreferrer')
+      if (!printWindow) throw new Error(isAr ? 'اسمح بالنوافذ المنبثقة للطباعة' : 'Allow pop-ups to print')
+      const escaped = generatedMarkdown.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      const escapedSignature = signature.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      printWindow.document.write(`<html dir="rtl"><head><title>Sanad document</title><style>body{font-family:Arial,sans-serif;white-space:pre-wrap;padding:32px;line-height:1.8}footer{margin-top:40px;border-top:1px solid #ccc;padding-top:12px;font-size:10px;color:#555;word-break:break-all}</style></head><body><main>${escaped}</main><footer>Sanad encrypted signature: ${escapedSignature}</footer><script>window.onload=()=>window.print()</script></body></html>`)
+      printWindow.document.close()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : (isAr ? 'تعذر توقيع المستند' : 'Unable to sign document'))
+    }
   }
 
   const handleInsertClause = (clauseText: string, clauseTitle: string) => {
@@ -602,6 +634,11 @@ ${JSON.stringify(answers, null, 2)}
                   <Button variant="outline" size="sm" onClick={handleDownload} className="h-8 text-xs gap-1.5">
                     <Download className="h-3.5 w-3.5" />
                     <span>{isAr ? 'تنزيل Markdown' : 'Download'}</span>
+                  </Button>
+
+                  <Button variant="outline" size="sm" onClick={handlePrint} className="h-8 text-xs gap-1.5">
+                    <Printer className="h-3.5 w-3.5" />
+                    <span>{isAr ? 'طباعة موقّعة' : 'Signed print'}</span>
                   </Button>
 
                   <Button size="sm" onClick={handleSaveToDatabase} disabled={isSaving} className="h-8 text-xs gap-1.5">

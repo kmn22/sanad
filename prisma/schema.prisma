@@ -47,6 +47,7 @@ model User {
   requestedApprovals    Approval[]          @relation("ApprovalRequester")
   assignedApprovals     Approval[]          @relation("ApprovalApprover")
   documentVersions      DocumentVersion[]
+  documentSignatures    DocumentSignature[]
 
   @@index([workspaceId])
   @@index([clientId])
@@ -97,6 +98,7 @@ model Workspace {
   workflowTemplates WorkflowTemplate[]
   approvals         Approval[]
   documentVersions  DocumentVersion[]
+  documentSignatures DocumentSignature[]
   subscription      Subscription?      @relation(fields: [subscriptionId], references: [id])
 }
 
@@ -896,6 +898,25 @@ model AuditLog {
   @@index([workspaceId])
   @@index([userId])
   @@index([createdAt])
+}
+
+model DocumentSignature {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  userId          String?
+  documentId      String
+  operation       String   // download | export | print
+  checksumSha256  String
+  signature       String   @unique
+  issuedAt        DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([userId, createdAt])
+  @@index([documentId, createdAt])
 }
 
 // ===== Phase 3: SaaS & Digital Signatures =====

@@ -58,6 +58,11 @@ npx prisma migrate deploy
 npm run dev                     # http://localhost:3001
 ```
 
+For server-side debugging, run `npm run debug`. This starts Next.js with the
+Node.js inspector enabled on port `9229` and writes output to `debug.log`.
+Attach VS Code or Chrome DevTools to the inspector, then open the app at
+`http://localhost:3001`.
+
 Demo seed (local databases only — refuses production and remote DBs):
 
 ```bash
@@ -166,7 +171,8 @@ triggers for external schedulers.
 
 See `.env.example` (production) and `.env.staging.example`. Required:
 `DATABASE_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `POSTGRES_*`, `CRON_SECRET`,
-`FILE_ENCRYPTION_KEY`, `MFA_ENCRYPTION_KEY`, `BACKUP_ENCRYPTION_KEY`.
+`FILE_ENCRYPTION_KEY`, `DOCUMENT_SIGNATURE_KEY`, `MFA_ENCRYPTION_KEY`,
+`BACKUP_ENCRYPTION_KEY`.
 Optional: `STRIPE_*`, SMTP (`EMAIL_*`/`SMTP_*`), `OLLAMA_*`, `UPLOAD_ROOT`,
 `NAJIZ_WEBHOOK_SECRET`, `ENABLE_DEMO_ZATCA`.
 

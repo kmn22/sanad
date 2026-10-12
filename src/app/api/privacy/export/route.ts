@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requestIp, writeAudit } from '@/lib/audit'
 import { canManageUsers, getAuthContext, unauthorizedJson } from '@/lib/auth/workspace'
+import { checksum } from '@/lib/file-storage'
+import { createDocumentSignature, documentSignatureHeaders } from '@/lib/document-signature'
 
 export async function POST(req: Request) {
   const auth = await getAuthContext()
@@ -26,12 +28,22 @@ export async function POST(req: Request) {
     exportData.tasks = await db.task.findMany({ where: { workspaceId: auth.workspaceId } })
     exportData.invoices = await db.invoice.findMany({ where: { workspaceId: auth.workspaceId } })
   }
+  const exportBody = JSON.stringify(exportData, null, 2)
+  const digest = checksum(Buffer.from(exportBody, 'utf8'))
+  const signature = createDocumentSignature({
+    userId: auth.userId,
+    workspaceId: auth.workspaceId,
+    documentId: `privacy-export:${auth.userId}`,
+    checksumSha256: digest,
+    operation: 'export',
+  })
   await writeAudit({ workspaceId: auth.workspaceId, userId: auth.userId, action: 'privacy.export', entityType: 'Workspace', entityId: auth.workspaceId, ipAddress: requestIp(req) })
-  return new NextResponse(JSON.stringify(exportData, null, 2), {
+  return new NextResponse(exportBody, {
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
       'Content-Disposition': `attachment; filename="sanad-data-export-${new Date().toISOString().slice(0, 10)}.json"`,
       'Cache-Control': 'no-store',
+      ...documentSignatureHeaders(signature),
     },
   })
 }

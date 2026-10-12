@@ -1,6 +1,6 @@
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'crypto'
-import { mkdir, readFile, writeFile } from 'fs/promises'
-import path from 'path'
+import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import path from 'node:path'
 
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 
