@@ -83,3 +83,9 @@ graphify-out/20*/
 # Playwright
 test-results*/
 playwright-report/
+
+# Scratch / tool output
+upload/
+tool-results/
+*.pid
+debug.log
