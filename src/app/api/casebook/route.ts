@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { getAuthContext, getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
 import { canWriteAcademic, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
 import { requireEducation } from '@/lib/saas/entitlements'
+import { createCaseEntrySchema } from '@/lib/validations'
 
 export async function GET(req: NextRequest) {
   const workspaceId = await getSessionWorkspaceId()
@@ -27,7 +28,16 @@ export async function POST(req: NextRequest) {
   const budgeted = await enforceMutationBudget(auth)
   if (budgeted) return budgeted
   const workspaceId = auth.workspaceId
-  const body = await req.json()
-  const entry = await db.caseEntry.create({ data: { ...body, id: undefined, workspaceId } })
+  let body: unknown
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+  const parsed = createCaseEntrySchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Validation failed', details: parsed.error.issues }, { status: 400 })
+  }
+  const entry = await db.caseEntry.create({ data: { ...parsed.data, workspaceId } })
   return NextResponse.json(entry, { status: 201 })
 }

@@ -1,20 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
 import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 import { canWriteAcademic, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
 import { requireEducation } from '@/lib/saas/entitlements'
-
-// Whitelist of updatable fields — never spread the raw body into the update.
-const legalTermUpdateSchema = z.object({
-  term: z.string().min(1).optional(),
-  definition: z.string().min(1).optional(),
-  category: z.string().min(1).optional(),
-  origin: z.string().nullable().optional(),
-  example: z.string().nullable().optional(),
-  mastery: z.enum(['learning', 'familiar', 'mastered']).optional(),
-})
+import { updateTermSchema } from '@/lib/validations'
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await getAuthContext()
@@ -37,7 +27,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const parsed = legalTermUpdateSchema.safeParse(body)
+  const parsed = updateTermSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json({ error: 'Validation failed', details: parsed.error.issues }, { status: 400 })
   }

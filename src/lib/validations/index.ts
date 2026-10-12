@@ -123,3 +123,67 @@ export const createComplianceSchema = z.object({
 })
 
 export const updateComplianceSchema = createComplianceSchema.partial()
+
+// ===== Academic / Education Schemas =====
+// The education module is entitlement-gated; these schemas replace the prior
+// unbounded `{ ...body }` mass-assignment on the academic routes.
+const requiredDate = z
+  .union([z.string(), z.date()])
+  .refine((v) => !isNaN(new Date(v).getTime()), 'تاريخ غير صالح')
+  .transform((v) => new Date(v))
+
+export const createCourseSchema = z.object({
+  title: z.string().min(1, 'اسم المقرر مطلوب').max(200),
+  code: z.string().max(50).optional().nullable(),
+  instructor: z.string().max(120).optional().nullable(),
+  semester: z.string().max(60).optional().nullable(),
+  credits: z.number().int().min(0).max(100).optional().nullable(),
+  color: z.string().max(20).optional(),
+  notes: z.string().max(5000).optional().nullable(),
+})
+export const updateCourseSchema = createCourseSchema.partial()
+
+export const createLectureSchema = z.object({
+  courseId: z.string().min(1, 'المقرر مطلوب'),
+  title: z.string().min(1, 'عنوان المحاضرة مطلوب').max(200),
+  lectureDate: requiredDate,
+  topic: z.string().max(200).optional().nullable(),
+  notes: z.string().max(20000).default(''),
+  attachments: z.string().max(5000).optional().nullable(),
+  status: z.enum(['draft', 'reviewed', 'mastered']).default('draft'),
+})
+export const updateLectureSchema = createLectureSchema.partial()
+
+export const createDeadlineSchema = z.object({
+  courseId: z.string().optional().nullable(),
+  title: z.string().min(1, 'عنوان الاستحقاق مطلوب').max(200),
+  type: z.string().min(1).max(60),
+  dueDate: requiredDate,
+  status: z.enum(['todo', 'in_progress', 'done']).default('todo'),
+  priority: z.enum(['low', 'normal', 'high', 'urgent']).default('normal'),
+  weight: z.number().min(0).max(100).optional().nullable(),
+  notes: z.string().max(5000).optional().nullable(),
+})
+export const updateDeadlineSchema = createDeadlineSchema.partial()
+
+export const createTermSchema = z.object({
+  term: z.string().min(1, 'المصطلح مطلوب').max(200),
+  definition: z.string().min(1, 'التعريف مطلوب').max(10000),
+  category: z.string().max(60).default('general'),
+  origin: z.string().max(200).optional().nullable(),
+  example: z.string().max(5000).optional().nullable(),
+  mastery: z.enum(['learning', 'familiar', 'mastered']).default('learning'),
+})
+export const updateTermSchema = createTermSchema.partial()
+
+export const createCaseEntrySchema = z.object({
+  caseName: z.string().min(1, 'اسم القضية مطلوب').max(200),
+  citation: z.string().max(200).optional().nullable(),
+  court: z.string().max(200).optional().nullable(),
+  principle: z.string().min(1, 'المبدأ القانوني مطلوب').max(10000),
+  subject: z.string().min(1, 'الموضوع مطلوب').max(120),
+  summary: z.string().max(20000).optional().nullable(),
+  significance: z.string().max(10000).optional().nullable(),
+  rating: z.number().int().min(1).max(5).default(3),
+})
+export const updateCaseEntrySchema = createCaseEntrySchema.partial()

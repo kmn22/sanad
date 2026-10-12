@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 import { canWriteAcademic, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
 import { requireEducation } from '@/lib/saas/entitlements'
+import { updateDeadlineSchema } from '@/lib/validations'
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await getAuthContext()
@@ -17,12 +18,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params
   const existing = await db.academicDeadline.findFirst({ where: { id, workspaceId }, select: { id: true } })
   if (!existing) return notFoundJson()
-  const body = await req.json()
-  if (body.courseId) {
-    const course = await db.course.findFirst({ where: { id: body.courseId, workspaceId }, select: { id: true } })
+  let body: unknown
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+  const parsed = updateDeadlineSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Validation failed', details: parsed.error.issues }, { status: 400 })
+  }
+  if (parsed.data.courseId) {
+    const course = await db.course.findFirst({ where: { id: parsed.data.courseId, workspaceId }, select: { id: true } })
     if (!course) return notFoundJson()
   }
-  const updated = await db.academicDeadline.update({ where: { id }, data: { ...body, id: undefined, workspaceId: undefined } })
+  const updated = await db.academicDeadline.update({ where: { id }, data: parsed.data })
   return NextResponse.json(updated)
 }
 

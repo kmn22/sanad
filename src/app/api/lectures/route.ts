@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { getAuthContext, getSessionWorkspaceId, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 import { canWriteAcademic, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
 import { requireEducation } from '@/lib/saas/entitlements'
+import { createLectureSchema } from '@/lib/validations'
 
 export async function GET(req: NextRequest) {
   const workspaceId = await getSessionWorkspaceId()
@@ -28,9 +29,18 @@ export async function POST(req: NextRequest) {
   const budgeted = await enforceMutationBudget(auth)
   if (budgeted) return budgeted
   const workspaceId = auth.workspaceId
-  const body = await req.json()
-  const course = await db.course.findFirst({ where: { id: body.courseId, workspaceId }, select: { id: true } })
+  let body: unknown
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+  const parsed = createLectureSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Validation failed', details: parsed.error.issues }, { status: 400 })
+  }
+  const course = await db.course.findFirst({ where: { id: parsed.data.courseId, workspaceId }, select: { id: true } })
   if (!course) return notFoundJson()
-  const lecture = await db.lecture.create({ data: { ...body, id: undefined, workspaceId } })
+  const lecture = await db.lecture.create({ data: { ...parsed.data, workspaceId } })
   return NextResponse.json(lecture, { status: 201 })
 }

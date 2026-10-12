@@ -100,3 +100,53 @@ describe('Zod Validation Schemas', () => {
     })
   })
 })
+
+describe('Academic Schemas', () => {
+  it('accepts a valid course and rejects missing title', async () => {
+    const { createCourseSchema } = await import('../src/lib/validations')
+    const parsed = createCourseSchema.parse({ title: 'القانون التجاري', credits: 3 })
+    expect(parsed.title).toBe('القانون التجاري')
+    expect(() => createCourseSchema.parse({ code: 'LAW101' })).toThrow()
+  })
+
+  it('never carries unknown keys through to the write payload', async () => {
+    const { createCourseSchema, updateTermSchema } = await import('../src/lib/validations')
+    const parsed = createCourseSchema.parse({ title: 'مقرر', workspaceId: 'evil', role: 'admin' })
+    expect(parsed).not.toHaveProperty('workspaceId')
+    expect(parsed).not.toHaveProperty('role')
+    const term = updateTermSchema.parse({ mastery: 'mastered', id: 'spoof' })
+    expect(term).not.toHaveProperty('id')
+  })
+
+  it('transforms lecture dates and applies defaults', async () => {
+    const { createLectureSchema } = await import('../src/lib/validations')
+    const parsed = createLectureSchema.parse({
+      courseId: 'c1',
+      title: 'محاضرة ١',
+      lectureDate: '2026-10-20T09:00:00Z',
+    })
+    expect(parsed.lectureDate).toBeInstanceOf(Date)
+    expect(parsed.status).toBe('draft')
+    expect(parsed.notes).toBe('')
+  })
+
+  it('rejects invalid dates and out-of-range values', async () => {
+    const { createLectureSchema, createDeadlineSchema, createCaseEntrySchema } = await import('../src/lib/validations')
+    expect(() =>
+      createLectureSchema.parse({ courseId: 'c1', title: 'x', lectureDate: 'not-a-date' }),
+    ).toThrow()
+    expect(() =>
+      createDeadlineSchema.parse({ title: 'x', type: 'exam', dueDate: '2026-01-01', priority: 'critical' }),
+    ).toThrow()
+    expect(() =>
+      createCaseEntrySchema.parse({ caseName: 'قضية', principle: 'مبدأ', subject: 'مدني', rating: 9 }),
+    ).toThrow()
+  })
+
+  it('update schemas are fully partial but keep field rules', async () => {
+    const { updateCourseSchema, updateCaseEntrySchema } = await import('../src/lib/validations')
+    expect(updateCourseSchema.parse({})).toEqual({})
+    expect(() => updateCaseEntrySchema.parse({ rating: 0 })).toThrow()
+    expect(updateCaseEntrySchema.parse({ rating: 5 }).rating).toBe(5)
+  })
+})

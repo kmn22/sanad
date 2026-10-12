@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { getAuthContext, getSessionWorkspaceId, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 import { canWriteAcademic, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
 import { requireEducation } from '@/lib/saas/entitlements'
+import { createDeadlineSchema } from '@/lib/validations'
 
 export async function GET() {
   const workspaceId = await getSessionWorkspaceId()
@@ -27,11 +28,20 @@ export async function POST(req: NextRequest) {
   const budgeted = await enforceMutationBudget(auth)
   if (budgeted) return budgeted
   const workspaceId = auth.workspaceId
-  const body = await req.json()
-  if (body.courseId) {
-    const course = await db.course.findFirst({ where: { id: body.courseId, workspaceId }, select: { id: true } })
+  let body: unknown
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+  const parsed = createDeadlineSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Validation failed', details: parsed.error.issues }, { status: 400 })
+  }
+  if (parsed.data.courseId) {
+    const course = await db.course.findFirst({ where: { id: parsed.data.courseId, workspaceId }, select: { id: true } })
     if (!course) return notFoundJson()
   }
-  const deadline = await db.academicDeadline.create({ data: { ...body, id: undefined, workspaceId } })
+  const deadline = await db.academicDeadline.create({ data: { ...parsed.data, workspaceId } })
   return NextResponse.json(deadline, { status: 201 })
 }
