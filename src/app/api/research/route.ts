@@ -3,12 +3,15 @@ import { db } from '@/lib/db'
 import { INITIAL_RESEARCH_ITEMS } from '@/lib/sanad/research/seedData'
 import { getAuthContext, getSessionWorkspaceId, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 import { canWriteAcademic, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
+import { requireEducation } from '@/lib/saas/entitlements'
 
 // GET /api/research?q=...&category=...&type=...
 export async function GET(req: NextRequest) {
   try {
     const workspaceId = await getSessionWorkspaceId()
     if (!workspaceId) return unauthorizedJson()
+    const eduGate = await requireEducation(workspaceId)
+    if (eduGate) return eduGate
     const { searchParams } = new URL(req.url)
     const q = searchParams.get('q') || ''
     const category = searchParams.get('category') || ''
@@ -75,6 +78,8 @@ export async function POST(req: NextRequest) {
   try {
     const auth = await getAuthContext()
     if (!auth) return unauthorizedJson()
+    const eduGate = await requireEducation(auth.workspaceId)
+    if (eduGate) return eduGate
     const denied = denyUnless(auth, canWriteAcademic(auth))
     if (denied) return denied
     const budgeted = await enforceMutationBudget(auth)

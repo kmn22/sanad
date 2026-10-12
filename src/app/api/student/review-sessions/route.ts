@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthContext, getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
 import { canWriteAcademic, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
+import { requireEducation } from '@/lib/saas/entitlements'
 
 // GET /api/student/review-sessions — list past sessions for stats
 export async function GET() {
   const workspaceId = await getSessionWorkspaceId()
   if (!workspaceId) return unauthorizedJson()
+  const eduGate = await requireEducation(workspaceId)
+  if (eduGate) return eduGate
   const sessions = await db.reviewSession.findMany({ where: { workspaceId }, orderBy: { date: 'desc' }, take: 30 })
 
   // Aggregate stats
@@ -37,6 +40,8 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const auth = await getAuthContext()
   if (!auth) return unauthorizedJson()
+  const eduGate = await requireEducation(auth.workspaceId)
+  if (eduGate) return eduGate
   const denied = denyUnless(auth, canWriteAcademic(auth))
   if (denied) return denied
   const budgeted = await enforceMutationBudget(auth)

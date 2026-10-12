@@ -98,10 +98,17 @@ export default function Home() {
 
   useEffect(() => { setMounted(true) }, [])
 
+  const educationEnabled = (session?.user as { workspaceType?: string } | undefined)?.workspaceType === 'academic'
+
   useEffect(() => {
+    if (!educationEnabled) {
+      // Non-academic workspaces have no student mode; never restore it.
+      setPersona('lawyer')
+      return
+    }
     const saved = typeof window !== 'undefined' ? localStorage.getItem(PERSONA_STORAGE_KEY) : null
     if (saved === 'student' || saved === 'lawyer') setPersona(saved)
-  }, [])
+  }, [educationEnabled])
 
   useEffect(() => {
     if (process.env.NODE_ENV === 'production') {
@@ -143,6 +150,7 @@ export default function Home() {
   }, [data])
 
   const switchPersona = (p: Persona) => {
+    if (p === 'student' && !educationEnabled) return
     setPersona(p)
     localStorage.setItem(PERSONA_STORAGE_KEY, p)
     setView('today')

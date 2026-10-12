@@ -37,6 +37,8 @@ export function TopNav({
   const { lang, t, toggle: toggleLang } = useLang()
   const { theme, setTheme } = useTheme()
 
+  const workspaceType = (session?.user as { workspaceType?: string } | undefined)?.workspaceType
+  const educationEnabled = workspaceType === 'academic'
   const userName = session?.user?.name || (persona === 'lawyer' ? 'المحامي الممارس' : 'طالب قانون')
   const userEmail = session?.user?.email || (persona === 'lawyer' ? 'lawyer@sanad.sa' : 'student@sanad.sa')
   const initialLetter = userName.trim().charAt(0) || (persona === 'lawyer' ? 'م' : 'ط')
@@ -96,31 +98,33 @@ export function TopNav({
               {mounted ? `${timeStr} • ${dateStr}` : null}
             </span>
 
-            {/* Persona Switcher Pill */}
-            <div className="flex items-center bg-muted/70 rounded-full p-0.5 border border-border/60">
-              <button
-                onClick={() => switchPersona('lawyer')}
-                className={`h-7 px-2.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
-                  persona === 'lawyer'
-                    ? 'bg-background text-foreground shadow-xs font-semibold'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                <Briefcase className="h-3 w-3" />
-                <span className="hidden sm:inline">محامي</span>
-              </button>
-              <button
-                onClick={() => switchPersona('student')}
-                className={`h-7 px-2.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
-                  persona === 'student'
-                    ? 'bg-background text-foreground shadow-xs font-semibold'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                <GraduationCap className="h-3 w-3" />
-                <span className="hidden sm:inline">طالب</span>
-              </button>
-            </div>
+            {/* Persona Switcher Pill — only for academic workspaces */}
+            {educationEnabled && (
+              <div className="flex items-center bg-muted/70 rounded-full p-0.5 border border-border/60">
+                <button
+                  onClick={() => switchPersona('lawyer')}
+                  className={`h-7 px-2.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                    persona === 'lawyer'
+                      ? 'bg-background text-foreground shadow-xs font-semibold'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Briefcase className="h-3 w-3" />
+                  <span className="hidden sm:inline">محامي</span>
+                </button>
+                <button
+                  onClick={() => switchPersona('student')}
+                  className={`h-7 px-2.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                    persona === 'student'
+                      ? 'bg-background text-foreground shadow-xs font-semibold'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <GraduationCap className="h-3 w-3" />
+                  <span className="hidden sm:inline">طالب</span>
+                </button>
+              </div>
+            )}
 
             {/* Mobile search trigger */}
             <Button

@@ -3,6 +3,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/options'
 import { db } from '@/lib/db'
+import { hasEntitlement } from '@/lib/saas/entitlements'
 
 function emptyStudentDashboard() {
   return {
@@ -34,6 +35,11 @@ export async function getStudentDashboard() {
   const session = await getServerSession(authOptions)
   const user = session?.user as { id?: string; workspaceId?: string; role?: string } | undefined
   if (!user?.id || !user.workspaceId || user.role === 'client') {
+    return emptyStudentDashboard()
+  }
+
+  // Education module is gated to academic/entitled workspaces only.
+  if (!(await hasEntitlement(user.workspaceId, 'education'))) {
     return emptyStudentDashboard()
   }
 

@@ -1,7 +1,8 @@
+import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { isFeatureEnabled } from '@/lib/feature-flags'
 
-export type EntitlementKey = 'cases' | 'clients' | 'workflow' | 'portal' | 'ai'
+export type EntitlementKey = 'cases' | 'clients' | 'workflow' | 'portal' | 'ai' | 'education'
 
 const ACTIVE_SUBSCRIPTION_STATUSES = new Set(['trialing', 'active'])
 
@@ -20,6 +21,10 @@ const defaultEntitlements: Record<EntitlementKey, boolean> = {
   workflow: true,
   portal: true,
   ai: true,
+  // The education/study module is excluded from the legal product by default;
+  // it is enabled implicitly for academic workspaces (see getWorkspacePlan) or
+  // explicitly via a plan's features JSON.
+  education: false,
 }
 
 export async function getWorkspacePlan(workspaceId: string) {
@@ -41,6 +46,8 @@ export async function getWorkspacePlan(workspaceId: string) {
       entitlements = defaultEntitlements
     }
   }
+  // Academic workspaces always carry the education module regardless of plan.
+  if (workspace.type === 'academic') entitlements = { ...entitlements, education: true }
   const activeSeats = await db.workspaceMembership.count({ where: { workspaceId, status: 'active', user: { role: { not: 'client' } } } })
   return {
     workspace: { id: workspace.id, name: workspace.name, domain: workspace.domain, type: workspace.type, status: workspace.status, onboardingStatus: workspace.onboardingStatus },
@@ -171,4 +178,17 @@ export async function incrementUsage(workspaceId: string, metric: string, amount
 export async function hasEntitlement(workspaceId: string, key: EntitlementKey) {
   const plan = await getWorkspacePlan(workspaceId)
   return Boolean(plan && plan.workspace.status === 'active' && (!plan.subscription || plan.subscription.active) && plan.entitlements[key])
+}
+
+/**
+ * Route guard for the education/study module. Returns a 403 NextResponse when
+ * the workspace is not entitled to education (i.e. not an academic workspace
+ * and not granted via plan features), or null when access is allowed.
+ */
+export async function requireEducation(workspaceId: string): Promise<NextResponse | null> {
+  if (await hasEntitlement(workspaceId, 'education')) return null
+  return NextResponse.json(
+    { error: 'The education module is not enabled for this workspace', code: 'EDUCATION_NOT_ENABLED' },
+    { status: 403 },
+  )
 }

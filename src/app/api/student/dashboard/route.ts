@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
+import { requireEducation } from '@/lib/saas/entitlements'
 
 // GET /api/student/dashboard — single payload for the student morning view
 export async function GET() {
   const workspaceId = await getSessionWorkspaceId()
   if (!workspaceId) return unauthorizedJson()
+  const eduGate = await requireEducation(workspaceId)
+  if (eduGate) return eduGate
   const now = new Date()
   const in7 = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
   const in30 = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)

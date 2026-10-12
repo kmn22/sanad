@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 import { canWriteAcademic, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
+import { requireEducation } from '@/lib/saas/entitlements'
 
 // Whitelist of updatable fields — never spread the raw body into the update.
 const legalTermUpdateSchema = z.object({
@@ -18,6 +19,8 @@ const legalTermUpdateSchema = z.object({
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await getAuthContext()
   if (!auth) return unauthorizedJson()
+  const eduGate = await requireEducation(auth.workspaceId)
+  if (eduGate) return eduGate
   const denied = denyUnless(auth, canWriteAcademic(auth))
   if (denied) return denied
   const budgeted = await enforceMutationBudget(auth)
@@ -53,6 +56,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await getAuthContext()
   if (!auth) return unauthorizedJson()
+  const eduGate = await requireEducation(auth.workspaceId)
+  if (eduGate) return eduGate
   const denied = denyUnless(auth, canWriteAcademic(auth))
   if (denied) return denied
   const budgeted = await enforceMutationBudget(auth)

@@ -13,8 +13,8 @@ function daysFromNow(days: number): Date {
 async function main() {
   const workspace = await db.workspace.upsert({
     where: { domain: 'sanad-student-demo' },
-    update: {},
-    create: { name: 'حساب طالب تجريبي', domain: 'sanad-student-demo' },
+    update: { type: 'academic' },
+    create: { name: 'حساب طالب تجريبي', domain: 'sanad-student-demo', type: 'academic' },
   })
   const ws = { workspaceId: workspace.id }
 

@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { SBA_EXAM_QUESTIONS } from '@/lib/sanad/student/sbaQuestionBank'
 import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
+import { requireEducation } from '@/lib/saas/entitlements'
 
 // GET /api/student/review?source=all|terms|cases|lectures|sba|course:{id}|subject:{value}&mode=flashcards|quiz
 // Generates a deck of review cards from the user's library.
 export async function GET(req: NextRequest) {
   const workspaceId = await getSessionWorkspaceId()
   if (!workspaceId) return unauthorizedJson()
+  const eduGate = await requireEducation(workspaceId)
+  if (eduGate) return eduGate
   const { searchParams } = new URL(req.url)
   const source = searchParams.get('source') || 'all'
   const mode = (searchParams.get('mode') || 'flashcards') as 'flashcards' | 'quiz'
