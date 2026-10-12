@@ -83,6 +83,7 @@ export async function POST(req: NextRequest) {
     if (err?.name === 'ZodError') {
       return NextResponse.json({ error: 'Validation failed', details: err.errors }, { status: 400 })
     }
-    return NextResponse.json({ error: err.message || 'Failed to create document' }, { status: 500 })
+    console.error('Failed to create document:', err)
+    return NextResponse.json({ error: 'Failed to create document' }, { status: 500 })
   }
 }

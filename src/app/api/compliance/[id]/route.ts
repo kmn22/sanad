@@ -37,7 +37,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (err?.name === 'ZodError') {
       return NextResponse.json({ error: 'Validation failed', details: err.errors }, { status: 400 })
     }
-    return NextResponse.json({ error: err.message || 'Failed to update compliance item' }, { status: 500 })
+    console.error('Failed to update compliance item:', err)
+    return NextResponse.json({ error: 'Failed to update compliance item' }, { status: 500 })
   }
 }
 

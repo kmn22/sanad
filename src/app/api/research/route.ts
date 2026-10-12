@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { INITIAL_RESEARCH_ITEMS } from '@/lib/sanad/research/seedData'
 import { getAuthContext, getSessionWorkspaceId, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
@@ -17,27 +18,28 @@ export async function GET(req: NextRequest) {
     const category = searchParams.get('category') || ''
     const type = searchParams.get('type') || ''
 
-    // Check count and seed if empty
+    // Seed a starter research set the first time a workspace opens the hub.
+    // createMany is a single round-trip; skipDuplicates keeps concurrent GETs
+    // from racing into duplicate rows.
     const count = await db.researchItem.count({ where: { workspaceId } })
     if (count === 0) {
-      for (const item of INITIAL_RESEARCH_ITEMS) {
-        await db.researchItem.create({
-          data: {
-            workspaceId,
-            title: item.title,
-            content: item.content,
-            type: item.type,
-            category: item.category,
-            source: item.source,
-            tags: item.tags,
-            notes: item.notes || null,
-            isPinned: item.isPinned || false,
-          },
-        })
-      }
+      await db.researchItem.createMany({
+        data: INITIAL_RESEARCH_ITEMS.map((item) => ({
+          workspaceId,
+          title: item.title,
+          content: item.content,
+          type: item.type,
+          category: item.category,
+          source: item.source,
+          tags: item.tags,
+          notes: item.notes || null,
+          isPinned: item.isPinned || false,
+        })),
+        skipDuplicates: true,
+      })
     }
 
-    const where: any = { workspaceId }
+    const where: Prisma.ResearchItemWhereInput = { workspaceId }
     if (category && category !== 'all') {
       where.category = category
     }
@@ -67,9 +69,9 @@ export async function GET(req: NextRequest) {
       items,
       total: items.length,
     })
-  } catch (err: any) {
+  } catch (err) {
     console.error('Error fetching research items:', err)
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 })
   }
 }
 
@@ -113,8 +115,8 @@ export async function POST(req: NextRequest) {
     })
 
     return NextResponse.json({ success: true, item })
-  } catch (err: any) {
+  } catch (err) {
     console.error('Error creating research item:', err)
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 })
   }
 }

@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
     if (err?.name === 'ZodError') {
       return NextResponse.json({ error: 'Validation failed', details: err.errors }, { status: 400 })
     }
-    return NextResponse.json({ error: err.message || 'Failed to create compliance item' }, { status: 500 })
+    console.error('Failed to create compliance item:', err)
+    return NextResponse.json({ error: 'Failed to create compliance item' }, { status: 500 })
   }
 }
