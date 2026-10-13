@@ -1,5 +1,5 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024
@@ -108,4 +108,12 @@ export async function readEncryptedFile(key: string) {
   const decipher = createDecipheriv('aes-256-gcm', encryptionKey(), data.subarray(0, 12))
   decipher.setAuthTag(data.subarray(data.length - 16))
   return Buffer.concat([decipher.update(data.subarray(12, data.length - 16)), decipher.final()])
+}
+
+export async function deleteEncryptedFile(key: string) {
+  const relative = key.split('/').filter((part) => /^[a-zA-Z0-9_.-]+$/.test(part)).join('/')
+  if (!relative || relative !== key) throw new Error('Invalid file key')
+  const fullPath = path.join(uploadRoot(), relative)
+  if (!fullPath.startsWith(path.resolve(uploadRoot()))) throw new Error('Invalid file path')
+  await rm(fullPath, { force: true })
 }

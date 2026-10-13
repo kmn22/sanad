@@ -598,6 +598,10 @@ export function FirmSettingsPage() {
   const [memberships, setMemberships] = useState<Array<{ userId: string; role: string; isOwner: boolean; status: string; user: { name: string | null; email: string; mfaEnabled: boolean } }>>([])
   const [transferTarget, setTransferTarget] = useState('')
   const [transferring, setTransferring] = useState(false)
+  const [deleteConfirmName, setDeleteConfirmName] = useState('')
+  const [deletePassword, setDeletePassword] = useState('')
+  const [deleting, setDeleting] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
   useEffect(() => {
     if (!data) return
@@ -634,6 +638,44 @@ export function FirmSettingsPage() {
     await signOut({ callbackUrl: '/login' })
   }
 
+  async function exportWorkspaceData() {
+    setExporting(true)
+    try {
+      const response = await fetch('/api/privacy/export', { method: 'POST' })
+      if (!response.ok) throw new Error()
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = url
+      anchor.download = `sanad-data-export-${new Date().toISOString().slice(0, 10)}.json`
+      anchor.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      toast.error(L({ ar: 'تعذر تصدير البيانات', en: 'Could not export data' }))
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  async function deleteWorkspace() {
+    setDeleting(true)
+    const response = await fetch('/api/workspace', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ confirmName: deleteConfirmName.trim(), password: deletePassword }),
+    })
+    const result = await response.json().catch(() => ({}))
+    setDeleting(false)
+    if (!response.ok) {
+      if (result.code === 'MFA_REQUIRED') {
+        return toast.error(L({ ar: 'فعّل التحقق الثنائي من صفحة الأمان أولاً', en: 'Enable MFA on the security page first' }))
+      }
+      return toast.error(result.error || L({ ar: 'تعذر حذف المكتب', en: 'Could not delete the workspace' }))
+    }
+    toast.success(L({ ar: 'تم حذف المكتب نهائياً', en: 'Workspace deleted permanently' }))
+    await signOut({ callbackUrl: '/login' })
+  }
+
   const links = [
     { href: '/admin', icon: Building2, title: { ar: 'لوحة الإدارة', en: 'Admin console' }, desc: { ar: 'المستخدمون، حالة النظام، طلبات الخصوصية', en: 'Users, system status, privacy requests' } },
     { href: '/settings/security', icon: ShieldCheck, title: { ar: 'الأمان والتحقق الثنائي', en: 'Security & MFA' }, desc: { ar: 'فعّل التحقق الثنائي لإدارة المستخدمين', en: 'Enable MFA to manage users' } },
@@ -662,6 +704,15 @@ export function FirmSettingsPage() {
       <div className="mb-5 rounded-2xl border border-rose-500/20 bg-card/70 p-5 shadow-sm">
         <div className="mb-4"><h2 className="font-semibold">{L({ ar: 'ملكية المكتب', en: 'Workspace ownership' })}</h2><p className="mt-1 text-xs text-muted-foreground">{L({ ar: 'انقل صلاحيات المالك إلى عضو نشط وموثوق. يتطلب ذلك تفعيل MFA وينهي جلسة المالك الحالي.', en: 'Transfer ownership to a trusted active member. MFA is required and the current owner session will end.' })}</p></div>
         <div className="flex flex-col gap-3 sm:flex-row"><select value={transferTarget} onChange={(event) => setTransferTarget(event.target.value)} className="h-10 flex-1 rounded-xl border bg-background px-3 text-sm"><option value="">{L({ ar: 'اختر المالك الجديد', en: 'Select the new owner' })}</option>{memberships.filter((membership) => !membership.isOwner && membership.status === 'active' && ['lawyer', 'staff'].includes(membership.role)).map((membership) => <option key={membership.userId} value={membership.userId}>{membership.user.name || membership.user.email} — {membership.role}</option>)}</select><Button type="button" variant="destructive" onClick={transferOwnership} disabled={!transferTarget || transferring}>{transferring ? L({ ar: 'جارٍ النقل...', en: 'Transferring...' }) : L({ ar: 'نقل الملكية', en: 'Transfer ownership' })}</Button></div>
+      </div>
+      <div className="mb-5 rounded-2xl border border-rose-500/40 bg-rose-500/5 p-5 shadow-sm">
+        <div className="mb-4 flex items-start gap-3"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-rose-600" /><div><h2 className="font-semibold text-rose-700 dark:text-rose-400">{L({ ar: 'حذف المكتب نهائياً', en: 'Delete workspace permanently' })}</h2><p className="mt-1 text-xs text-muted-foreground">{L({ ar: 'يمسح هذا كل بيانات المكتب والقضايا والمستندات والفواتير والأعضاء غير المرتبطين بمكاتب أخرى. إجراء غير قابل للتراجع — صدّر بياناتك أولاً.', en: 'This permanently erases all workspace data, cases, documents, invoices, and members not linked to other workspaces. This cannot be undone — export your data first.' })}</p></div></div>
+        <div className="mb-3"><Button type="button" variant="outline" size="sm" disabled={exporting} onClick={exportWorkspaceData}>{exporting ? L({ ar: 'جارٍ تصدير البيانات...', en: 'Exporting data...' }) : L({ ar: 'تصدير كل بيانات المكتب (JSON)', en: 'Export all workspace data (JSON)' })}</Button></div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="space-y-1.5"><span className="text-xs font-medium text-muted-foreground">{L({ ar: 'اكتب اسم المكتب للتأكيد', en: 'Type the workspace name to confirm' })}</span><Input value={deleteConfirmName} onChange={(event) => setDeleteConfirmName(event.target.value)} placeholder={data?.workspace.name} dir="auto" /></label>
+          <label className="space-y-1.5"><span className="text-xs font-medium text-muted-foreground">{L({ ar: 'كلمة المرور', en: 'Password' })}</span><Input type="password" value={deletePassword} onChange={(event) => setDeletePassword(event.target.value)} autoComplete="current-password" /></label>
+        </div>
+        <div className="mt-4 flex items-center justify-between gap-3"><p className="text-[11px] text-muted-foreground">{L({ ar: 'يتطلب الحذف تفعيل التحقق الثنائي ولا يمكن مع وجود حجز قانوني نشط.', en: 'Deletion requires MFA and is blocked while a legal hold is active.' })}</p><Button type="button" variant="destructive" onClick={deleteWorkspace} disabled={deleting || !deletePassword || deleteConfirmName.trim() !== (data?.workspace.name || '')}>{deleting ? L({ ar: 'جارٍ الحذف...', en: 'Deleting...' }) : L({ ar: 'حذف المكتب نهائياً', en: 'Delete workspace' })}</Button></div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {links.map((l) => (
