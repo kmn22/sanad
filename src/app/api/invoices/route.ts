@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { forbiddenJson, getAuthContext, hasRole, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 import { parsePagination, paginatedResponse } from '@/lib/http'
 import { canAccessCase, caseLinkedAccessWhere } from '@/lib/auth/capabilities'
+import { createInvoiceFromTimeEntriesSchema } from '@/lib/validations'
 
 export async function GET(req: NextRequest) {
   const auth = await getAuthContext()
@@ -31,9 +32,11 @@ export async function POST(req: NextRequest) {
   if (!auth) return unauthorizedJson()
   if (!hasRole(auth, ['admin', 'workspace_owner', 'lawyer', 'staff'])) return forbiddenJson()
   const workspaceId = auth.workspaceId
-  const body = await req.json()
-  const { timeEntryIds, clientId, caseId, dueDate, notes } = body
-  const entryIds = Array.isArray(timeEntryIds) ? timeEntryIds : []
+  const parsed = createInvoiceFromTimeEntriesSchema.safeParse(await req.json().catch(() => null))
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Validation failed', details: parsed.error.issues }, { status: 400 })
+  }
+  const { timeEntryIds: entryIds, clientId, caseId, dueDate, notes } = parsed.data
 
   if (clientId) {
     const client = await db.client.findFirst({ where: { id: clientId, workspaceId }, select: { id: true } })
@@ -67,7 +70,7 @@ export async function POST(req: NextRequest) {
       number,
       clientId: clientId || null,
       caseId: caseId || null,
-      dueDate: dueDate ? new Date(dueDate) : null,
+      dueDate,
       subtotal,
       vatRate: 15,
       vatAmount,

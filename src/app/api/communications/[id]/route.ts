@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { communicationWorkspaceWhere, getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 import { canAccessCase, canWrite, denyUnless, enforceMutationBudget, legalHoldBlock } from '@/lib/auth/capabilities'
+import { updateCommunicationSchema } from '@/lib/validations'
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await getAuthContext()
@@ -17,17 +18,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     select: { id: true, caseId: true },
   })
   if (!existing || (existing.caseId && !(await canAccessCase(auth, existing.caseId)))) return notFoundJson()
-  const body = await req.json()
+  const parsed = updateCommunicationSchema.safeParse(await req.json().catch(() => null))
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Validation failed', details: parsed.error.issues }, { status: 400 })
+  }
   const updated = await db.communication.update({
     where: { id },
-    data: {
-      subject: body.subject,
-      body: body.body,
-      type: body.type,
-      direction: body.direction,
-      date: body.date ? new Date(body.date) : undefined,
-      durationMin: body.durationMin ?? undefined,
-    },
+    data: parsed.data,
   })
   return NextResponse.json(updated)
 }

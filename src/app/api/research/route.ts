@@ -6,6 +6,7 @@ import { getAuthContext, getSessionWorkspaceId, notFoundJson, unauthorizedJson }
 import { canWriteAcademic, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
 import { requireEducation } from '@/lib/saas/entitlements'
 import { logError } from '@/lib/observability'
+import { createResearchItemSchema } from '@/lib/validations'
 
 // GET /api/research?q=...&category=...&type=...
 export async function GET(req: NextRequest) {
@@ -88,30 +89,19 @@ export async function POST(req: NextRequest) {
     const budgeted = await enforceMutationBudget(auth)
     if (budgeted) return budgeted
     const workspaceId = auth.workspaceId
-    const body = await req.json()
-    const { title, content, type = 'note', category = 'general', source, tags, notes, caseId, url, isPinned = false } = body
-    if (caseId) {
-      const legalCase = await db.legalCase.findFirst({ where: { id: caseId, workspaceId }, select: { id: true } })
-      if (!legalCase) return notFoundJson()
+    const parsed = createResearchItemSchema.safeParse(await req.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, error: 'العنوان والمحتوى مطلوبان', details: parsed.error.issues }, { status: 400 })
     }
-
-    if (!title || !content) {
-      return NextResponse.json({ success: false, error: 'العنوان والمحتوى مطلوبان' }, { status: 400 })
+    if (parsed.data.caseId) {
+      const legalCase = await db.legalCase.findFirst({ where: { id: parsed.data.caseId, workspaceId }, select: { id: true } })
+      if (!legalCase) return notFoundJson()
     }
 
     const item = await db.researchItem.create({
       data: {
         workspaceId,
-        title: title.trim(),
-        content: content.trim(),
-        type,
-        category,
-        source: source ? source.trim() : null,
-        tags: tags ? tags.trim() : null,
-        notes: notes ? notes.trim() : null,
-        caseId: caseId || null,
-        url: url || null,
-        isPinned: Boolean(isPinned),
+        ...parsed.data,
       },
     })
 

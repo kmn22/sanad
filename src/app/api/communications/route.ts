@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { communicationWorkspaceWhere, getAuthContext, getSessionWorkspaceId, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 import { canAccessCase, canWrite, denyUnless, enforceMutationBudget, caseLinkedAccessWhere } from '@/lib/auth/capabilities'
+import { createCommunicationSchema } from '@/lib/validations'
 
 export async function GET(req: NextRequest) {
   const auth = await getAuthContext()
@@ -35,26 +36,23 @@ export async function POST(req: NextRequest) {
   const budgeted = await enforceMutationBudget(auth)
   if (budgeted) return budgeted
   const workspaceId = auth.workspaceId
-  const body = await req.json()
-  if (body.clientId) {
-    const client = await db.client.findFirst({ where: { id: body.clientId, workspaceId }, select: { id: true } })
+  const parsed = createCommunicationSchema.safeParse(await req.json().catch(() => null))
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Validation failed', details: parsed.error.issues }, { status: 400 })
+  }
+  const { clientId, caseId } = parsed.data
+  if (clientId) {
+    const client = await db.client.findFirst({ where: { id: clientId, workspaceId }, select: { id: true } })
     if (!client) return notFoundJson()
   }
-  if (body.caseId) {
-    const legalCase = await db.legalCase.findFirst({ where: { id: body.caseId, workspaceId, deletedAt: null }, select: { id: true } })
+  if (caseId) {
+    const legalCase = await db.legalCase.findFirst({ where: { id: caseId, workspaceId, deletedAt: null }, select: { id: true } })
     if (!legalCase || !(await canAccessCase(auth, legalCase.id))) return notFoundJson()
   }
   const c = await db.communication.create({
     data: {
-      clientId: body.clientId || null,
-      caseId: body.caseId || null,
       workspaceId,
-      type: String(body.type || 'note'),
-      direction: String(body.direction || 'outgoing'),
-      subject: String(body.subject || ''),
-      body: String(body.body || ''),
-      date: body.date ? new Date(body.date) : new Date(),
-      durationMin: body.durationMin || null,
+      ...parsed.data,
     },
   })
   return NextResponse.json(c)

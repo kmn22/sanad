@@ -187,3 +187,75 @@ export const createCaseEntrySchema = z.object({
   rating: z.number().int().min(1).max(5).default(3),
 })
 export const updateCaseEntrySchema = createCaseEntrySchema.partial()
+
+// ===== Operations Schemas =====
+// Optional date: accepts string/Date, null, '' (treated as absent), or absent;
+// rejects invalid values.
+const optionalDate = z
+  .preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.union([z.string(), z.date()]).optional().nullable()
+  )
+  .refine((v) => v == null || !isNaN(new Date(v).getTime()), 'تاريخ غير صالح')
+  .transform((v) => (v ? new Date(v) : null))
+
+export const createTimeEntrySchema = z.object({
+  caseId: z.string().optional().nullable(),
+  description: z.string().max(500).optional().nullable(),
+  durationSec: z.number().int().min(0).max(24 * 60 * 60).default(0),
+  billable: z.boolean().default(false),
+  hourlyRate: z.number().min(0).optional().nullable(),
+  invoiced: z.boolean().default(false),
+  invoiceId: z.string().optional().nullable(),
+  sessionType: z.enum(['focus', 'billable', 'break']).default('focus'),
+  date: z
+    .union([z.string(), z.date()])
+    .optional()
+    .nullable()
+    .refine((v) => v == null || !isNaN(new Date(v).getTime()), 'تاريخ غير صالح')
+    .transform((v) => (v ? new Date(v) : new Date())),
+})
+
+export const createCommunicationSchema = z.object({
+  clientId: z.string().optional().nullable(),
+  caseId: z.string().optional().nullable(),
+  type: z.enum(['call', 'email', 'meeting', 'sms', 'note']).default('note'),
+  direction: z.enum(['outgoing', 'incoming']).default('outgoing'),
+  subject: z.string().max(300).default(''),
+  body: z.string().max(20000).default(''),
+  date: optionalDate.transform((v) => v ?? new Date()),
+  durationMin: z.number().int().min(0).max(24 * 60).optional().nullable(),
+})
+// PATCH semantics: absent/null date must skip the field entirely, not write now().
+// clientId/caseId are omitted: updates may not re-link the communication.
+export const updateCommunicationSchema = createCommunicationSchema
+  .omit({ date: true, clientId: true, caseId: true })
+  .partial()
+  .extend({ date: optionalDate.transform((v) => v ?? undefined) })
+
+export const createResearchItemSchema = z.object({
+  title: z.string().trim().min(1, 'العنوان مطلوب').max(300),
+  content: z.string().trim().min(1, 'المحتوى مطلوب').max(50000),
+  type: z.string().trim().min(1).max(60).default('note'),
+  category: z.string().trim().min(1).max(60).default('general'),
+  source: z.string().trim().max(300).optional().nullable(),
+  tags: z.string().trim().max(1000).optional().nullable(),
+  notes: z.string().trim().max(10000).optional().nullable(),
+  caseId: z.string().optional().nullable(),
+  url: z
+    .string()
+    .max(2000)
+    .optional()
+    .nullable()
+    .refine((v) => v == null || v === '' || /^https?:\/\//i.test(v), 'رابط غير صالح'),
+  isPinned: z.boolean().default(false),
+})
+export const updateResearchItemSchema = createResearchItemSchema.partial()
+
+export const createInvoiceFromTimeEntriesSchema = z.object({
+  timeEntryIds: z.array(z.string().min(1)).max(500).default([]),
+  clientId: z.string().optional().nullable(),
+  caseId: z.string().optional().nullable(),
+  dueDate: optionalDate,
+  notes: z.string().max(5000).optional().nullable(),
+})

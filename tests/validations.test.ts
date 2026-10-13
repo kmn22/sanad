@@ -150,3 +150,73 @@ describe('Academic Schemas', () => {
     expect(updateCaseEntrySchema.parse({ rating: 5 }).rating).toBe(5)
   })
 })
+
+describe('operations schemas', () => {
+  it('accepts a real deep-work time entry payload', async () => {
+    const { createTimeEntrySchema } = await import('../src/lib/validations')
+    const parsed = createTimeEntrySchema.parse({
+      caseId: null,
+      description: 'بحث',
+      durationSec: 1500,
+      billable: false,
+      hourlyRate: null,
+      sessionType: 'focus',
+      date: '2026-10-20T09:00:00.000Z',
+    })
+    expect(parsed.durationSec).toBe(1500)
+    expect(parsed.date).toBeInstanceOf(Date)
+    expect(parsed.sessionType).toBe('focus')
+  })
+
+  it('rejects malformed time entries (type confusion / out-of-range)', async () => {
+    const { createTimeEntrySchema } = await import('../src/lib/validations')
+    expect(() => createTimeEntrySchema.parse({ durationSec: 'abc' })).toThrow()
+    expect(() => createTimeEntrySchema.parse({ durationSec: 999999 })).toThrow()
+    expect(() => createTimeEntrySchema.parse({ sessionType: 'archived' })).toThrow()
+    expect(() => createTimeEntrySchema.parse({ date: 'not-a-date' })).toThrow()
+  })
+
+  it('treats empty-string dates as absent (frontend clears datetime inputs)', async () => {
+    const { createCommunicationSchema, createInvoiceFromTimeEntriesSchema } = await import('../src/lib/validations')
+    const comm = createCommunicationSchema.parse({ subject: 'مكالمة', date: '' })
+    expect(comm.date).toBeInstanceOf(Date)
+    const inv = createInvoiceFromTimeEntriesSchema.parse({ dueDate: '', timeEntryIds: [] })
+    expect(inv.dueDate).toBeNull()
+  })
+
+  it('enforces communication enums and bounds', async () => {
+    const { createCommunicationSchema } = await import('../src/lib/validations')
+    expect(() => createCommunicationSchema.parse({ type: 'pigeon' })).toThrow()
+    expect(() => createCommunicationSchema.parse({ direction: 'sideways' })).toThrow()
+    expect(() => createCommunicationSchema.parse({ durationMin: '30' })).toThrow()
+    const ok = createCommunicationSchema.parse({ type: 'call', direction: 'incoming' })
+    expect(ok.direction).toBe('incoming')
+  })
+
+  it('update communication omits relation re-linking and skips null date', async () => {
+    const { updateCommunicationSchema } = await import('../src/lib/validations')
+    const parsed = updateCommunicationSchema.parse({ subject: 'م', date: null })
+    expect(parsed.date).toBeUndefined()
+    expect('clientId' in parsed).toBe(false)
+    expect(() => updateCommunicationSchema.parse({ clientId: 'x' })).not.toThrow()
+  })
+
+  it('research schema rejects non-http urls and trims required fields', async () => {
+    const { createResearchItemSchema } = await import('../src/lib/validations')
+    expect(() =>
+      createResearchItemSchema.parse({ title: 't', content: 'c', url: 'javascript:alert(1)' }),
+    ).toThrow()
+    expect(() => createResearchItemSchema.parse({ title: '   ', content: 'c' })).toThrow()
+    const ok = createResearchItemSchema.parse({ title: '  نص  ', content: '  محتوى  ' })
+    expect(ok.title).toBe('نص')
+    expect(ok.type).toBe('note')
+  })
+
+  it('invoice-from-entries requires string ids', async () => {
+    const { createInvoiceFromTimeEntriesSchema } = await import('../src/lib/validations')
+    expect(() => createInvoiceFromTimeEntriesSchema.parse({ timeEntryIds: [{ id: 'x' }] })).toThrow()
+    expect(() => createInvoiceFromTimeEntriesSchema.parse({ timeEntryIds: 'not-array' })).toThrow()
+    const ok = createInvoiceFromTimeEntriesSchema.parse({ timeEntryIds: ['a', 'b'], dueDate: '2026-12-01' })
+    expect(ok.dueDate).toBeInstanceOf(Date)
+  })
+})

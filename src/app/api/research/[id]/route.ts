@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 import { canWriteAcademic, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
 import { requireEducation } from '@/lib/saas/entitlements'
+import { updateResearchItemSchema } from '@/lib/validations'
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await getAuthContext()
@@ -17,22 +18,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params
   const existing = await db.researchItem.findFirst({ where: { id, workspaceId }, select: { id: true } })
   if (!existing) return notFoundJson()
-  const body = await req.json()
-  if (body.caseId) {
-    const legalCase = await db.legalCase.findFirst({ where: { id: body.caseId, workspaceId }, select: { id: true } })
+  const parsed = updateResearchItemSchema.safeParse(await req.json().catch(() => null))
+  if (!parsed.success) {
+    return NextResponse.json({ success: false, error: 'Validation failed', details: parsed.error.issues }, { status: 400 })
+  }
+  if (parsed.data.caseId) {
+    const legalCase = await db.legalCase.findFirst({ where: { id: parsed.data.caseId, workspaceId }, select: { id: true } })
     if (!legalCase) return notFoundJson()
   }
   const item = await db.researchItem.update({
     where: { id },
-    data: {
-      title: body.title,
-      content: body.content,
-      isPinned: body.isPinned === undefined ? undefined : Boolean(body.isPinned),
-      notes: body.notes,
-      tags: body.tags,
-      caseId: body.caseId,
-      category: body.category,
-    },
+    data: parsed.data,
   })
   return NextResponse.json({ success: true, item })
 }
