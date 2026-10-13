@@ -11,6 +11,8 @@ services:
     image: postgres:16-bookworm
     container_name: sanad-staging-postgres
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-sanad_staging}
       POSTGRES_USER: ${POSTGRES_USER:-sanad}
@@ -29,6 +31,10 @@ services:
     image: sanad-app:latest
     container_name: sanad-staging-web
     restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     depends_on:
       db:
         condition: service_healthy
@@ -44,7 +50,7 @@ services:
       OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
       CRON_SECRET: ${CRON_SECRET:-}
     ports:
-      - "3101:3001"
+      - "127.0.0.1:3101:3001"
     volumes:
       - staging-uploads:/app/uploads
       - staging-backups:/app/backups

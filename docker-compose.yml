@@ -3,6 +3,8 @@ services:
     image: postgres:16-bookworm
     container_name: sanad-postgres
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     environment:
       POSTGRES_DB: sanad
       POSTGRES_USER: sanad
@@ -26,6 +28,8 @@ services:
     image: louislam/uptime-kuma:1
     container_name: sanad-uptime-kuma
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     ports:
       - "127.0.0.1:3002:3001"
     volumes:
@@ -49,6 +53,10 @@ services:
     image: sanad-app:latest
     container_name: sanad-web
     restart: unless-stopped
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     depends_on:
       db:
         condition: service_healthy
@@ -104,6 +112,8 @@ services:
     container_name: sanad-ts
     hostname: sanad
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     environment:
       TS_STATE_DIR: /var/lib/tailscale
       TS_AUTHKEY: ${TS_AUTHKEY:-}
