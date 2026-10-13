@@ -3,6 +3,7 @@
 // Usage: DATABASE_URL=... npx tsx scripts/seed_e2e.ts
 import { PrismaClient } from '@prisma/client'
 import { hashPassword } from '../src/lib/auth/password'
+import { encryptMfaSecret, hashRecoveryCode } from '../src/lib/auth/mfa'
 
 const db = new PrismaClient()
 
@@ -18,8 +19,13 @@ function isTestDatabase(url: string | undefined): boolean {
 export const E2E = {
   ownerEmail: 'e2e.owner@sanad.test',
   lawyerEmail: 'e2e.lawyer@sanad.test',
+  adminEmail: 'e2e.admin@sanad.test',
   password: 'Sanad-E2E-Passw0rd!',
   workspaceName: 'مكتب الاختبار الآلي',
+  // Fixed TOTP secret so Playwright can compute login codes deterministically.
+  adminMfaSecret: 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP',
+  // Fallback login path if TOTP clock skew ever bites — re-seeding restores it.
+  adminRecoveryCode: 'E2EADMINRECOVERY01',
 }
 
 async function main() {
@@ -56,8 +62,23 @@ async function main() {
     create: { email: E2E.lawyerEmail, name: 'محامي الاختبار', role: 'lawyer', accountType: 'lawyer', password, workspaceId: ws.id, emailVerified: new Date(), privacyNoticeVersion: '2026-09-28' },
     update: { password, emailVerified: new Date(), privacyNoticeVersion: '2026-09-28', disabledAt: null, lockedUntil: null, failedLoginAttempts: 0, sessionVersion: { increment: 1 } },
   })
+  const admin = await db.user.upsert({
+    where: { email: E2E.adminEmail },
+    create: {
+      email: E2E.adminEmail, name: 'مدير الاختبار', role: 'workspace_owner', accountType: 'firm', password, workspaceId: ws.id,
+      emailVerified: new Date(), privacyNoticeVersion: '2026-09-28',
+      mfaEnabled: true, mfaSecret: encryptMfaSecret(E2E.adminMfaSecret),
+      mfaRecoveryCodes: JSON.stringify([hashRecoveryCode(E2E.adminRecoveryCode)]),
+    },
+    update: {
+      password, emailVerified: new Date(), privacyNoticeVersion: '2026-09-28', disabledAt: null, lockedUntil: null, failedLoginAttempts: 0,
+      mfaEnabled: true, mfaSecret: encryptMfaSecret(E2E.adminMfaSecret),
+      mfaRecoveryCodes: JSON.stringify([hashRecoveryCode(E2E.adminRecoveryCode)]),
+      sessionVersion: { increment: 1 },
+    },
+  })
 
-  for (const [user, role, isOwner] of [[owner, 'workspace_owner', true], [lawyer, 'lawyer', false]] as const) {
+  for (const [user, role, isOwner] of [[owner, 'workspace_owner', true], [lawyer, 'lawyer', false], [admin, 'workspace_owner', false]] as const) {
     await db.workspaceMembership.upsert({
       where: { workspaceId_userId: { workspaceId: ws.id, userId: user.id } },
       create: { workspaceId: ws.id, userId: user.id, role, status: 'active', isOwner },

@@ -93,6 +93,10 @@ jobs:
       E2E_OWNER_EMAIL: "e2e.owner@sanad.test"
       E2E_OWNER_PASSWORD: "Sanad-E2E-Passw0rd!"
       E2E_LAWYER_EMAIL: "e2e.lawyer@sanad.test"
+      E2E_ADMIN_EMAIL: "e2e.admin@sanad.test"
+      E2E_ADMIN_PASSWORD: "Sanad-E2E-Passw0rd!"
+      E2E_ADMIN_MFA_SECRET: "JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP"
+      MFA_ENCRYPTION_KEY: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 
     steps:
       - name: Checkout code
