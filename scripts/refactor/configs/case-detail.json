@@ -1,0 +1,16 @@
+{
+  "source": "src/components/sanad/CaseDetailDrawer.tsx",
+  "modules": {
+    "src/components/sanad/case-detail/types.ts": { "symbols": ["CaseDetail"], "useClient": false },
+    "src/components/sanad/case-detail/meta.ts": { "symbols": ["STAGE_COLORS", "INVOICE_STATUS_COLORS", "COMM_TYPE_META", "getCommMeta", "DIRECTION_META", "getDirectionMeta"], "useClient": false },
+    "src/lib/sanad/billing-calc.ts": { "symbols": ["entryAmount"], "useClient": false },
+    "src/components/sanad/case-detail/primitives.tsx": { "symbols": ["CountChip", "EmptyState", "InfoRow", "StatCard"] },
+    "src/components/sanad/case-detail/OverviewTab.tsx": { "symbols": ["OverviewTab"] },
+    "src/components/sanad/case-detail/TasksTab.tsx": { "symbols": ["TasksTab"] },
+    "src/components/sanad/case-detail/DocumentsTab.tsx": { "symbols": ["DocumentsTab"] },
+    "src/components/sanad/case-detail/TimeTab.tsx": { "symbols": ["TimeTabProps", "TimeTab"] },
+    "src/components/sanad/case-detail/CommsTab.tsx": { "symbols": ["CommsTab"] },
+    "src/components/sanad/case-detail/InvoicesTab.tsx": { "symbols": ["InvoicesTab"] },
+    "src/components/sanad/case-detail/AiInsightsTab.tsx": { "symbols": ["AiInsightsTab"] }
+  }
+}

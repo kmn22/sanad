@@ -37,9 +37,24 @@ DRILL_PORT="55433"
 DRILL_DB="sanad_drill"
 WORK="$(mktemp -d /tmp/sanad-restore-drill.XXXXXX)"
 
+# Dead-man-switch monitoring: when DRILL_SUCCESS_URL is set (e.g. an Uptime
+# Kuma "push" monitor with a >= 7-day heartbeat), a successful drill pings it —
+# silence or a failure ping means the recovery path is unverified.
+ping_drill_monitor() {
+  local url="${DRILL_SUCCESS_URL:-}"
+  [ -n "$url" ] || return 0
+  local sep='?'
+  case "$url" in *\?*) sep='&' ;; esac
+  curl -fsS -m 10 -o /dev/null "${url}${1:+${sep}$1}" 2>/dev/null || echo "WARN: drill monitor ping failed" >&2
+}
+
 cleanup() {
+  local rc=$?
   docker rm -f "$DRILL_NAME" >/dev/null 2>&1 || true
   rm -rf "$WORK"
+  if [ $rc -ne 0 ]; then
+    ping_drill_monitor "status=down&msg=restore-drill-failed"
+  fi
 }
 trap cleanup EXIT
 
@@ -170,4 +185,6 @@ else
 fi
 
 echo
+ping_drill_monitor
+
 echo "RESTORE DRILL PASSED — backup is decryptable, restorable, complete, and file-encryption keys recover content."

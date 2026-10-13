@@ -1,0 +1,12 @@
+{
+  "source": "src/components/sanad/InvoicesView.tsx",
+  "modules": {
+    "src/components/sanad/invoices/meta.ts": { "symbols": ["STATUS_FILTERS", "STATUS_COLORS", "defaultDueDate"], "useClient": false },
+    "src/components/sanad/invoices/StatTile.tsx": { "symbols": ["StatTile"] },
+    "src/components/sanad/invoices/InvoiceRow.tsx": { "symbols": ["InvoiceRow"] },
+    "src/components/sanad/invoices/InvoiceCard.tsx": { "symbols": ["InvoiceCard"] },
+    "src/components/sanad/invoices/InvoiceActions.tsx": { "symbols": ["InvoiceActions"] },
+    "src/components/sanad/invoices/CreateInvoiceDialog.tsx": { "symbols": ["CreateInvoiceDialog"] },
+    "src/components/sanad/invoices/InvoicePreviewDialog.tsx": { "symbols": ["InvoicePreviewDialog"] }
+  }
+}
