@@ -18,10 +18,26 @@ UPLOAD_DIR="${UPLOAD_ROOT:-$PROJECT_DIR/uploads}"
 UPLOAD_ARCHIVE="$BACKUP_DIR/sanad-files-$DATE.tar.gz"
 
 mkdir -p "$BACKUP_DIR"
+
+# Dead-man-switch monitoring: when BACKUP_SUCCESS_URL is set (e.g. an Uptime
+# Kuma "push" monitor URL), a successful run pings it — silence or a failure
+# ping raises the alert instead of discovery on restore day.
+ping_backup_monitor() {
+  local url="${BACKUP_SUCCESS_URL:-}"
+  [ -n "$url" ] || return 0
+  local sep='?'
+  case "$url" in *\?*) sep='&' ;; esac
+  curl -fsS -m 10 -o /dev/null "${url}${1:+${sep}$1}" 2>/dev/null || echo "WARN: backup monitor ping failed" >&2
+}
+
 cleanup() {
+  local rc=$?
   rm -f "$DUMP_FILE" "$VERIFY_FILE"
   docker exec sanad-postgres dropdb -U sanad --if-exists "$VERIFY_DB" >/dev/null 2>&1 || true
   docker exec sanad-postgres rm -f "/tmp/$VERIFY_DB.dump" >/dev/null 2>&1 || true
+  if [ $rc -ne 0 ]; then
+    ping_backup_monitor "status=down&msg=backup-failed"
+  fi
 }
 trap cleanup EXIT
 
@@ -36,9 +52,24 @@ docker exec sanad-postgres pg_restore -U sanad -d "$VERIFY_DB" --no-owner --no-p
 docker exec sanad-postgres psql -U sanad -d "$VERIFY_DB" -v ON_ERROR_STOP=1 -Atc 'SELECT COUNT(*) FROM "User"; SELECT COUNT(*) FROM "Workspace";' >/dev/null
 
 sha256sum "$ENCRYPTED_FILE" > "$ENCRYPTED_FILE.sha256"
-if [ -d "$UPLOAD_DIR" ]; then
-  tar -C "$UPLOAD_DIR" -czf "$UPLOAD_ARCHIVE" .
-  sha256sum "$UPLOAD_ARCHIVE" > "$UPLOAD_ARCHIVE.sha256"
+
+# File archive: uploaded files are root-owned inside the app container, so
+# host-side tar cannot read them — stream the archive out of the container
+# instead. A failure here warns but must not abort the (verified) DB backup.
+if docker exec sanad-web test -d /app/uploads 2>/dev/null; then
+  if docker exec sanad-web tar -C /app/uploads -czf - . > "$UPLOAD_ARCHIVE" 2>/dev/null; then
+    sha256sum "$UPLOAD_ARCHIVE" > "$UPLOAD_ARCHIVE.sha256"
+  else
+    rm -f "$UPLOAD_ARCHIVE"
+    echo "WARN: container file-archive failed — uploads not included in this backup" >&2
+  fi
+elif [ -d "$UPLOAD_DIR" ]; then
+  if tar -C "$UPLOAD_DIR" -czf "$UPLOAD_ARCHIVE" . 2>/dev/null; then
+    sha256sum "$UPLOAD_ARCHIVE" > "$UPLOAD_ARCHIVE.sha256"
+  else
+    rm -f "$UPLOAD_ARCHIVE"
+    echo "WARN: file-archive failed — uploads not included in this backup" >&2
+  fi
 fi
 
 if [ -n "${S3_BACKUP_BUCKET:-}" ]; then
@@ -80,4 +111,5 @@ if [ -n "${BACKUP_OFFLOAD_CMD:-}" ]; then
 fi
 
 find "$BACKUP_DIR" -type f \( -name 'sanad-*.dump.enc' -o -name 'sanad-*.dump.enc.sha256' -o -name 'sanad-files-*.tar.gz' -o -name 'sanad-files-*.tar.gz.sha256' \) -mtime +30 -delete
+ping_backup_monitor
 printf '[%s] Encrypted backup verified: %s (%s)\n' "$(date --iso-8601=seconds)" "$ENCRYPTED_FILE" "$(du -h "$ENCRYPTED_FILE" | cut -f1)"
