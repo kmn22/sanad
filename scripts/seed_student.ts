@@ -10,6 +10,19 @@ function daysFromNow(days: number): Date {
   return d
 }
 
+
+// SAFETY: demo fixtures must never reach production — same guard as seed_e2e.
+function isTestDatabase(url: string | undefined): boolean {
+  if (!url) return false
+  const name = (url.split('/').pop() || '').split('?')[0]
+  return /test|staging|e2e/i.test(name)
+}
+if (!isTestDatabase(process.env.DATABASE_URL)) {
+  const dbName = (process.env.DATABASE_URL?.split('/').pop() || '').split('?')[0] || '(unset)'
+  console.error(`Refusing to seed demo data into "${dbName}" — database name must contain test/staging/e2e.`)
+  process.exit(1)
+}
+
 async function main() {
   const workspace = await db.workspace.upsert({
     where: { domain: 'sanad-student-demo' },

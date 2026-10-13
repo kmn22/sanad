@@ -6,6 +6,15 @@ import { hashPassword } from '../src/lib/auth/password'
 
 const db = new PrismaClient()
 
+// SAFETY: this script creates well-known credentials and fixture data.
+// Refuse to run against anything that is not obviously a disposable
+// test/staging database — this is what let e2e.* users reach production.
+function isTestDatabase(url: string | undefined): boolean {
+  if (!url) return false
+  const name = (url.split('/').pop() || '').split('?')[0]
+  return /test|staging|e2e/i.test(name)
+}
+
 export const E2E = {
   ownerEmail: 'e2e.owner@sanad.test',
   lawyerEmail: 'e2e.lawyer@sanad.test',
@@ -14,6 +23,11 @@ export const E2E = {
 }
 
 async function main() {
+  if (!isTestDatabase(process.env.DATABASE_URL)) {
+    const dbName = (process.env.DATABASE_URL?.split('/').pop() || '').split('?')[0] || '(unset)'
+    console.error(`Refusing to seed E2E fixtures into "${dbName}" — database name must contain test/staging/e2e.`)
+    process.exit(1)
+  }
   const trialPlan = await db.plan.upsert({
     where: { code: 'trial' },
     create: { code: 'trial', name: 'Trial', price: 0, seatLimit: 10, storageLimitMb: 1024, aiRequestLimit: 100, portalUploadLimit: 100, features: JSON.stringify({ cases: true, clients: true, workflow: true, portal: true, ai: true }) },
