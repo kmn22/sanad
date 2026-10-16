@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { ANALYTICS_EVENTS } from '../src/lib/analytics/events'
-import { runDeterministicClauseRules } from '../src/app/api/ai/check-clause/route'
+import { runDeterministicClauseRules } from '../src/lib/ai/clause-checker'
 
 describe('Repositioning Architecture & Analytics', () => {
   it('defines the required wedge analytics events', () => {
