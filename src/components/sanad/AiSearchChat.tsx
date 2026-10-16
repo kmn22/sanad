@@ -86,7 +86,12 @@ export function AiSearchChat() {
               onChange={(e) => setInput(e.target.value)}
               disabled={isLoading}
             />
-            <Button type="submit" size="icon" disabled={isLoading || !input.trim()}>
+            <Button
+              type="submit"
+              size="icon"
+              aria-label={lang === 'ar' ? 'إرسال' : 'Send'}
+              disabled={isLoading || !input.trim()}
+            >
               <Send className="h-4 w-4 rtl:rotate-180" />
             </Button>
           </form>

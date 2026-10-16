@@ -70,8 +70,7 @@ export default function LoginPage() {
       }
 
       toast.success('تم تسجيل الدخول بنجاح')
-      router.push(safeCallbackUrl())
-      router.refresh()
+      window.location.assign(safeCallbackUrl())
     } catch (e) {
       console.warn('NextAuth sign in error:', e)
       setErrorMsg('حدث خطأ أثناء تسجيل الدخول. حاول مجدداً.')

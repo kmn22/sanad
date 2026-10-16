@@ -374,10 +374,10 @@ export const ECOSYSTEM_WORKFLOWS: EcosystemWorkflow[] = [
 
 export function personaColorForNode(node: EcosystemEntity): string {
   switch (node) {
-    case 'lawyer': return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-    case 'client': return 'bg-blue-500/20 text-blue-300 border-blue-500/30'
-    case 'student': return 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
-    case 'admin': return 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+    case 'lawyer': return 'bg-emerald-500/15 text-emerald-900 dark:text-emerald-200 border-emerald-500/30'
+    case 'client': return 'bg-blue-500/15 text-blue-900 dark:text-blue-200 border-blue-500/30'
+    case 'student': return 'bg-indigo-500/15 text-indigo-900 dark:text-indigo-200 border-indigo-500/30'
+    case 'admin': return 'bg-amber-500/15 text-amber-900 dark:text-amber-200 border-amber-500/30'
   }
 }
 
@@ -470,10 +470,10 @@ export const SOURCE_COLORS: Record<string, string> = {
 }
 
 export function getDaysUntilColor(days: number, notifyDays: number = 30): string {
-  if (days < 0) return 'text-rose-600 dark:text-rose-400'
-  if (days <= 7) return 'text-rose-600 dark:text-rose-400 font-semibold'
-  if (days <= notifyDays) return 'text-amber-600 dark:text-amber-400 font-semibold'
-  return 'text-emerald-600 dark:text-emerald-400'
+  if (days < 0) return 'text-rose-800 dark:text-rose-400'
+  if (days <= 7) return 'text-rose-800 dark:text-rose-400 font-semibold'
+  if (days <= notifyDays) return 'text-amber-800 dark:text-amber-400 font-semibold'
+  return 'text-emerald-800 dark:text-emerald-400'
 }
 
 export function getDaysUntilBg(days: number, notifyDays: number = 30): string {

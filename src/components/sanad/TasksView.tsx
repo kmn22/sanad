@@ -147,6 +147,7 @@ export function TasksView({ tasks, cases, onChange }: Props) {
             <Button 
               variant={view === 'kanban' ? 'secondary' : 'ghost'} 
               size="sm" 
+              aria-label={lang === 'ar' ? 'عرض كانبان' : 'Kanban view'}
               className="h-7 px-2" 
               onClick={() => setView('kanban')}
             >
@@ -155,6 +156,7 @@ export function TasksView({ tasks, cases, onChange }: Props) {
             <Button 
               variant={view === 'list' ? 'secondary' : 'ghost'} 
               size="sm" 
+              aria-label={lang === 'ar' ? 'عرض القائمة' : 'List view'}
               className="h-7 px-2" 
               onClick={() => setView('list')}
             >

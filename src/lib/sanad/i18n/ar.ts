@@ -6,9 +6,9 @@ export const ar = {
   'brand.full': 'سند — لوحة العمليات اليومية للامتثال والمحاماة',
 
   // Greetings
-  'greeting.morning': 'صباح الخير، أحمد.',
-  'greeting.afternoon': 'مساء الخير، أحمد.',
-  'greeting.evening': 'مساء الخير، أحمد.',
+  'greeting.morning': 'صباح الخير،',
+  'greeting.afternoon': 'مساء الخير،',
+  'greeting.evening': 'مساء الخير،',
 
   // Nav
   'nav.dashboard': 'لوحة التحكم',

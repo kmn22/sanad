@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
+import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -61,6 +62,8 @@ interface Props {
 
 export function DashboardView({ data, onNavigate }: Props) {
   const { lang, t } = useLang()
+  const { data: session } = useSession()
+  const firstName = session?.user?.name?.trim().split(/\s+/)[0] || (lang === 'ar' ? 'زميلنا' : 'Counsel')
   const { stats } = data
   const now = new Date()
   const hour = now.getHours()
@@ -169,7 +172,7 @@ export function DashboardView({ data, onNavigate }: Props) {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">
-            {t(greetingKey)}
+            {t(greetingKey)} <span className="text-primary font-black">{firstName}</span>
           </h2>
           <p className="text-sm text-muted-foreground">
             {now.toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}

@@ -7,8 +7,10 @@ import { useSession } from 'next-auth/react'
 type Status = { emailConfigured: boolean; billingConfigured: boolean; backupEncryptionConfigured: boolean; mfaEnabled: boolean; overduePrivacyRequests: number; openIncidents: number; uptimeSeconds?: number; queuedJobs?: number; failedJobs?: number; lastBackupAt?: string | null }
 
 export default function AdminPage() {
-  const { data: session } = useSession()
-  const isPlatformAdmin = (session?.user as { role?: string } | undefined)?.role === 'admin'
+  const { data: session, status: sessionStatus } = useSession()
+  const user = session?.user as { role?: string; mfaEnabled?: boolean } | undefined
+  const isPlatformAdmin = user?.role === 'admin'
+  const mfaEnabled = Boolean(user?.mfaEnabled)
   const [status, setStatus] = useState<Status | null>(null)
   const [requests, setRequests] = useState<any[]>([])
   const [users, setUsers] = useState<any[]>([])
@@ -37,6 +39,7 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
+    if (sessionStatus !== 'authenticated' || !mfaEnabled) return
     Promise.all([
       fetch('/api/admin/system/status'),
       fetch('/api/admin/privacy/requests'),
@@ -56,14 +59,14 @@ export default function AdminPage() {
     fetch('/api/admin/feature-flags').then(async (response) => {
       if (response.ok) setFlags((await response.json()).flags)
     })
-  }, [])
+  }, [sessionStatus, mfaEnabled])
 
   useEffect(() => {
-    if (!isPlatformAdmin) return
+    if (sessionStatus !== 'authenticated' || !mfaEnabled || !isPlatformAdmin) return
     fetch('/api/admin/platform/workspaces').then(async (res) => {
       if (res.ok) setWorkspaces(await res.json())
     })
-  }, [isPlatformAdmin])
+  }, [sessionStatus, mfaEnabled, isPlatformAdmin])
 
   async function invite(e: React.FormEvent) {
     e.preventDefault()
@@ -169,7 +172,19 @@ export default function AdminPage() {
         </div>
       )}
 
-      {!status && <p className="text-sm text-muted-foreground">يتطلب الوصول دور مالك/مدير مع تفعيل التحقق بخطوتين.</p>}
+      {!status && (
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-6 space-y-3">
+          <p className="text-sm font-semibold text-foreground">
+            يتطلب الوصول إلى لوحة الإدارة تفعيل التحقق بخطوتين (MFA) لحساب مالك المكتب أو المدير.
+          </p>
+          <Link
+            href="/settings/security"
+            className="inline-flex items-center rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 text-xs font-bold transition-colors"
+          >
+            تفعيل التحقق بخطوتين (MFA) الآن
+          </Link>
+        </div>
+      )}
       {status && <>
         <div className="grid gap-4 md:grid-cols-3 mb-10">
           <Card title="البريد" value={status.emailConfigured ? 'مهيأ' : 'غير مهيأ'} />

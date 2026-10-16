@@ -181,7 +181,12 @@ export function DocumentsView({ documents, cases, onChange }: Props) {
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={lang === 'ar' ? 'خيارات المستند' : 'Document actions'}
+                        className="h-7 w-7 p-0 shrink-0"
+                      >
                         <MoreVertical className="h-3.5 w-3.5" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -227,8 +232,8 @@ export function DocumentsView({ documents, cases, onChange }: Props) {
                       <Calendar className="h-3 w-3" /> {t('docs.expires')}
                     </span>
                     <span className={`font-medium ${
-                      days! < 0 ? 'text-rose-600 dark:text-rose-400' :
-                      days! <= 30 ? 'text-amber-600 dark:text-amber-400' :
+                      days! < 0 ? 'text-rose-700 dark:text-rose-400' :
+                      days! <= 30 ? 'text-amber-800 dark:text-amber-400' :
                       'text-muted-foreground'
                     }`}>
                       {formatDate(d.expiryDate, lang)}

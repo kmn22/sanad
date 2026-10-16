@@ -396,7 +396,7 @@ function KanbanColumn({
             />
           ))}
           {cases.length === 0 && (
-            <div className="text-center text-xs text-muted-foreground/60 py-12 border border-dashed border-border/60 rounded-xl m-1">
+            <div className="text-center text-xs text-muted-foreground py-12 border border-dashed border-border/60 rounded-xl m-1">
               {t('cases.drop_here')}
             </div>
           )}
@@ -420,8 +420,9 @@ function DraggableCase({
   onDraftPleading?: () => void
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: c.id })
+  const { role: _ignoredRole, tabIndex: _ignoredTabIndex, ...dragAttrs } = attributes
   return (
-    <div ref={setNodeRef} {...attributes} {...listeners} className={isDragging ? 'opacity-30' : ''}>
+    <div ref={setNodeRef} {...dragAttrs} {...listeners} className={isDragging ? 'opacity-30' : ''}>
       <CaseCard c={c} onClick={onClick} onEdit={onEdit} onDelete={onDelete} onDraftPleading={onDraftPleading} />
     </div>
   )
@@ -484,7 +485,12 @@ function CaseCard({
             <div data-action-menu className="opacity-0 group-hover:opacity-100 transition-opacity">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-label={lang === 'ar' ? 'خيارات القضية' : 'Case actions'}
+                    className="h-6 w-6 p-0 rounded-full"
+                  >
                     <MoreVertical className="h-3.5 w-3.5" />
                   </Button>
                 </DropdownMenuTrigger>

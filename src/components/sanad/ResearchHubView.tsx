@@ -537,7 +537,7 @@ ${dossierConclusion || '—'}
 
                     {/* Source Citation */}
                     {item.source && (
-                      <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+                      <p className="text-xs font-semibold text-blue-800 dark:text-blue-300 bg-blue-500/10 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
                         <Scale className="w-3.5 h-3.5 shrink-0" />
                         <span>{item.source}</span>
                       </p>

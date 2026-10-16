@@ -6,9 +6,9 @@ export const en: Record<TranslationKey, string> = {
   'brand.tagline': 'Daily Operations',
   'brand.full': 'Sanad — Daily Legal & Compliance Dashboard',
 
-  'greeting.morning': 'Good morning, Ahmed.',
-  'greeting.afternoon': 'Good afternoon, Ahmed.',
-  'greeting.evening': 'Good evening, Ahmed.',
+  'greeting.morning': 'Good morning,',
+  'greeting.afternoon': 'Good afternoon,',
+  'greeting.evening': 'Good evening,',
 
   'nav.dashboard': 'Dashboard',
   'nav.today': 'Today',

@@ -306,7 +306,7 @@ ${item.practicalImpact || 'يوصى بمواءمة العقود الحالية �
               <Badge variant="outline" className="text-[11px] font-mono border-white/10">
                 {briefs.length} {lang === 'ar' ? 'تحديث موثق' : 'updates'}
               </Badge>
-              <Badge variant="secondary" className="text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 border-none">
+              <Badge variant="secondary" className="text-[11px] font-semibold bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-none">
                 {lang === 'ar' ? 'أم القرى والجريدة الرسمية' : 'Official Gazette'}
               </Badge>
             </div>
@@ -438,7 +438,7 @@ ${item.practicalImpact || 'يوصى بمواءمة العقود الحالية �
           >
             <BookOpen className="w-3.5 h-3.5" />
             <span>{lang === 'ar' ? 'أعداد النشرة التحليلية' : 'Curated Issues'}</span>
-            <Badge variant="outline" className="text-[10px] border-emerald-500/40 text-emerald-600 font-mono">
+            <Badge variant="outline" className="text-[10px] border-emerald-500/40 text-emerald-800 dark:text-emerald-300 font-mono">
               {NEWSLETTER_ISSUES.length} {lang === 'ar' ? 'أعداد' : 'issues'}
             </Badge>
           </Button>
@@ -686,8 +686,8 @@ ${item.practicalImpact || 'يوصى بمواءمة العقود الحالية �
                     </p>
 
                     {/* Practical Compliance Action Badge */}
-                    <div className="bg-emerald-950/20 border border-emerald-500/20 rounded-xl p-3 text-xs text-emerald-700 dark:text-emerald-300 flex items-start gap-2.5">
-                      <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                    <div className="bg-emerald-500/10 dark:bg-emerald-950/30 border border-emerald-500/20 rounded-xl p-3 text-xs text-emerald-900 dark:text-emerald-200 flex items-start gap-2.5">
+                      <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                       <div className="leading-relaxed">
                         <strong className="font-semibold block mb-0.5 text-foreground">
                           {lang === 'ar' ? 'الأثر التطبيقي للمحامي والمنشأة:' : 'Practical Impact & Action:'}

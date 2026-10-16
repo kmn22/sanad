@@ -110,10 +110,10 @@ function SummaryTile({
   icon: React.ReactNode
 }) {
   const toneClasses: Record<string, string> = {
-    rose: 'bg-rose-500/10 border-rose-500/25 text-rose-700 dark:text-rose-400',
-    amber: 'bg-amber-500/10 border-amber-500/25 text-amber-700 dark:text-amber-400',
-    orange: 'bg-orange-500/10 border-orange-500/25 text-orange-700 dark:text-orange-400',
-    emerald: 'bg-emerald-500/10 border-emerald-500/25 text-emerald-700 dark:text-emerald-400',
+    rose: 'bg-rose-500/10 border-rose-500/25 text-rose-800 dark:text-rose-400',
+    amber: 'bg-amber-500/10 border-amber-500/25 text-amber-800 dark:text-amber-400',
+    orange: 'bg-orange-500/10 border-orange-500/25 text-orange-800 dark:text-orange-400',
+    emerald: 'bg-emerald-500/10 border-emerald-500/25 text-emerald-800 dark:text-emerald-400',
   }
   return (
     <div className={`rounded-2xl border p-4 shadow-2xs glass-card-hover ${toneClasses[tone]}`}>
@@ -171,7 +171,7 @@ function ComplianceCard({ item, onChange }: { item: ComplianceItem; onChange: ()
               {days < 0 ? t('comp.days_overdue', { n: Math.abs(days) }) : t('comp.days_left', { n: days })}
             </span>
           </div>
-          <Progress value={pct} className="h-1.5 rounded-full" />
+          <Progress value={pct} aria-label={item.title} className="h-1.5 rounded-full" />
         </div>
 
         {item.notes && (
