@@ -68,6 +68,7 @@ export async function proxy(req: NextRequest) {
     pathname === '/api/invitations/preview' ||
     pathname === '/api/waitlist' ||
     pathname === '/api/analytics/events' ||
+    pathname === '/api/ai/check-clause' ||
     pathname.startsWith('/api/portal/') ||
     pathname.startsWith('/api/cron/')
 
@@ -142,8 +143,8 @@ export async function proxy(req: NextRequest) {
     if (portal && !canAccessPortal(role, portal)) {
       return withSecureHeaders(req, requestId, NextResponse.redirect(new URL(home, req.url)))
     }
-    // Admin guard: only admin or workspace_owner can access /admin
-    if (pathname.startsWith('/admin') && role !== 'admin' && role !== 'workspace_owner') {
+    // Admin guard: only admin, workspace_owner, or a workspace owner (e.g. solo lawyer) can access /admin
+    if (pathname.startsWith('/admin') && role !== 'admin' && role !== 'workspace_owner' && !token.isOwner) {
       return withSecureHeaders(req, requestId, NextResponse.redirect(new URL(home, req.url)))
     }
     // Workflow tooling is for practice staff only.

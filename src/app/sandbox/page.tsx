@@ -143,7 +143,7 @@ export default function SandboxPage() {
   }
 
   // Analyze clause against Saudi Labor Law & Civil Transactions
-  const handleAnalyzeClause = () => {
+  const handleAnalyzeClause = async () => {
     const text = clauseText.trim()
     if (!text) {
       setAnalysisResult(null)
@@ -157,12 +157,41 @@ export default function SandboxPage() {
       source: 'sandbox_page',
     })
 
-    setTimeout(() => {
+    let result: {
+      valid: boolean
+      score: number
+      violation: string
+      recommendation: string
+      saudiArticle: string
+    } | null = null
+
+    try {
+      const res = await fetch('/api/ai/check-clause', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clauseText: text }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (typeof data?.valid === 'boolean' && typeof data?.violation === 'string') {
+          result = {
+            valid: data.valid,
+            score: data.score,
+            violation: data.violation,
+            recommendation: data.recommendation,
+            saudiArticle: data.article,
+          }
+        }
+      }
+    } catch {
+      // Fallback below
+    }
+
+    if (!result) {
       const restrictive = /عدم العمل|عدم المنافسة|منافس/i.test(text)
       const isProbation = /تجربة|فترة التجربة|90|180/i.test(text)
       const isPenalty = /غرامة|شرط جزائي|تعويض قطعي/i.test(text)
 
-      let result
       if (restrictive) {
         result = {
           valid: false,
@@ -196,17 +225,17 @@ export default function SandboxPage() {
           saudiArticle: 'فحص مطابق للأحكام العامة',
         }
       }
+    }
 
-      setAnalysisResult(result)
-      setAnalyzingClause(false)
-      trackEvent({
-        event: ANALYTICS_EVENTS.CLAUSE_CHECK_COMPLETED,
-        score: result.score,
-        violationFound: !result.valid,
-        article: result.saudiArticle,
-      })
-      toast.success('تم فحص البند بنجاح بالذكاء الاصطناعي السيادي')
-    }, 500)
+    setAnalysisResult(result)
+    setAnalyzingClause(false)
+    trackEvent({
+      event: ANALYTICS_EVENTS.CLAUSE_CHECK_COMPLETED,
+      score: result.score,
+      violationFound: !result.valid,
+      article: result.saudiArticle,
+    })
+    toast.success('تم فحص البند بنجاح بالذكاء الاصطناعي السيادي')
   }
 
   const handleCopyRecommendation = () => {

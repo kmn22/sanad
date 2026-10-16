@@ -196,7 +196,7 @@ export function InteractiveDemo() {
     setCopied(false)
   }
 
-  const handleRunCheck = () => {
+  const handleRunCheck = async () => {
     if (!clauseText.trim()) {
       toast.error('الرجاء إدخال نص البند أولاً')
       return
@@ -209,19 +209,33 @@ export function InteractiveDemo() {
       source: 'landing_embedded_demo',
     })
 
-    setTimeout(() => {
-      const outcome = evaluateClauseText(clauseText, activePreset)
-      setAuditResult(outcome)
-      setIsAnalyzing(false)
-      setHasChecked(true)
-      trackEvent({
-        event: ANALYTICS_EVENTS.CLAUSE_CHECK_COMPLETED,
-        score: outcome.score,
-        violationFound: !outcome.valid,
-        article: outcome.article,
+    let outcome = evaluateClauseText(clauseText, activePreset)
+    try {
+      const res = await fetch('/api/ai/check-clause', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clauseText }),
       })
-      toast.success('اكتمل الفحص النظامي للبند بنجاح')
-    }, 450)
+      if (res.ok) {
+        const data = await res.json()
+        if (typeof data?.valid === 'boolean' && typeof data?.violation === 'string') {
+          outcome = data
+        }
+      }
+    } catch {
+      // Offline or transient network error — keep client-side deterministic outcome
+    }
+
+    setAuditResult(outcome)
+    setIsAnalyzing(false)
+    setHasChecked(true)
+    trackEvent({
+      event: ANALYTICS_EVENTS.CLAUSE_CHECK_COMPLETED,
+      score: outcome.score,
+      violationFound: !outcome.valid,
+      article: outcome.article,
+    })
+    toast.success('اكتمل الفحص النظامي للبند بنجاح')
   }
 
   const handleCopyAlternative = () => {

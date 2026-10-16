@@ -18,6 +18,7 @@ export default function AdminPage() {
   const [jobs, setJobs] = useState<any | null>(null)
   const [flags, setFlags] = useState<Record<string, boolean> | null>(null)
   const [auditLogs, setAuditLogs] = useState<any[]>([])
+  const [waitlist, setWaitlist] = useState<Array<{ id: string; email: string; interest: string | null; source: string | null; createdAt: string }>>([])
   const [loadingLogs, setLoadingLogs] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [email, setEmail] = useState('')
@@ -45,8 +46,9 @@ export default function AdminPage() {
       fetch('/api/admin/privacy/requests'),
       fetch('/api/admin/users'),
       fetch('/api/admin/jobs'),
-      fetch('/api/admin/audit-logs')
-    ]).then(async ([a, b, c, e, f]) => {
+      fetch('/api/admin/audit-logs'),
+      fetch('/api/admin/waitlist'),
+    ]).then(async ([a, b, c, e, f, w]) => {
       if (a.ok) setStatus(await a.json())
       if (b.ok) setRequests(await b.json())
       if (c.ok) setUsers(await c.json())
@@ -54,6 +56,10 @@ export default function AdminPage() {
       if (f.ok) {
         const logData = await f.json()
         setAuditLogs(logData.items || [])
+      }
+      if (w.ok) {
+        const wlData = await w.json()
+        setWaitlist(wlData.items || [])
       }
     })
     fetch('/api/admin/feature-flags').then(async (response) => {
@@ -400,6 +406,59 @@ export default function AdminPage() {
                         </button>
                       )}
                     </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="mb-8">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div>
+              <h2 className="text-xl font-bold">قائمة الانتظار المبكرة (Waitlist — {waitlist.length})</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">المسجلون في صفحة قيد البناء والصفحة الرئيسية لتجربة المزايا القادمة.</p>
+            </div>
+            {waitlist.length > 0 && (
+              <button
+                onClick={() => {
+                  const header = 'email,interest,source,createdAt\n'
+                  const rows = waitlist
+                    .map((w) => `"${w.email.replace(/"/g, '""')}","${(w.interest || '').replace(/"/g, '""')}","${(w.source || '').replace(/"/g, '""')}","${w.createdAt}"`)
+                    .join('\n')
+                  const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8' })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = `sanad-waitlist-${new Date().toISOString().slice(0, 10)}.csv`
+                  a.click()
+                  URL.revokeObjectURL(url)
+                }}
+                className="rounded-lg border px-3 py-1.5 text-xs hover:bg-muted font-medium"
+              >
+                تصدير CSV
+              </button>
+            )}
+          </div>
+          {waitlist.length === 0 ? (
+            <div className="rounded-xl border p-6 text-center text-sm text-muted-foreground">
+              لا توجد تسجيلات في قائمة الانتظار حالياً.
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              {waitlist.slice(0, 30).map((entry) => (
+                <div key={entry.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-semibold text-foreground" dir="ltr">{entry.email}</span>
+                    {entry.interest && (
+                      <span className="rounded-full bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 text-[10px] font-medium">
+                        {entry.interest}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 text-muted-foreground">
+                    {entry.source && <span className="font-mono text-[11px]">{entry.source}</span>}
+                    <span>{new Date(entry.createdAt).toLocaleString('ar-SA')}</span>
                   </div>
                 </div>
               ))}

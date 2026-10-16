@@ -8,7 +8,7 @@ import { deleteEncryptedFile } from '@/lib/file-storage'
 export async function PATCH(req: NextRequest) {
   const auth = await getAuthContext()
   if (!auth) return unauthorizedJson()
-  if (!['admin', 'workspace_owner'].includes(auth.role)) return forbiddenJson()
+  if (!['admin', 'workspace_owner'].includes(auth.role) && !auth.isOwner) return forbiddenJson()
   const body = await req.json().catch(() => null)
   const name = typeof body?.name === 'string' ? body.name.trim().slice(0, 120) : ''
   const domain = typeof body?.domain === 'string' ? body.domain.trim().toLowerCase().slice(0, 253) : ''
@@ -37,7 +37,7 @@ export async function DELETE(req: NextRequest) {
   try {
     const auth = await getAuthContext()
     if (!auth) return unauthorizedJson()
-    if (auth.role !== 'workspace_owner') return forbiddenJson()
+    if (auth.role !== 'workspace_owner' && !auth.isOwner) return forbiddenJson()
     if (!auth.mfaEnabled) {
       return NextResponse.json(
         { error: 'Multi-factor authentication must be enabled before the workspace can be deleted', code: 'MFA_REQUIRED' },

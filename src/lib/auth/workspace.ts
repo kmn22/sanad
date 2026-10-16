@@ -7,16 +7,23 @@ export type AuthContext = {
   workspaceId: string
   role: string
   mfaEnabled: boolean
+  isOwner?: boolean
 }
 
 export async function getAuthContext(): Promise<AuthContext | null> {
   const session = await getServerSession(authOptions)
-  const user = session?.user as { id?: string; workspaceId?: string; role?: string; mfaEnabled?: boolean } | undefined
+  const user = session?.user as { id?: string; workspaceId?: string; role?: string; mfaEnabled?: boolean; isOwner?: boolean } | undefined
   if (!user?.id || !user.workspaceId) return null
   // Client logins share the firm's workspaceId but must never be authorised
   // by it — every workspace-scoped API would otherwise expose firm data.
   if (user.role === 'client') return null
-  return { userId: user.id, workspaceId: user.workspaceId, role: user.role || 'lawyer', mfaEnabled: Boolean(user.mfaEnabled) }
+  return {
+    userId: user.id,
+    workspaceId: user.workspaceId,
+    role: user.role || 'lawyer',
+    mfaEnabled: Boolean(user.mfaEnabled),
+    isOwner: Boolean(user.isOwner),
+  }
 }
 
 export type ClientAuthContext = {
@@ -54,7 +61,7 @@ export function hasRole(auth: AuthContext, roles: string[]) {
 }
 
 export function canManageUsers(auth: AuthContext) {
-  return auth.mfaEnabled && hasRole(auth, ['admin', 'workspace_owner'])
+  return auth.mfaEnabled && (hasRole(auth, ['admin', 'workspace_owner']) || Boolean(auth.isOwner))
 }
 
 export function communicationWorkspaceWhere(workspaceId: string) {

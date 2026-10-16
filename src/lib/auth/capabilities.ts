@@ -86,7 +86,7 @@ export function canWriteAcademic(auth: AuthContext) {
 
 /** May administer the workspace (non-MFA-gated; use canManageUsers for user admin). */
 export function canManage(auth: AuthContext) {
-  return MANAGE_ROLES.has(auth.role)
+  return MANAGE_ROLES.has(auth.role) || Boolean(auth.isOwner)
 }
 
 /** 403 response when the role lacks a capability; null when allowed. */

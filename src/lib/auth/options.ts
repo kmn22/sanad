@@ -24,13 +24,15 @@ export const authOptions: NextAuthOptions = {
         const dbUser = await db.user.findUnique({ where: { email: cleanEmail } })
 
         if (!dbUser?.password || dbUser.disabledAt || (dbUser.lockedUntil && dbUser.lockedUntil > new Date())) return null
+        let isOwner = false
         if (dbUser.workspaceId) {
           const [workspace, membership] = await Promise.all([
             db.workspace.findUnique({ where: { id: dbUser.workspaceId }, select: { status: true } }),
-            db.workspaceMembership.findUnique({ where: { workspaceId_userId: { workspaceId: dbUser.workspaceId, userId: dbUser.id } }, select: { status: true, role: true } }),
+            db.workspaceMembership.findUnique({ where: { workspaceId_userId: { workspaceId: dbUser.workspaceId, userId: dbUser.id } }, select: { status: true, role: true, isOwner: true } }),
           ])
           if (!workspace || workspace.status !== 'active' || !membership || membership.status !== 'active') return null
           dbUser.role = membership.role
+          isOwner = membership.isOwner
         }
         if (!verifyPassword(credentials.password, dbUser.password)) {
           const attempts = dbUser.failedLoginAttempts + 1
@@ -69,6 +71,7 @@ export const authOptions: NextAuthOptions = {
           clientId: dbUser.clientId,
           sessionVersion: dbUser.sessionVersion,
           mfaEnabled: dbUser.mfaEnabled,
+          isOwner,
           privacyNoticeVersion: dbUser.privacyNoticeVersion,
         }
       },
@@ -90,13 +93,14 @@ export const authOptions: NextAuthOptions = {
         token.clientId = (user as { clientId?: string | null }).clientId || undefined
         token.sessionVersion = (user as { sessionVersion?: number }).sessionVersion || 0
         token.mfaEnabled = Boolean((user as { mfaEnabled?: boolean }).mfaEnabled)
+        token.isOwner = Boolean((user as { isOwner?: boolean }).isOwner)
         token.privacyNoticeVersion = (user as { privacyNoticeVersion?: string }).privacyNoticeVersion
         return token
       }
       if (token.id) {
         const current = await db.user.findUnique({
           where: { id: token.id as string },
-          select: { sessionVersion: true, disabledAt: true, role: true, workspaceId: true, clientId: true, mfaEnabled: true, privacyNoticeVersion: true, workspace: { select: { status: true, type: true } }, memberships: { where: { status: 'active' }, select: { workspaceId: true, role: true } } },
+          select: { sessionVersion: true, disabledAt: true, role: true, workspaceId: true, clientId: true, mfaEnabled: true, privacyNoticeVersion: true, workspace: { select: { status: true, type: true } }, memberships: { where: { status: 'active' }, select: { workspaceId: true, role: true, isOwner: true } } },
         })
         const activeMembership = current?.workspaceId ? current.memberships.find((membership) => membership.workspaceId === current.workspaceId) : null
         if (!current || current.disabledAt || current.sessionVersion !== token.sessionVersion || current.workspace?.status !== 'active' || !activeMembership) {
@@ -106,6 +110,7 @@ export const authOptions: NextAuthOptions = {
           delete token.role
         } else {
           token.role = activeMembership.role
+          token.isOwner = activeMembership.isOwner
           token.workspaceId = current.workspaceId
           token.clientId = current.clientId || undefined
           token.mfaEnabled = current.mfaEnabled
@@ -123,6 +128,7 @@ export const authOptions: NextAuthOptions = {
         ;(session.user as { workspaceId?: string }).workspaceId = token.workspaceId as string | undefined
         ;(session.user as { clientId?: string }).clientId = token.clientId as string | undefined
         ;(session.user as { mfaEnabled?: boolean }).mfaEnabled = Boolean(token.mfaEnabled)
+        ;(session.user as { isOwner?: boolean }).isOwner = Boolean(token.isOwner)
         ;(session.user as { workspaceType?: string }).workspaceType = token.workspaceType as string | undefined
       }
       return session
