@@ -1,6 +1,7 @@
 'use client'
 
 import { FormEvent, useState } from 'react'
+import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 
 export default function SecuritySettingsPage() {
@@ -64,6 +65,11 @@ export default function SecuritySettingsPage() {
   return (
     <main className="mx-auto max-w-3xl px-6 py-12 space-y-8" dir="rtl">
       <div>
+        <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
+          <Link href="/dashboard" className="text-emerald-700 hover:underline font-medium">العودة إلى مساحة العمل</Link>
+          <span>/</span>
+          <span>الأمان والتحقق الثنائي</span>
+        </div>
         <h1 className="text-3xl font-bold mb-3">أمان الحساب</h1>
         <p className="text-muted-foreground">التحقق بخطوتين إلزامي لمالكي مساحات العمل والإدارة.</p>
       </div>

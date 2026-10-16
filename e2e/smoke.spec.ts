@@ -25,6 +25,28 @@ test.describe('public surface', () => {
     const response = await page.goto('/pricing')
     expect(response?.ok()).toBeTruthy()
   })
+
+  for (const route of ['/sandbox', '/about', '/security', '/build', '/privacy', '/terms', '/ai-disclosure']) {
+    test(`${route} renders without error`, async ({ page }) => {
+      const response = await page.goto(route)
+      expect(response?.ok()).toBeTruthy()
+      await expect(page.locator('h1').first()).toBeVisible()
+    })
+  }
+
+  test('social preview image and crawler metadata are served', async ({ request }) => {
+    const [og, robots, sitemap] = await Promise.all([
+      request.get('/og-preview.png'),
+      request.get('/robots.txt'),
+      request.get('/sitemap.xml'),
+    ])
+    expect(og.ok()).toBeTruthy()
+    expect(og.headers()['content-type']).toContain('image/png')
+    expect(robots.ok()).toBeTruthy()
+    expect(await robots.text()).toContain('Disallow: /api/')
+    expect(sitemap.ok()).toBeTruthy()
+    expect(await sitemap.text()).toContain('/security')
+  })
 })
 
 test.describe('access control', () => {

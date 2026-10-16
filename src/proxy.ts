@@ -66,6 +66,8 @@ export async function proxy(req: NextRequest) {
     pathname === '/api/billing/webhook' ||
     pathname === '/api/privacy/requests' ||
     pathname === '/api/invitations/preview' ||
+    pathname === '/api/waitlist' ||
+    pathname === '/api/analytics/events' ||
     pathname.startsWith('/api/portal/') ||
     pathname.startsWith('/api/cron/')
 
@@ -163,7 +165,7 @@ export const config = {
   matcher: [
     // Run on every request so HTTPS-only headers are applied site-wide;
     // static assets are skipped for performance.
-    '/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|icons/).*)',
+    '/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.json|manifest.webmanifest|og-preview.png|logo.svg|icon-192.png|icon-512.png|icons/).*)',
     '/api/:path*',
     '/dashboard/:path*', '/dashboard',
     '/student/:path*', '/student',

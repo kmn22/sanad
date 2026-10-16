@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Scale, ArrowLeft, ShieldCheck, Mail, Lock, AlertCircle } from 'lucide-react'
@@ -79,62 +80,55 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 p-4 font-sans relative overflow-hidden" dir="rtl">
-      
-      {/* Background aesthetics */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-600/20 rounded-full blur-[120px]" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/20 rounded-full blur-[120px]" />
-
-      <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-8 bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden relative z-10">
+    <div className="min-h-screen flex items-center justify-center bg-[#F5F7F5] p-4 font-sans relative" dir="rtl">
+      <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 bg-white border border-[#CCD8CE] rounded-3xl shadow-sm overflow-hidden relative z-10">
         
-        {/* Left Side: Branding & Info */}
-        <div className="hidden md:flex flex-col justify-between p-12 bg-gradient-to-br from-slate-900 to-slate-800 relative">
-          <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:32px]" />
-          
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-12">
-              <div className="bg-emerald-500/20 p-3 rounded-xl border border-emerald-500/30">
-                <Scale className="w-8 h-8 text-emerald-400" />
+        {/* Left Side: Institutional Branding */}
+        <div className="hidden md:flex flex-col justify-between p-10 bg-[#E8EFE9] border-l border-[#CCD8CE]">
+          <div>
+            <Link href="/" className="flex items-center gap-3 mb-10 hover:opacity-85 transition-opacity w-fit">
+              <div className="bg-[#1F7A46] p-2.5 rounded-xl text-white">
+                <Scale className="w-6 h-6 stroke-[2.2]" />
               </div>
-              <h1 className="text-3xl font-bold text-white tracking-tight">سند</h1>
-            </div>
+              <span className="text-2xl font-black text-[#1B281F] font-heading">سَنَد</span>
+            </Link>
 
-            <h2 className="text-4xl font-extrabold text-white leading-tight mb-6">
-              مساحة العمل القانونية <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">الذكية المتكاملة</span>
+            <h2 className="text-3xl font-extrabold text-[#1B281F] font-heading leading-tight mb-4">
+              مساعد الصياغة الممتثلة <br />
+              <span className="text-[#1F7A46]">للأنظمة السعودية</span>
             </h2>
-            <p className="text-slate-400 text-lg leading-relaxed">
-              قم بإدارة قضاياك، عملائك، وفواتيرك في منصة واحدة مدعومة بالذكاء الاصطناعي وبأعلى معايير الأمان المعتمدة في المملكة.
+            <p className="text-[#4A5D50] text-sm leading-relaxed">
+              سجل الدخول لإدارة مسوداتك القانونية، فحص العقود فورياً مقابل نظام العمل والمعاملات المدنية، ومتابعة قضايا مكتبك.
             </p>
           </div>
 
-          <div className="relative z-10 flex items-center gap-4 text-sm text-slate-500 font-medium">
-            <ShieldCheck className="w-5 h-5 text-emerald-500" />
-            <span>متوافق مع هيئة الزكاة (ZATCA) وأنظمة الأمن السيبراني (NCA)</span>
+          <div className="flex items-center gap-2 text-xs text-[#566A5C] font-medium pt-8 border-t border-[#CCD8CE]">
+            <ShieldCheck className="w-4 h-4 text-[#1F7A46]" />
+            <span>بيئة معزولة • متوافق مع نظام حماية البيانات الشخصية (PDPL)</span>
           </div>
         </div>
 
         {/* Right Side: Login Form */}
-        <div className="p-8 md:p-12 flex flex-col justify-center">
-          <div className="mb-10 text-center md:text-right">
-            <h3 className="text-2xl font-bold text-white mb-2">مرحباً بعودتك</h3>
-            <p className="text-slate-400">سجل الدخول للمتابعة إلى مساحة العمل الخاصة بك</p>
+        <div className="p-8 sm:p-10 flex flex-col justify-center">
+          <div className="mb-8 text-center md:text-right">
+            <h1 className="text-2xl font-bold text-[#1B281F] font-heading mb-1">تسجيل الدخول</h1>
+            <p className="text-xs text-[#566A5C]">أدخل بيانات اعتمادك للوصول إلى مساحة العمل</p>
           </div>
 
           {errorMsg && (
-            <div className="mb-6 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="mb-5 p-3 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-[#991B1B] text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-[#DC2626]" />
               <span>{errorMsg}</span>
             </div>
           )}
 
-          <form onSubmit={handleLogin} noValidate className="space-y-6">
-            <div className="space-y-2">
-              <label htmlFor="login-email" className="text-sm font-medium text-slate-300">
+          <form onSubmit={handleLogin} noValidate className="space-y-4">
+            <div className="space-y-1.5">
+              <label htmlFor="login-email" className="text-xs font-bold text-[#1B281F]">
                 البريد الإلكتروني
               </label>
               <div className="relative">
-                <Mail className="absolute right-3 top-3 h-5 w-5 text-slate-500" aria-hidden="true" />
+                <Mail className="absolute right-3 top-3 h-4 w-4 text-[#566A5C]" aria-hidden="true" />
                 <Input
                   id="login-email"
                   type="email"
@@ -146,20 +140,20 @@ export default function LoginPage() {
                     setEmail(e.target.value)
                     if (errorMsg) setErrorMsg('')
                   }}
-                  className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-400 pl-4 pr-11 h-12 focus-visible:ring-emerald-500"
+                  className="bg-[#F5F7F5] border-[#CCD8CE] text-[#1B281F] placeholder:text-[#566A5C]/60 pl-4 pr-10 h-11 text-xs focus-visible:ring-[#1F7A46]"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <div className="flex justify-between items-center">
-                <label htmlFor="login-password" className="text-sm font-medium text-slate-300">
+                <label htmlFor="login-password" className="text-xs font-bold text-[#1B281F]">
                   كلمة المرور
                 </label>
-                <a href="/forgot-password" className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors">نسيت كلمة المرور؟</a>
+                <Link href="/forgot-password" className="text-xs text-[#1F7A46] hover:underline">نسيت كلمة المرور؟</Link>
               </div>
               <div className="relative">
-                <Lock className="absolute right-3 top-3 h-5 w-5 text-slate-500" aria-hidden="true" />
+                <Lock className="absolute right-3 top-3 h-4 w-4 text-[#566A5C]" aria-hidden="true" />
                 <Input
                   id="login-password"
                   type="password"
@@ -171,13 +165,13 @@ export default function LoginPage() {
                     setPassword(e.target.value)
                     if (errorMsg) setErrorMsg('')
                   }}
-                  className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-400 pl-4 pr-11 h-12 focus-visible:ring-emerald-500"
+                  className="bg-[#F5F7F5] border-[#CCD8CE] text-[#1B281F] placeholder:text-[#566A5C]/60 pl-4 pr-10 h-11 text-xs focus-visible:ring-[#1F7A46]"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="login-otp" className="text-sm font-medium text-slate-300">
+            <div className="space-y-1.5">
+              <label htmlFor="login-otp" className="text-xs font-bold text-[#1B281F]">
                 رمز التحقق بخطوتين (عند تفعيله)
               </label>
               <Input
@@ -190,35 +184,35 @@ export default function LoginPage() {
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
                 maxLength={16}
-                className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-400 h-12 focus-visible:ring-emerald-500"
+                className="bg-[#F5F7F5] border-[#CCD8CE] text-[#1B281F] placeholder:text-[#566A5C]/60 h-11 text-xs focus-visible:ring-[#1F7A46]"
               />
             </div>
 
             <Button 
               type="submit" 
-              className="w-full h-12 mt-4 bg-emerald-600 hover:bg-emerald-500 text-white text-base font-semibold shadow-lg shadow-emerald-900/20 transition-all hover:scale-[1.02]" 
+              className="w-full h-11 mt-2 bg-[#1F7A46] hover:bg-[#165832] text-white text-xs font-bold shadow-xs transition-all cursor-pointer" 
               disabled={loading}
             >
               {loading ? (
                 <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                   جاري التحقق...
                 </div>
               ) : (
                 <div className="flex items-center justify-center gap-2">
                   تسجيل الدخول
-                  <ArrowLeft className="w-5 h-5" />
+                  <ArrowLeft className="w-4 h-4" />
                 </div>
               )}
             </Button>
           </form>
 
-          <div className="mt-8 pt-8 border-t border-slate-800 text-center">
-            <p className="text-sm text-slate-300">
-              ليس لديك حساب؟{' '}
-              <a href="/register" className="text-emerald-400 hover:text-emerald-300 transition-colors font-medium">
+          <div className="mt-6 pt-6 border-t border-[#CCD8CE] text-center">
+            <p className="text-xs text-[#566A5C]">
+              ليس لديك حساب بعد؟{' '}
+              <Link href="/register" className="text-[#1F7A46] hover:underline font-bold">
                 إنشاء حساب جديد
-              </a>
+              </Link>
             </p>
           </div>
         </div>

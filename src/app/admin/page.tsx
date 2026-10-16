@@ -1,10 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { useSession } from 'next-auth/react'
 
 type Status = { emailConfigured: boolean; billingConfigured: boolean; backupEncryptionConfigured: boolean; mfaEnabled: boolean; overduePrivacyRequests: number; openIncidents: number; uptimeSeconds?: number; queuedJobs?: number; failedJobs?: number; lastBackupAt?: string | null }
 
 export default function AdminPage() {
+  const { data: session } = useSession()
+  const isPlatformAdmin = (session?.user as { role?: string } | undefined)?.role === 'admin'
   const [status, setStatus] = useState<Status | null>(null)
   const [requests, setRequests] = useState<any[]>([])
   const [users, setUsers] = useState<any[]>([])
@@ -37,14 +41,12 @@ export default function AdminPage() {
       fetch('/api/admin/system/status'),
       fetch('/api/admin/privacy/requests'),
       fetch('/api/admin/users'),
-      fetch('/api/admin/platform/workspaces'),
       fetch('/api/admin/jobs'),
       fetch('/api/admin/audit-logs')
-    ]).then(async ([a, b, c, d, e, f]) => {
+    ]).then(async ([a, b, c, e, f]) => {
       if (a.ok) setStatus(await a.json())
       if (b.ok) setRequests(await b.json())
       if (c.ok) setUsers(await c.json())
-      if (d.ok) setWorkspaces(await d.json())
       if (e.ok) setJobs(await e.json())
       if (f.ok) {
         const logData = await f.json()
@@ -55,6 +57,13 @@ export default function AdminPage() {
       if (response.ok) setFlags((await response.json()).flags)
     })
   }, [])
+
+  useEffect(() => {
+    if (!isPlatformAdmin) return
+    fetch('/api/admin/platform/workspaces').then(async (res) => {
+      if (res.ok) setWorkspaces(await res.json())
+    })
+  }, [isPlatformAdmin])
 
   async function invite(e: React.FormEvent) {
     e.preventDefault()
@@ -137,6 +146,11 @@ export default function AdminPage() {
     <main className="mx-auto max-w-5xl px-6 py-12" dir="rtl">
       <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
         <div>
+          <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
+            <Link href="/dashboard" className="text-emerald-700 hover:underline font-medium">العودة إلى مساحة العمل</Link>
+            <span>/</span>
+            <span>لوحة الإدارة</span>
+          </div>
           <h1 className="text-3xl font-bold">إدارة سند والامتثال</h1>
           <p className="text-sm text-muted-foreground mt-1">الرقابة الإدارية، طلبات نظام حماية البيانات الشخصية، وسجلات التدقيق.</p>
         </div>

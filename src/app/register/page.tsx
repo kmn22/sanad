@@ -22,31 +22,31 @@ const ACCOUNT_OPTIONS: {
   perks: string[]
 }[] = [
   {
-    id: 'student',
-    title: 'طالب قانون',
-    desc: 'نظّم مقرراتك ومواعيدك وراجع بذكاء',
-    icon: GraduationCap,
-    ring: 'hover:border-indigo-400/60 data-[on=true]:border-indigo-400 data-[on=true]:bg-indigo-500/10 data-[on=true]:shadow-indigo-900/30',
-    tile: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
-    perks: ['المقررات والمحاضرات', 'بنك المصطلحات', 'دفتر القضايا'],
-  },
-  {
     id: 'lawyer',
     title: 'محامٍ مستقل',
-    desc: 'أدر قضاياك ووقتك وفواتيرك',
+    desc: 'صياغة ممتثلة وتدقيق عقود وإدارة قضايا',
     icon: Briefcase,
-    ring: 'hover:border-emerald-400/60 data-[on=true]:border-emerald-400 data-[on=true]:bg-emerald-500/10 data-[on=true]:shadow-emerald-900/30',
-    tile: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
-    perks: ['إدارة القضايا والمهام', 'صياغة بالذكاء الاصطناعي', 'بوابة الموكّل'],
+    ring: 'hover:border-[#1F7A46] data-[on=true]:border-[#1F7A46] data-[on=true]:bg-[#E8EFE9] data-[on=true]:shadow-xs',
+    tile: 'bg-[#E8EFE9] text-[#1F7A46] border-[#CCD8CE]',
+    perks: ['فحص لحظي للأنظمة', 'صياغة بالذكاء الاصطناعي', 'بوابة الموكل'],
   },
   {
     id: 'firm',
     title: 'مكتب محاماة',
-    desc: 'فريق، توزيع قضايا، وتحصيل',
+    desc: 'فريق عمل، توزيع مهام، وصلاحيات مشتركة',
     icon: Building2,
-    ring: 'hover:border-amber-400/60 data-[on=true]:border-amber-400 data-[on=true]:bg-amber-500/10 data-[on=true]:shadow-amber-900/30',
-    tile: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
-    perks: ['إدارة الفريق والصلاحيات', 'لوحة أداء المكتب', 'فوترة ZATCA'],
+    ring: 'hover:border-[#1F7A46] data-[on=true]:border-[#1F7A46] data-[on=true]:bg-[#E8EFE9] data-[on=true]:shadow-xs',
+    tile: 'bg-[#E8EFE9] text-[#1F7A46] border-[#CCD8CE]',
+    perks: ['إدارة الفريق والصلاحيات', 'تقارير الشركاء', 'فواتير داخلية'],
+  },
+  {
+    id: 'student',
+    title: 'طالب قانون أو متدرب',
+    desc: 'بنك الأنظمة والتدريب على الصياغة القضائية',
+    icon: GraduationCap,
+    ring: 'hover:border-[#1F7A46] data-[on=true]:border-[#1F7A46] data-[on=true]:bg-[#E8EFE9] data-[on=true]:shadow-xs',
+    tile: 'bg-[#E8EFE9] text-[#1F7A46] border-[#CCD8CE]',
+    perks: ['المقررات وبنك الأنظمة', 'بطاقات الاستذكار', 'مجاني للجامعات'],
   },
 ]
 
@@ -61,7 +61,7 @@ const ROLE_AR: Record<string, string> = {
 export default function RegisterPage() {
   const router = useRouter()
   const [step, setStep] = useState<'type' | 'details' | 'done'>('type')
-  const [accountType, setAccountType] = useState<AccountType | null>(null)
+  const [accountType, setAccountType] = useState<AccountType | null>('lawyer')
   const [name, setName] = useState('')
   const [orgName, setOrgName] = useState('')
   const [email, setEmail] = useState('')
@@ -145,62 +145,61 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 p-4 font-sans relative overflow-hidden" dir="rtl">
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-600/20 rounded-full blur-[120px]" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/20 rounded-full blur-[120px]" />
-
-      <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-5 bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden relative z-10">
-        {/* Branding */}
-        <div className="hidden md:flex md:col-span-2 flex-col justify-between p-10 bg-gradient-to-br from-slate-900 to-slate-800 relative">
-          <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:32px]" />
-          <div className="relative z-10">
-            <Link href="/" className="flex items-center gap-3 mb-10 hover:opacity-80 transition-opacity w-fit">
-              <div className="bg-emerald-500/20 p-3 rounded-xl border border-emerald-500/30">
-                <Scale className="w-7 h-7 text-emerald-400" />
+    <div className="min-h-screen flex items-center justify-center bg-[#F5F7F5] p-4 font-sans relative" dir="rtl">
+      <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-5 bg-white border border-[#CCD8CE] rounded-3xl shadow-sm overflow-hidden relative z-10">
+        {/* Branding Side */}
+        <div className="hidden md:flex md:col-span-2 flex-col justify-between p-10 bg-[#E8EFE9] border-l border-[#CCD8CE] relative">
+          <div>
+            <Link href="/" className="flex items-center gap-3 mb-10 hover:opacity-85 transition-opacity w-fit">
+              <div className="bg-[#1F7A46] p-2.5 rounded-xl text-white">
+                <Scale className="w-6 h-6 stroke-[2.2]" />
               </div>
-              <span className="text-3xl font-bold text-white tracking-tight">سند</span>
+              <span className="text-2xl font-black text-[#1B281F] font-heading">سَنَد</span>
             </Link>
-            <h1 className="text-3xl font-extrabold text-white leading-tight mb-5">
-              بوابة لكل دور <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">في المنظومة القانونية</span>
+            <h1 className="text-2xl font-extrabold text-[#1B281F] font-heading leading-tight mb-4">
+              منظومة الصياغة <br />
+              <span className="text-[#1F7A46]">الممتثلة للأنظمة السعودية</span>
             </h1>
-            <ul className="space-y-3 text-sm text-slate-300">
-              <li className="flex items-center gap-2"><GraduationCap className="h-4 w-4 text-indigo-300" /> بوابة الطالب</li>
-              <li className="flex items-center gap-2"><Briefcase className="h-4 w-4 text-emerald-300" /> بوابة المحامي</li>
-              <li className="flex items-center gap-2"><Building2 className="h-4 w-4 text-amber-300" /> بوابة المكتب</li>
-              <li className="flex items-center gap-2"><User className="h-4 w-4 text-sky-300" /> بوابة الموكّل (بدعوة من المكتب)</li>
+            <p className="text-[#4A5D50] text-xs leading-relaxed mb-6">
+              أنشئ مساحة عملك اليوم وابدأ فحص بنود العقود وتدقيق الضمانات في 60 ثانية.
+            </p>
+            <ul className="space-y-2.5 text-xs text-[#1B281F] font-medium">
+              <li className="flex items-center gap-2"><Briefcase className="h-4 w-4 text-[#1F7A46]" /> بوابة المحامي المستقل</li>
+              <li className="flex items-center gap-2"><Building2 className="h-4 w-4 text-[#1F7A46]" /> بوابة مكتب المحاماة</li>
+              <li className="flex items-center gap-2"><GraduationCap className="h-4 w-4 text-[#1F7A46]" /> بوابة الطالب والمتدرب</li>
+              <li className="flex items-center gap-2"><User className="h-4 w-4 text-[#1F7A46]" /> بوابة الموكل السيادية</li>
             </ul>
           </div>
-          <div className="relative z-10 mt-10 flex items-center gap-3 text-xs text-slate-500 font-medium">
-            <ShieldCheck className="w-5 h-5 text-emerald-500" />
-            <span>بياناتك مشفرة ومعزولة لكل مساحة عمل</span>
+          <div className="mt-8 flex items-center gap-2 text-xs text-[#566A5C] font-medium pt-4 border-t border-[#CCD8CE]">
+            <ShieldCheck className="w-4 h-4 text-[#1F7A46]" />
+            <span>بياناتك معزولة ومحلية بالكامل داخل المملكة</span>
           </div>
         </div>
 
         {/* Form side */}
-        <div className="md:col-span-3 p-7 md:p-10 flex flex-col justify-center">
+        <div className="md:col-span-3 p-6 sm:p-10 flex flex-col justify-center">
           {step === 'done' ? (
-            <div className="text-center space-y-5 animate-in fade-in-0 zoom-in-95 duration-300">
-              <div className="mx-auto h-16 w-16 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 grid place-items-center">
-                <MailCheck className="h-8 w-8 text-emerald-400" />
+            <div className="text-center space-y-4 animate-in fade-in-0 zoom-in-95 duration-200">
+              <div className="mx-auto h-14 w-14 rounded-2xl bg-[#E8EFE9] border border-[#CCD8CE] grid place-items-center">
+                <MailCheck className="h-7 w-7 text-[#1F7A46]" />
               </div>
-              <h2 className="text-2xl font-bold text-white">تحقّق من بريدك الإلكتروني</h2>
-              <p className="text-slate-400 text-sm leading-relaxed">
+              <h2 className="text-2xl font-bold text-[#1B281F] font-heading">تحقّق من بريدك الإلكتروني</h2>
+              <p className="text-[#4A5D50] text-xs sm:text-sm leading-relaxed max-w-sm mx-auto">
                 أنشأنا مساحة العمل الخاصة بك. {doneInfo?.delivery === 'email' ? `أرسلنا رابط التفعيل إلى ${email}.` : 'يلزم تأكيد البريد قبل تسجيل الدخول.'}
               </p>
               {doneInfo?.devVerifyUrl && (
-                <a href={doneInfo.devVerifyUrl} className="block text-xs text-amber-300 underline break-all" id="dev-verify-link">
+                <a href={doneInfo.devVerifyUrl} className="block text-xs text-[#D97706] underline break-all font-mono" id="dev-verify-link">
                   (وضع التطوير) فعّل الحساب مباشرة
                 </a>
               )}
-              <Button asChild className="bg-emerald-600 hover:bg-emerald-500 text-white">
+              <Button asChild className="bg-[#1F7A46] hover:bg-[#165832] text-white font-bold h-10 text-xs px-6">
                 <Link href="/login">الذهاب لتسجيل الدخول</Link>
               </Button>
             </div>
           ) : step === 'type' ? (
-            <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
-              <h2 className="text-2xl font-bold text-white mb-1">اختر نوع حسابك</h2>
-              <p className="text-slate-400 text-sm mb-6">ستحصل على بوابة مصممة لاحتياجاتك</p>
+            <div className="animate-in fade-in-0 duration-200">
+              <h2 className="text-2xl font-bold text-[#1B281F] font-heading mb-1">اختر نوع حسابك</h2>
+              <p className="text-[#566A5C] text-xs mb-5">حدد دورك لتهيئة مساحة العمل المناسبة لاحتياجاتك</p>
               <div className="space-y-3">
                 {ACCOUNT_OPTIONS.map((o) => (
                   <button
@@ -209,56 +208,56 @@ export default function RegisterPage() {
                     type="button"
                     data-on={accountType === o.id}
                     onClick={() => setAccountType(o.id)}
-                    className={`w-full text-start flex items-start gap-4 p-4 rounded-2xl border border-white/10 bg-slate-800/40 transition-all duration-200 hover:-translate-y-0.5 shadow-lg shadow-transparent cursor-pointer ${o.ring}`}
+                    className={`w-full text-start flex items-start gap-3.5 p-3.5 rounded-xl border border-[#CCD8CE] bg-white transition-all hover:border-[#1F7A46] cursor-pointer shadow-2xs ${o.ring}`}
                   >
-                    <div className={`h-11 w-11 rounded-xl border grid place-items-center shrink-0 ${o.tile}`}>
+                    <div className={`h-10 w-10 rounded-lg border grid place-items-center shrink-0 ${o.tile}`}>
                       <o.icon className="h-5 w-5" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <p className="font-semibold text-white">{o.title}</p>
-                        {accountType === o.id && <Check className="h-4 w-4 text-white" />}
+                        <p className="font-bold text-sm text-[#1B281F]">{o.title}</p>
+                        {accountType === o.id && <Check className="h-4 w-4 text-[#1F7A46]" />}
                       </div>
-                      <p className="text-xs text-slate-400 mt-0.5">{o.desc}</p>
-                      <div className="flex flex-wrap gap-1.5 mt-2">
+                      <p className="text-[11px] text-[#4A5D50] mt-0.5">{o.desc}</p>
+                      <div className="flex flex-wrap gap-1 mt-2">
                         {o.perks.map((p) => (
-                          <span key={p} className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-slate-300 border border-white/10">{p}</span>
+                          <span key={p} className="text-[10px] px-2 py-0.5 rounded-md bg-[#F5F7F5] text-[#1B281F] border border-[#CCD8CE]">{p}</span>
                         ))}
                       </div>
                     </div>
                   </button>
                 ))}
               </div>
-              <p className="text-xs text-slate-500 mt-4">هل أنت موكّل؟ اطلب من مكتب المحاماة إرسال دعوة إلى بوابة الموكّل.</p>
+              <p className="text-[11px] text-[#566A5C] mt-4">هل أنت موكّل؟ اطلب من مكتب المحاماة إرسال دعوة إلى بوابة الموكل مباشرة.</p>
               <Button
                 id="account-type-continue"
                 disabled={!accountType}
                 onClick={() => setStep('details')}
-                className="w-full h-12 mt-6 bg-emerald-600 hover:bg-emerald-500 text-white text-base font-semibold cursor-pointer"
+                className="w-full h-11 mt-5 bg-[#1F7A46] hover:bg-[#165832] text-white text-xs font-bold shadow-xs cursor-pointer"
               >
-                متابعة <ArrowLeft className="w-5 h-5 ms-2" />
+                متابعة التسجيل <ArrowLeft className="w-4 h-4 ms-2" />
               </Button>
             </div>
           ) : (
-            <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
-              <div className="mb-6 flex items-start justify-between gap-3">
+            <div className="animate-in fade-in-0 duration-200">
+              <div className="mb-5 flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-2xl font-bold text-white mb-1">إنشاء حساب جديد</h2>
-                  <p className="text-slate-400 text-sm">{invitation ? 'أكمل بياناتك لقبول الدعوة' : selected ? `حساب ${selected.title}` : ''}</p>
+                  <h2 className="text-xl font-bold text-[#1B281F] font-heading mb-0.5">إنشاء حساب جديد</h2>
+                  <p className="text-xs text-[#566A5C]">{invitation ? 'أكمل بياناتك لقبول الدعوة' : selected ? `حساب ${selected.title}` : ''}</p>
                 </div>
                 {!inviteToken && (
-                  <button type="button" onClick={() => setStep('type')} className="text-xs text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer" id="change-account-type">
-                    <ArrowRight className="h-3.5 w-3.5" /> تغيير النوع
+                  <button type="button" onClick={() => setStep('type')} className="text-xs text-[#1F7A46] hover:underline flex items-center gap-1 cursor-pointer" id="change-account-type">
+                    <ArrowRight className="h-3.5 w-3.5" /> تغيير الدور
                   </button>
                 )}
               </div>
 
-              <form onSubmit={handleRegister} noValidate className="space-y-4">
+              <form onSubmit={handleRegister} noValidate className="space-y-3.5">
                 {registrationError && (
                   <div
                     role="alert"
                     aria-live="assertive"
-                    className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200"
+                    className="rounded-xl border border-[#FECACA] bg-[#FEF2F2] px-3.5 py-2.5 text-xs text-[#991B1B]"
                   >
                     {registrationError}
                   </div>
@@ -266,11 +265,11 @@ export default function RegisterPage() {
 
                 {inviteToken && (
                   invitation ? (
-                    <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200">
+                    <div className="rounded-xl border border-[#CCD8CE] bg-[#E8EFE9] p-3 text-xs text-[#1B281F]">
                       دعوة للانضمام إلى <strong>{invitation.workspaceName}</strong> بصفة <strong>{ROLE_AR[invitation.role] || invitation.role}</strong>
                     </div>
                   ) : (
-                    <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
+                    <div className="rounded-xl border border-[#FDE68A] bg-[#FEF3C7] p-3 text-xs text-[#92400E]">
                       {inviteError || 'جارٍ التحقق من الدعوة...'}
                     </div>
                   )
@@ -292,30 +291,30 @@ export default function RegisterPage() {
 
                 <Field id="reg-password" label="كلمة المرور" icon={Lock}>
                   <Input id="reg-password" type="password" autoComplete="new-password" placeholder="12 خانة على الأقل" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={12} className={inputCls} />
-                  <p className="text-xs text-slate-500">12 خانة على الأقل، وتتضمن حروفاً وأرقاماً.</p>
+                  <p className="text-[11px] text-[#566A5C]">12 خانة على الأقل، وتتضمن حروفاً وأرقاماً.</p>
                 </Field>
 
-                <label htmlFor="reg-privacy" className="flex items-start gap-3 text-sm text-slate-300 cursor-pointer">
-                  <input id="reg-privacy" type="checkbox" checked={acceptPrivacy} onChange={(e) => setAcceptPrivacy(e.target.checked)} required className="mt-1" />
+                <label htmlFor="reg-privacy" className="flex items-start gap-2.5 text-xs text-[#1B281F] cursor-pointer pt-1">
+                  <input id="reg-privacy" type="checkbox" checked={acceptPrivacy} onChange={(e) => setAcceptPrivacy(e.target.checked)} required className="mt-0.5 accent-[#1F7A46]" />
                   <span>
-                    أقر بقراءة وقبول <Link href="/privacy" className="text-emerald-400 underline">سياسة الخصوصية</Link> و<Link href="/terms" className="text-emerald-400 underline">شروط الاستخدام</Link>.
+                    أقر بقراءة وموافقة <Link href="/privacy" className="text-[#1F7A46] underline font-bold">سياسة الخصوصية</Link> و<Link href="/terms" className="text-[#1F7A46] underline font-bold">شروط الاستخدام</Link>.
                   </span>
                 </label>
 
                 <Button
                   type="submit"
                   id="register-submit"
-                  className="w-full h-12 mt-4 bg-emerald-600 hover:bg-emerald-500 text-white text-base font-semibold shadow-lg shadow-emerald-900/20 transition-all hover:scale-[1.01] cursor-pointer"
+                  className="w-full h-11 mt-2 bg-[#1F7A46] hover:bg-[#165832] text-white text-xs font-bold shadow-xs cursor-pointer transition-all"
                   disabled={loading || !canSubmit || !acceptPrivacy}
                 >
                   {loading ? (
                     <span className="flex items-center gap-2">
-                      <span className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                      <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                       جاري الإعداد...
                     </span>
                   ) : (
                     <span className="flex items-center justify-center gap-2">
-                      إنشاء الحساب <ArrowLeft className="w-5 h-5" />
+                      إنشاء الحساب <ArrowLeft className="w-4 h-4" />
                     </span>
                   )}
                 </Button>
@@ -324,10 +323,10 @@ export default function RegisterPage() {
           )}
 
           {step !== 'done' && (
-            <div className="mt-8 pt-6 border-t border-slate-800 text-center">
-              <p className="text-sm text-slate-400">
+            <div className="mt-5 pt-4 border-t border-[#CCD8CE] text-center">
+              <p className="text-xs text-[#566A5C]">
                 لديك حساب بالفعل؟{' '}
-                <Link href="/login" className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors">
+                <Link href="/login" className="text-[#1F7A46] hover:underline font-bold">
                   تسجيل الدخول
                 </Link>
               </p>
@@ -339,16 +338,16 @@ export default function RegisterPage() {
   )
 }
 
-const inputCls = 'bg-slate-800/50 border-slate-700 text-white pl-4 pr-11 h-12 focus-visible:ring-emerald-500'
+const inputCls = 'bg-[#F5F7F5] border-[#CCD8CE] text-[#1B281F] placeholder:text-[#566A5C]/60 pl-4 pr-10 h-10 text-xs focus-visible:ring-[#1F7A46]'
 
 function Field({ id, label, icon: Icon, children }: { id: string; label: string; icon: typeof User; children: React.ReactNode }) {
   return (
-    <div className="space-y-2">
-      <label htmlFor={id} className="text-sm font-medium text-slate-300">
+    <div className="space-y-1">
+      <label htmlFor={id} className="text-xs font-bold text-[#1B281F]">
         {label}
       </label>
       <div className="relative">
-        <Icon className="absolute right-3 top-3.5 h-5 w-5 text-slate-500 pointer-events-none" aria-hidden="true" />
+        <Icon className="absolute right-3 top-2.5 h-4 w-4 text-[#566A5C] pointer-events-none" aria-hidden="true" />
         {children}
       </div>
     </div>

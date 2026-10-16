@@ -1,76 +1,120 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Scale, ArrowLeft } from 'lucide-react'
+import { Scale, ArrowLeft, Menu, X } from 'lucide-react'
+
+const NAV_ITEMS = [
+  { href: '/#checker', label: 'المصحح', highlight: true },
+  { href: '/sandbox', label: 'المعمل التجريبي' },
+  { href: '/pricing', label: 'الأسعار والباقات' },
+  { href: '/about', label: 'من نحن' },
+  { href: '/security', label: 'الأمان والسيادة', subtle: true },
+]
 
 export function LandingHeader() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
   return (
     <>
       {/* Top Announcement Bar */}
-      <div className="relative z-30 border-b border-emerald-500/20 bg-emerald-950/70 backdrop-blur-md px-4 py-2 text-center text-xs sm:text-sm font-medium text-emerald-300 flex items-center justify-center gap-2">
-        <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-        <span>🇸🇦 منصة سعودية قيد التطوير — المزايا التنظيمية والفوترة تتطلب مراجعة واعتماداً مستقلاً</span>
-        <Link href="/register" className="underline underline-offset-4 hover:text-white font-bold inline-flex items-center gap-1 mr-1">
-          جرّب الآن مجاناً <ArrowLeft className="w-3.5 h-3.5 inline" />
+      <div className="border-b border-[#CCD8CE] bg-[#E8EFE9] px-4 py-2 text-center text-xs font-medium text-[#1B281F] flex items-center justify-center gap-2">
+        <span className="flex h-2 w-2 rounded-full bg-[#1F7A46]" />
+        <span>منصة سعودية مساندة للمحامين — صياغة ممتثلة وتدقيق نظامي لحظي</span>
+        <span className="text-[#566A5C] hidden sm:inline">•</span>
+        <Link href="/about" className="text-[#1F7A46] font-bold hover:underline inline-flex items-center gap-1">
+          تعرّف على سَنَد <ArrowLeft className="w-3 h-3 inline" />
         </Link>
       </div>
 
       {/* Navigation Bar */}
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-slate-950/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-[#CCD8CE] bg-[#FFFFFF]/95 backdrop-blur-md">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
+          <div className="flex items-center justify-between h-18">
             {/* Brand Logo */}
             <div className="flex items-center gap-3">
               <Link href="/" className="flex items-center gap-3 group">
-                <div className="bg-gradient-to-br from-emerald-400 to-emerald-600 p-2.5 rounded-2xl shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform duration-300">
-                  <Scale className="w-6 h-6 text-slate-950 stroke-[2.5]" />
+                <div className="bg-[#1F7A46] p-2.5 rounded-xl shadow-xs text-white">
+                  <Scale className="w-5 h-5 stroke-[2.2]" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl font-black tracking-tight text-white">سَنَد</span>
-                    <Badge variant="outline" className="text-[10px] uppercase font-mono tracking-wider border-emerald-500/40 text-emerald-400 bg-emerald-500/10 px-1.5 py-0">
+                    <span className="text-2xl font-black tracking-tight text-[#1B281F] font-heading">سَنَد</span>
+                    <span className="text-[10px] uppercase font-mono tracking-wider border border-[#CCD8CE] text-[#34543F] bg-[#E8EFE9] px-1.5 py-0.5 rounded-md font-semibold">
                       LEGAL OS
-                    </Badge>
+                    </span>
                   </div>
-                  <span className="text-[11px] text-slate-400 hidden sm:block">النظام التشغيلي القانوني الذكي</span>
+                  <span className="text-[11px] text-[#4A5D50] hidden sm:block">مساعد الصياغة الممتثلة للأنظمة السعودية</span>
                 </div>
               </Link>
             </div>
 
-            {/* Nav Links */}
-            <nav className="hidden lg:flex items-center gap-6 text-sm font-medium text-slate-300">
-              <a href="#features" className="hover:text-emerald-400 transition-colors">المميزات الأساسية</a>
-              <a href="#interactive-demo" className="hover:text-emerald-400 transition-colors">التجربة التفاعلية</a>
-              <a href="#drafting" className="hover:text-emerald-400 transition-colors">محرك الصياغة</a>
-              <a href="#research-hub" className="hover:text-emerald-400 transition-colors">مركز الأبحاث</a>
-              <a href="#newsletter" className="hover:text-emerald-400 transition-colors">النشرة القانونية</a>
-              <a href="#zatca" className="hover:text-emerald-400 transition-colors">فوترة زاتكا</a>
-              <a href="#student-path" className="hover:text-emerald-400 transition-colors">مسار المتدربين</a>
-              <Link href="/pricing" className="hover:text-emerald-400 text-emerald-400 font-bold transition-colors">
-                الأسعار والباقات
-              </Link>
-              <Link href="/sandbox" className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-bold border border-emerald-500/30 transition-colors">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>جرّب المعمل التجريبي</span>
-              </Link>
-              <a href="#faq" className="hover:text-emerald-400 transition-colors">الأسئلة الشائعة</a>
+            {/* Desktop Nav Links */}
+            <nav aria-label="التنقل الرئيسي" className="hidden md:flex items-center gap-6 text-sm font-medium text-[#1B281F]">
+              {NAV_ITEMS.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`hover:text-[#1F7A46] transition-colors ${
+                    item.highlight ? 'font-semibold' : item.subtle ? 'text-xs text-[#4A5D50]' : ''
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ))}
             </nav>
 
-            {/* Auth Actions */}
-            <div className="flex items-center gap-3">
+            {/* Auth Actions + Mobile Toggle */}
+            <div className="flex items-center gap-2 sm:gap-3">
               <Link href="/login">
-                <Button variant="ghost" className="text-slate-200 hover:text-white hover:bg-white/10 font-semibold px-4 cursor-pointer">
+                <Button variant="ghost" size="sm" className="text-[#1B281F] hover:text-[#1F7A46] hover:bg-[#E8EFE9] font-medium text-xs sm:text-sm cursor-pointer">
                   تسجيل الدخول
                 </Button>
               </Link>
               <Link href="/register">
-                <Button className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold shadow-xl shadow-emerald-600/30 px-5 border border-emerald-400/30 transition-all hover:scale-[1.02] cursor-pointer">
+                <Button size="sm" className="bg-[#1F7A46] hover:bg-[#165832] text-white font-bold px-4 py-2 rounded-lg text-xs sm:text-sm shadow-xs transition-all cursor-pointer">
                   ابدأ مجاناً
-                  <ArrowLeft className="w-4 h-4 mr-1.5" />
+                  <ArrowLeft className="w-3.5 h-3.5 mr-1" />
                 </Button>
               </Link>
+              <button
+                type="button"
+                aria-label={mobileMenuOpen ? 'إغلاق القائمة' : 'فتح القائمة'}
+                aria-expanded={mobileMenuOpen}
+                onClick={() => setMobileMenuOpen((open) => !open)}
+                className="md:hidden inline-flex items-center justify-center p-2 rounded-lg border border-[#CCD8CE] text-[#1B281F] hover:bg-[#E8EFE9] transition-colors cursor-pointer"
+              >
+                {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+              </button>
             </div>
           </div>
+
+          {/* Mobile Navigation Drawer */}
+          {mobileMenuOpen && (
+            <nav
+              aria-label="قائمة الجوال"
+              className="md:hidden border-t border-[#CCD8CE] py-3 flex flex-col gap-1 text-sm font-medium text-[#1B281F]"
+            >
+              {NAV_ITEMS.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-3 py-2 rounded-lg hover:bg-[#E8EFE9] hover:text-[#1F7A46] transition-colors"
+                >
+                  {item.label}
+                </Link>
+              ))}
+              <Link
+                href="/build"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2 rounded-lg hover:bg-[#E8EFE9] hover:text-[#1F7A46] transition-colors text-xs text-[#4A5D50]"
+              >
+                قيد البناء (خارطة الطريق)
+              </Link>
+            </nav>
+          )}
         </div>
       </header>
     </>

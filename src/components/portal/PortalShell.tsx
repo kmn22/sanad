@@ -58,9 +58,9 @@ function isActive(pathname: string, item: NavItem) {
 function badgeClass(theme: PortalTheme, tone: NavBadge['tone']) {
   switch (tone) {
     case 'rose':
-      return 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
+      return 'bg-rose-500/15 text-rose-800 dark:text-rose-400'
     case 'amber':
-      return 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
+      return 'bg-amber-500/15 text-amber-800 dark:text-amber-400'
     case 'muted':
       return 'bg-muted text-muted-foreground'
     default:

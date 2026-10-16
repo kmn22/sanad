@@ -9,6 +9,9 @@ export const ANALYTICS_EVENTS = {
   ONBOARDING_COMPLETED: 'onboarding_completed',
   ALERT_DELIVERED: 'alert_delivered',
   PAYMENT_SUCCESS: 'payment_success',
+  CLAUSE_CHECK_STARTED: 'clause_check_started',
+  CLAUSE_CHECK_COMPLETED: 'clause_check_completed',
+  WAITLIST_JOINED: 'waitlist_joined',
 } as const;
 
 export type AnalyticsEventName = typeof ANALYTICS_EVENTS[keyof typeof ANALYTICS_EVENTS];
@@ -85,6 +88,25 @@ export interface PaymentSuccessEvent extends AnalyticsEventBase {
   method: string;
 }
 
+export interface ClauseCheckStartedEvent extends AnalyticsEventBase {
+  event: typeof ANALYTICS_EVENTS.CLAUSE_CHECK_STARTED;
+  sampleId?: string;
+  source?: string;
+}
+
+export interface ClauseCheckCompletedEvent extends AnalyticsEventBase {
+  event: typeof ANALYTICS_EVENTS.CLAUSE_CHECK_COMPLETED;
+  score: number;
+  violationFound: boolean;
+  article?: string;
+}
+
+export interface WaitlistJoinedEvent extends AnalyticsEventBase {
+  event: typeof ANALYTICS_EVENTS.WAITLIST_JOINED;
+  email: string;
+  source?: string;
+}
+
 export type AnalyticsEvent =
   | SignupEvent
   | SandboxDraftEvent
@@ -94,7 +116,10 @@ export type AnalyticsEvent =
   | LogoutEvent
   | OnboardingCompletedEvent
   | AlertDeliveredEvent
-  | PaymentSuccessEvent;
+  | PaymentSuccessEvent
+  | ClauseCheckStartedEvent
+  | ClauseCheckCompletedEvent
+  | WaitlistJoinedEvent;
 
 type DistributiveOmit<T, K extends keyof any> = T extends any ? Omit<T, K> : never;
 export type AnalyticsEventInput = DistributiveOmit<AnalyticsEvent, 'timestamp'> & { timestamp?: string };

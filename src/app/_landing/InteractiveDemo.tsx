@@ -2,388 +2,420 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import {
-  ShieldCheck,
   Sparkles,
-  FileText,
+  AlertTriangle,
   CheckCircle2,
-  Receipt,
-  Calendar,
-  Gavel,
-  Clock,
-  GraduationCap,
-  QrCode,
-  AlertCircle,
-  Eye,
-  Flame,
+  Copy,
+  Check,
+  RotateCcw,
+  Scale,
+  ShieldCheck,
 } from 'lucide-react'
+import { toast } from 'sonner'
+import { trackEvent, ANALYTICS_EVENTS } from '@/lib/analytics/events'
+
+interface PresetClause {
+  id: string
+  title: string
+  law: string
+  text: string
+  score: number
+  violation: string
+  recommendation: string
+  article: string
+}
+
+const PRESET_CLAUSES: PresetClause[] = [
+  {
+    id: 'non-compete',
+    title: 'شرط عدم المنافسة (5 سنوات)',
+    law: 'نظام العمل (م/83)',
+    text: 'يلتزم الطرف الثاني بعدم العمل لدى أي منافس داخل المملكة العربية السعودية لمدة خمس سنوات بعد انتهاء العقد دون قيد أو شرط جغرافي أو مكاني.',
+    score: 42,
+    article: 'المادة (83) من نظام العمل السعودي',
+    violation: 'اشتراط عدم المنافسة لمدة 5 سنوات يتجاوز الحد الأقصى النظامي (سنتان)، وإطلاق المنع في كامل المملكة دون تحديد مكاني ونوعي صريح يجعله عرضة للبطلان القضائي.',
+    recommendation: 'يلتزم الطرف الثاني بعدم منافسة الطرف الأول في نشاط (المقاولات) داخل مدينة (الرياض) لمدة (سنة واحدة) تبدأ من تاريخ انتهاء عقد العمل، حفظاً لأسرار العمل المشروعة.',
+  },
+  {
+    id: 'probation',
+    title: 'فترة التجربة (180 يوماً أولية)',
+    law: 'نظام العمل (م/53)',
+    text: 'يخضع الطرف الثاني لفترة تجربة مدتها ستة أشهر (180 يوماً) تبدأ من تاريخ مباشرة العمل، ويحق للطرف الأول إنهاء العقد خلالها دون مكافأة أو إشعار.',
+    score: 48,
+    article: 'المادة (53) من نظام العمل السعودي',
+    violation: 'الحد الأقصى لفترة التجربة الأصلية هو 90 يوماً فقط؛ ولا يجوز تمديدها إلى 180 يوماً إلا باتفاق كتابي صريح يتم بعد بدء سريان العقد ومباشرة العمل.',
+    recommendation: 'يخضع الطرف الثاني لفترة تجربة مدتها (90) يوماً من تاريخ مباشرة العمل الفعلي، ويجوز باتفاق كتابي لاحق تمديدها بما لا يتجاوز 180 يوماً وفق المادة 53 من نظام العمل.',
+  },
+  {
+    id: 'liquidated-damages',
+    title: 'الشرط الجزائي القطعي',
+    law: 'المعاملات المدنية (م/179)',
+    text: 'في حال تأخر المقاول عن تسليم المشروع يلتزم بدفع غرامة قطعية قدرها 500,000 ريال دون حاجة لإثبات الضرر ولا يحق للقضاء التدخل بتعديلها.',
+    score: 55,
+    article: 'المادة (179) من نظام المعاملات المدنية',
+    violation: 'النص على عدم جواز تدخل القضاء باطل نظاماً؛ إذ للمحكمة بناءً على طلب المدين تخفيض التعويض المتفق عليه إذا ثبت أن التعويض كان مبالغاً فيه أو أن الالتزام نُفذ جزئياً.',
+    recommendation: 'في حال إخلال المدين بالتزامه في الموعد المحدد، يستحق الدائن تعويضاً اتفاقياً عن الضرر الفعلي، وتخضع تقديرات التعويض للضوابط النظامية المقررة بالمادة 179 من نظام المعاملات المدنية.',
+  },
+]
+
+interface AuditOutcome {
+  valid: boolean
+  score: number
+  law: string
+  article: string
+  violation: string
+  recommendation: string
+}
+
+function evaluateClauseText(rawText: string, fallbackPreset: PresetClause): AuditOutcome {
+  const text = rawText.trim()
+  if (text === fallbackPreset.text.trim()) {
+    return {
+      valid: false,
+      score: fallbackPreset.score,
+      law: fallbackPreset.law,
+      article: fallbackPreset.article,
+      violation: fallbackPreset.violation,
+      recommendation: fallbackPreset.recommendation,
+    }
+  }
+
+  // 1. Non-compete (Saudi Labor Law Art. 83)
+  if (/منافس|عدم العمل|عدم المنافسة/.test(text)) {
+    const hasOverLimit = /خمس|ثلاث|أربع|عشر|[3-9]\s*سنوات|مدى الحياة|دون قيد|كامل المملكة/.test(text)
+    if (hasOverLimit) {
+      return {
+        valid: false,
+        score: 42,
+        law: 'نظام العمل (م/83)',
+        article: 'المادة (83) من نظام العمل السعودي',
+        violation: PRESET_CLAUSES[0].violation,
+        recommendation: PRESET_CLAUSES[0].recommendation,
+      }
+    }
+    return {
+      valid: true,
+      score: 94,
+      law: 'نظام العمل (م/83)',
+      article: 'المادة (83) من نظام العمل السعودي',
+      violation: 'لم يرصد المحرك تجاوزاً للحد الأقصى النظامي (سنتان) أو إطلاقاً غير مقيد للمنع المكاني والنوعي.',
+      recommendation: text,
+    }
+  }
+
+  // 2. Probation period (Saudi Labor Law Art. 53)
+  if (/تجربة|فترة التجربة/.test(text)) {
+    const over90WithoutWrittenExtension = /(180|ستة أشهر|6 أشهر|مائة وثمان)/.test(text) && !/اتفاق كتابي لاحق|تمديد.*كتابي/.test(text)
+    if (over90WithoutWrittenExtension) {
+      return {
+        valid: false,
+        score: 48,
+        law: 'نظام العمل (م/53)',
+        article: 'المادة (53) من نظام العمل السعودي',
+        violation: PRESET_CLAUSES[1].violation,
+        recommendation: PRESET_CLAUSES[1].recommendation,
+      }
+    }
+    return {
+      valid: true,
+      score: 95,
+      law: 'نظام العمل (م/53)',
+      article: 'المادة (53) من نظام العمل السعودي',
+      violation: 'بند فترة التجربة متوافق مع سقف الـ 90 يوماً وضوابط التمديد الكتابي المستقل.',
+      recommendation: text,
+    }
+  }
+
+  // 3. Liquidated damages / judicial review waiver (Civil Transactions Law Art. 179)
+  if (/شرط جزائي|غرامة قطعية|تعويض قطعي|لا يحق للقضاء|دون سلطة للمحكمة|دون رقابة القضاء/.test(text)) {
+    const waivesCourt = /قطعية|قطعي|لا يحق للقضاء|دون سلطة للمحكمة|دون حاجة لإثبات الضرر/.test(text)
+    if (waivesCourt) {
+      return {
+        valid: false,
+        score: 55,
+        law: 'المعاملات المدنية (م/179)',
+        article: 'المادة (179) من نظام المعاملات المدنية',
+        violation: PRESET_CLAUSES[2].violation,
+        recommendation: PRESET_CLAUSES[2].recommendation,
+      }
+    }
+  }
+
+  // 4. Unilateral termination without notice/compensation (Labor Law Art. 75/77/80)
+  if (/إنهاء العقد.*دون إشعار|فصل.*دون تعويض|إنهاء فوري دون مكافأة/.test(text) && !/المادة 80|م80/.test(text)) {
+    return {
+      valid: false,
+      score: 46,
+      law: 'نظام العمل (م/75 و م/77 و م/80)',
+      article: 'المواد (75، 77، 80) من نظام العمل السعودي',
+      violation: 'لا يجوز حرمان العامل من مهلة الإشعار أو مكافأة نهاية الخدمة إلا في الحالات الحصرية الواردة بالمادة (80) من نظام العمل وبعد إتاحة حق سماع أقواله.',
+      recommendation: 'يحق لأي من الطرفين إنهاء العقد غير المحدد المدة لسبب مشروع بموجب إشعار كتابي لا يقل عن (60) يوماً، مع حفظ كامل الحقوق النظامية ومكافأة نهاية الخدمة وفق نظام العمل.',
+    }
+  }
+
+  // 5. Cross-border personal data transfer (PDPL Art. 29)
+  if (/خارج المملكة|خوادم خارجية|نقل البيانات.*دولياً/.test(text) && !/المادة 29|سدايا|ضمانات كافية/.test(text)) {
+    return {
+      valid: false,
+      score: 50,
+      law: 'نظام حماية البيانات الشخصية (م/29)',
+      article: 'المادة (29) من نظام حماية البيانات الشخصية (PDPL)',
+      violation: 'نقل البيانات الشخصية خارج المملكة مقيد بوجود مستوى حماية كافٍ واستيفاء الضوابط والاشتراطات الصادرة عن (سدايا) وتقييم أثر النقل.',
+      recommendation: 'تُحفظ وتُعالج كافة البيانات الشخصية على خوادم محلية داخل المملكة العربية السعودية، ولا يجوز نقلها خارج المملكة إلا بعد استيفاء متطلبات المادة (29) من نظام حماية البيانات الشخصية ولوائحه التنفيذية.',
+    }
+  }
+
+  return {
+    valid: true,
+    score: 95,
+    law: 'الأحكام العامة للأنظمة السعودية',
+    article: 'فحص مطابق للضوابط النظامية العامة',
+    violation: 'لم يرصد الفحص الآلي أي تعارض صريح مع المواد الإلزامية المفعلة في نظام العمل أو نظام المعاملات المدنية.',
+    recommendation: text,
+  }
+}
 
 export function InteractiveDemo() {
-  // Live Demo Tab in Hero
-  const [activeDemoTab, setActiveDemoTab] = useState<'drafting' | 'zatca' | 'focus' | 'student'>('drafting')
+  const [selectedPreset, setSelectedPreset] = useState<string>('non-compete')
+  const [clauseText, setClauseText] = useState(PRESET_CLAUSES[0].text)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [hasChecked, setHasChecked] = useState(true)
+  const [copied, setCopied] = useState(false)
+  const [auditResult, setAuditResult] = useState<AuditOutcome>(() =>
+    evaluateClauseText(PRESET_CLAUSES[0].text, PRESET_CLAUSES[0]),
+  )
 
-  // Interactive Drafting Sandbox state
-  const [hasNonCompete, setHasNonCompete] = useState(true)
-  const [contractDuration, setContractDuration] = useState('12')
+  const activePreset = PRESET_CLAUSES.find((p) => p.id === selectedPreset) || PRESET_CLAUSES[0]
 
-  // Student Flashcard Flip
-  const [showFlashcardAnswer, setShowFlashcardAnswer] = useState(false)
+  const handleSelectPreset = (preset: PresetClause) => {
+    setSelectedPreset(preset.id)
+    setClauseText(preset.text)
+    setAuditResult(evaluateClauseText(preset.text, preset))
+    setHasChecked(true)
+    setCopied(false)
+  }
+
+  const handleRunCheck = () => {
+    if (!clauseText.trim()) {
+      toast.error('الرجاء إدخال نص البند أولاً')
+      return
+    }
+
+    setIsAnalyzing(true)
+    trackEvent({
+      event: ANALYTICS_EVENTS.CLAUSE_CHECK_STARTED,
+      sampleId: selectedPreset,
+      source: 'landing_embedded_demo',
+    })
+
+    setTimeout(() => {
+      const outcome = evaluateClauseText(clauseText, activePreset)
+      setAuditResult(outcome)
+      setIsAnalyzing(false)
+      setHasChecked(true)
+      trackEvent({
+        event: ANALYTICS_EVENTS.CLAUSE_CHECK_COMPLETED,
+        score: outcome.score,
+        violationFound: !outcome.valid,
+        article: outcome.article,
+      })
+      toast.success('اكتمل الفحص النظامي للبند بنجاح')
+    }, 450)
+  }
+
+  const handleCopyAlternative = () => {
+    navigator.clipboard.writeText(auditResult.recommendation)
+    setCopied(true)
+    toast.success('تم نسخ الصياغة المتوافقة')
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   return (
-    <>
-        {/* Live Interactive Sandbox / Product Tour Widget */}
-        <section id="interactive-demo" className="px-4 sm:px-6 lg:px-8 mx-auto max-w-6xl pb-24">
-          <div className="text-center mb-8">
-            <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 px-3 py-1 mb-2 font-mono">
-              INTERACTIVE DEMO
-            </Badge>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white">جرّب قدرات سَنَد الحية الآن قبل التسجيل</h2>
-            <p className="text-slate-400 text-sm mt-1">تفاعل مع النماذج أدناه وشاهد كيف ينفذ النظام الضوابط والتحققات آلياً</p>
-          </div>
+    <section id="checker" className="px-4 sm:px-6 lg:px-8 mx-auto max-w-5xl pb-16 scroll-mt-24">
+      {/* Section Header */}
+      <div className="text-center mb-6">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E8EFE9] border border-[#CCD8CE] text-[#1F7A46] text-xs font-bold mb-2">
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>المعرض الحي: افحص البند في ثوانٍ</span>
+        </div>
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1B281F] font-heading">
+          جرّب دقة الفحص النظامي قبل التسجيل
+        </h2>
+        <p className="text-sm text-[#4A5D50] mt-1 max-w-xl mx-auto">
+          اختر أحد النماذج الشائعة أو الصق نص بندك وشاهد كيف يلتقط النظام المخالفة ويقترح البديل المتوافق.
+        </p>
+      </div>
 
-          {/* Outer Glass Card */}
-          <div className="rounded-3xl border border-white/10 bg-slate-900/60 backdrop-blur-2xl shadow-2xl shadow-emerald-950/40 overflow-hidden">
-            {/* Tab Controls Bar */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 border-b border-white/10 bg-slate-950/60 p-2 gap-2 text-xs sm:text-sm">
+      {/* Main Checker Card */}
+      <div className="bg-white rounded-2xl border border-[#CCD8CE] shadow-sm overflow-hidden">
+        {/* Preset Selector Tabs */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-[#CCD8CE] bg-[#F5F7F5] p-1.5 gap-1.5 text-xs">
+          {PRESET_CLAUSES.map((preset) => {
+            const isSelected = selectedPreset === preset.id
+            return (
               <button
-                onClick={() => setActiveDemoTab('drafting')}
-                className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all cursor-pointer ${
-                  activeDemoTab === 'drafting'
-                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                key={preset.id}
+                type="button"
+                onClick={() => handleSelectPreset(preset)}
+                className={`py-2.5 px-3 rounded-lg font-bold transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer ${
+                  isSelected
+                    ? 'bg-white text-[#1F7A46] shadow-xs border border-[#CCD8CE]'
+                    : 'text-[#4A5D50] hover:text-[#1B281F] hover:bg-white/60'
                 }`}
               >
-                <Sparkles className="w-4 h-4 text-emerald-400" />
-                <span>أتمتة الصياغة والضمانات</span>
+                <Scale className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{preset.title}</span>
               </button>
+            )
+          })}
+        </div>
 
-              <button
-                onClick={() => setActiveDemoTab('zatca')}
-                className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all cursor-pointer ${
-                  activeDemoTab === 'zatca'
-                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
-                }`}
-              >
-                <Receipt className="w-4 h-4 text-emerald-400" />
-                <span>مسودة فاتورة داخلية مع رمز تجريبي</span>
-              </button>
-
-              <button
-                onClick={() => setActiveDemoTab('focus')}
-                className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all cursor-pointer ${
-                  activeDemoTab === 'focus'
-                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
-                }`}
-              >
-                <Gavel className="w-4 h-4 text-emerald-400" />
-                <span>إدارة الجلسات والتركيز</span>
-              </button>
-
-              <button
-                onClick={() => setActiveDemoTab('student')}
-                className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all cursor-pointer ${
-                  activeDemoTab === 'student'
-                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
-                }`}
-              >
-                <GraduationCap className="w-4 h-4 text-emerald-400" />
-                <span>أكاديمية تدريب القانون</span>
-              </button>
+        {/* Checker Workspace */}
+        <div className="p-5 sm:p-7 space-y-5">
+          {/* Textarea Input Block */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <label htmlFor="clause-input" className="font-bold text-[#1B281F]">
+                نص البند التعاقدي المراد تدقيقه:
+              </label>
+              <span className="text-[#566A5C] font-mono text-[11px]">
+                المرجع المستهدف: {auditResult.law}
+              </span>
             </div>
-
-            {/* Tab 1: Interactive Drafting Hub */}
-            {activeDemoTab === 'drafting' && (
-              <div className="p-6 sm:p-8 space-y-6">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-white/5">
-                  <div>
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                      <FileText className="w-5 h-5 text-emerald-400" />
-                      محاكاة صياغة: عقد عمل سعودي محدد المدة
-                    </h3>
-                    <p className="text-xs text-slate-400">تعديل المتغيرات يُطبق الضمانات النظامية التلقائية في الوقت الحقيقي</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-400">فحص النظام:</span>
-                    <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs">
-                      مفعل: نظام العمل السعودي (م/83 و م/53)
-                    </Badge>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                  {/* Controls Column */}
-                  <div className="lg:col-span-4 space-y-4 bg-slate-950/60 p-5 rounded-2xl border border-white/5">
-                    <div className="text-sm font-semibold text-slate-200 mb-2">محددات الصياغة التفاعلية:</div>
-
-                    <div>
-                      <label htmlFor="contract-duration" className="text-xs text-slate-400 block mb-1.5">مدة العقد الأساسي:</label>
-                      <select
-                        id="contract-duration"
-                        value={contractDuration}
-                        onChange={(e) => setContractDuration(e.target.value)}
-                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"
-                      >
-                        <option value="12">12 شهراً (سنة واحدة)</option>
-                        <option value="24">24 شهراً (سنتان)</option>
-                        <option value="36">36 شهراً (ثلاث سنوات)</option>
-                      </select>
-                    </div>
-
-                    <div className="pt-2">
-                      <label className="text-xs text-slate-400 block mb-2">إدراج شرط عدم المنافسة وسرية المعلومات:</label>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setHasNonCompete(true)}
-                          className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                            hasNonCompete
-                              ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
-                              : 'bg-slate-900 border-slate-700 text-slate-400'
-                          }`}
-                        >
-                          نعم (تفعيل الشرط)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setHasNonCompete(false)}
-                          className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                            !hasNonCompete
-                              ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
-                              : 'bg-slate-900 border-slate-700 text-slate-400'
-                          }`}
-                        >
-                          بدون الشرط
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Active Regulatory Safeguard Alerts */}
-                    <div className="pt-3 border-t border-white/5 space-y-2">
-                      <div className="text-xs font-semibold text-slate-300">الضمانات النظامية المفعلة:</div>
-                      {hasNonCompete ? (
-                        <div className="bg-emerald-950/60 border border-emerald-500/30 rounded-xl p-3 text-xs text-emerald-200 flex items-start gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                          <span>
-                            <strong>[م/83 نظام العمل]:</strong> تم تقييد عدم المنافسة بسنة واحدة ونطاق مدينة العمل لحماية صحة الشرط قضائياً.
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="bg-amber-950/50 border border-amber-500/30 rounded-xl p-3 text-xs text-amber-200 flex items-start gap-2">
-                          <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                          <span>تنبيه: تم إلغاء بند عدم المنافسة، يحق للطرف الثاني الانتقال إلى منافس فور انتهاء العلاقة.</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Generated Document Preview Column */}
-                  <div className="lg:col-span-8 bg-slate-950/90 rounded-2xl border border-white/5 p-6 font-mono text-xs text-slate-300 leading-relaxed overflow-y-auto max-h-[380px] space-y-3">
-                    <div className="text-center font-bold text-sm text-emerald-400 border-b border-white/5 pb-2">
-                      # عقد عمل سعودي محدد المدة (مسودة تتطلب مراجعة قانونية)
-                    </div>
-                    <p className="text-slate-400">
-                      بعون الله تعالى، تم إبرام هذا العقد في مدينة الرياض بين الطرف الأول (صاحب العمل) والطرف الثاني (الموظف).
-                    </p>
-                    <div className="p-3 bg-white/5 rounded-xl border-r-2 border-emerald-500">
-                      <strong className="text-emerald-300 block mb-1">المادة الثانية: مدة العقد وفترة التجربة (م/53)</strong>
-                      تحدد مدة هذا العقد بـ <span className="text-amber-300 font-bold underline font-sans">({contractDuration}) شهراً</span> تبدأ من تاريخ مباشرة العمل الفعلي وتخضع لفترة تجربة مدتها 90 يوماً.
-                    </div>
-                    {hasNonCompete && (
-                      <div className="p-3 bg-emerald-950/30 border border-emerald-500/20 rounded-xl border-r-2 border-r-emerald-500 animate-fade-in">
-                        <strong className="text-emerald-300 block mb-1">المادة الخامسة: عدم المنافسة وسرية البيانات (م/83)</strong>
-                        يلتزم الطرف الثاني بعدم منافسة الطرف الأول داخل نطاق مدينة (الرياض) لمدة (سنة واحدة) من انتهاء العلاقة، حفظاً لأسرار العمل.
-                      </div>
-                    )}
-                    <div className="p-3 bg-white/5 rounded-xl border-r-2 border-slate-600">
-                      <strong className="text-slate-300 block mb-1">المادة الختامية: الاختصاص القضائي</strong>
-                      يخضع هذا العقد ويفسر وفقاً لنظام العمل السعودي وتختص المحاكم العمالية بالمملكة بنظر أي نزاع قد ينشأ عنه.
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Tab 2: ZATCA Invoicing */}
-            {activeDemoTab === 'zatca' && (
-              <div className="p-6 sm:p-8 space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/5">
-                  <div>
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                      <Receipt className="w-5 h-5 text-emerald-400" />
-                      محرك فواتير تجريبي (غير مدمج حالياً مع منصة فاتورة)
-                    </h3>
-                    <p className="text-xs text-slate-400">معاينة تعليمية فقط؛ لا ترسل الفواتير إلى الهيئة ولا تثبت الامتثال أو الاعتماد الضريبي</p>
-                  </div>
-                  <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs">
-                    نموذج غير مرتبط بالهيئة
-                  </Badge>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-                  <div className="md:col-span-7 space-y-4">
-                    <div className="bg-slate-950/60 p-5 rounded-2xl border border-white/5 space-y-3">
-                      <div className="flex justify-between items-center text-sm border-b border-white/5 pb-2">
-                        <span className="text-slate-400">رقم نموذج الفاتورة:</span>
-                        <span className="font-mono font-bold text-white">INV-2026-0042</span>
-                      </div>
-                      <div className="flex justify-between items-center text-sm border-b border-white/5 pb-2">
-                        <span className="text-slate-400">رقم التسجيل الضريبي:</span>
-                        <span className="font-mono text-emerald-300">غير مهيأ — بيانات توضيحية</span>
-                      </div>
-                      <div className="flex justify-between items-center text-sm border-b border-white/5 pb-2">
-                        <span className="text-slate-400">بيان الأتعاب القانونية:</span>
-                        <span className="text-white">صياغة ومراجعة لائحة دعوى تجارية</span>
-                      </div>
-                      <div className="flex justify-between items-center text-sm border-b border-white/5 pb-2">
-                        <span className="text-slate-400">المبلغ الخاضع للضريبة:</span>
-                        <span className="font-mono text-white">5,000.00 ر.س</span>
-                      </div>
-                      <div className="flex justify-between items-center text-sm border-b border-white/5 pb-2">
-                        <span className="text-slate-400">ضريبة القيمة المضافة (15%):</span>
-                        <span className="font-mono text-amber-300">750.00 ر.س</span>
-                      </div>
-                      <div className="flex justify-between items-center text-base font-bold pt-1">
-                        <span className="text-white">الإجمالي شامل الضريبة:</span>
-                        <span className="font-mono text-emerald-400 text-lg">5,750.00 ر.س</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* QR Code TLV Visualizer */}
-                  <div className="md:col-span-5 flex flex-col items-center justify-center p-6 bg-slate-950/80 rounded-2xl border border-emerald-500/20 text-center">
-                    <div className="p-4 bg-white rounded-2xl shadow-xl shadow-emerald-500/10 mb-3">
-                      <QrCode className="w-32 h-32 text-slate-950" />
-                    </div>
-                    <span className="text-xs font-mono font-bold text-emerald-300 flex items-center gap-1">
-                      <ShieldCheck className="w-4 h-4" /> رمز استجابة سريع تجريبي غير معتمد
-                    </span>
-                    <p className="text-[11px] text-slate-500 mt-1 max-w-xs">
-                      هذه أيقونة توضيحية وليست رمزاً قابلاً للمسح، ولا تحتوي بيانات تسجيل أو اعتماد حقيقية.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Tab 3: Deep Work & Case Hearings */}
-            {activeDemoTab === 'focus' && (
-              <div className="p-6 sm:p-8 space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/5">
-                  <div>
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                      <Clock className="w-5 h-5 text-emerald-400" />
-                      لوحة التركيز وإدارة الجلسات القضائية اليومية
-                    </h3>
-                    <p className="text-xs text-slate-400">ربط مواعيد الدوائر القضائية مع جلسات العمل العميق للمحامي (Deep Work)</p>
-                  </div>
-                  <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs">
-                    تزامن ذكي مع مواعيد ناجز
-                  </Badge>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Hearing Alerts Card */}
-                  <div className="bg-slate-950/70 p-5 rounded-2xl border border-white/5 space-y-3">
-                    <div className="text-sm font-bold text-white flex items-center gap-2 mb-2">
-                      <Calendar className="w-4 h-4 text-emerald-400" /> الجلسات القضائية القادمة:
-                    </div>
-                    <div className="p-3 bg-white/5 rounded-xl border-r-2 border-emerald-500 flex justify-between items-center">
-                      <div>
-                        <div className="text-sm font-semibold text-white">دعوى إخلال بعقد توريد</div>
-                        <div className="text-xs text-slate-400">المحكمة التجارية بالرياض — الدائرة السادسة</div>
-                      </div>
-                      <Badge className="bg-emerald-500/20 text-emerald-300 text-xs">غداً 09:30 ص</Badge>
-                    </div>
-                    <div className="p-3 bg-white/5 rounded-xl border-r-2 border-amber-500 flex justify-between items-center">
-                      <div>
-                        <div className="text-sm font-semibold text-white">مطالبة مستحقات عمالية</div>
-                        <div className="text-xs text-slate-400">المحكمة العمالية بجدة — جلسة تبادل مذكرات</div>
-                      </div>
-                      <Badge className="bg-amber-500/20 text-amber-300 text-xs">بعد 3 أيام</Badge>
-                    </div>
-                  </div>
-
-                  {/* Pomodoro Timer Preview */}
-                  <div className="bg-slate-950/70 p-5 rounded-2xl border border-white/5 flex flex-col items-center justify-center text-center">
-                    <div className="text-xs font-semibold text-emerald-400 mb-1 flex items-center gap-1">
-                      <Flame className="w-4 h-4 text-amber-400" /> جلسة صياغة مركزة (Deep Work)
-                    </div>
-                    <div className="text-4xl font-mono font-black text-white my-2">25:00</div>
-                    <p className="text-xs text-slate-400 max-w-xs mb-3">
-                      تخصيص وقت مخصص لتحليل أسانيد القضية وكتابة الدفوع دون أي مشتتات.
-                    </p>
-                    <div className="flex gap-2">
-                      <Badge variant="outline" className="text-xs border-emerald-500/40 text-emerald-300">
-                        حظر الإشعارات مفعّل
-                      </Badge>
-                      <Badge variant="outline" className="text-xs border-white/10 text-slate-400">
-                        تتبع الساعات المفوترة
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Tab 4: Student Path & Academy */}
-            {activeDemoTab === 'student' && (
-              <div className="p-6 sm:p-8 space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/5">
-                  <div>
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                      <GraduationCap className="w-5 h-5 text-emerald-400" />
-                      أكاديمية سَنَد وبنك الأسئلة التفاعلي لطلاب القانون
-                    </h3>
-                    <p className="text-xs text-slate-400">تقنية الاستذكار المتباعد (Spaced Repetition) لحفظ الأنظمة وتطبيق السوابق</p>
-                  </div>
-                  <Badge className="bg-blue-500/20 text-blue-300 border border-blue-500/30 text-xs">
-                    بنك أسئلة الأنظمة السعودية
-                  </Badge>
-                </div>
-
-                <div className="bg-slate-950/80 p-6 rounded-2xl border border-white/5 max-w-2xl mx-auto text-center space-y-4">
-                  <div className="text-xs font-bold text-blue-400 tracking-wider">سؤال تطبيقي من نظام المعاملات المدنية:</div>
-                  <p className="text-base sm:text-lg font-semibold text-white leading-relaxed">
-                    «إذا اتفق المتعاقدان على مقدار التعويض (الشرط الجزائي)، فما هي سلطة المحكمة إذا أثبت المدين أن الضرر كان أقل من التعويض المتفق عليه؟»
-                  </p>
-
-                  {showFlashcardAnswer ? (
-                    <div className="bg-emerald-950/50 border border-emerald-500/30 p-4 rounded-xl text-emerald-200 text-sm animate-fade-in text-right">
-                      <strong className="block mb-1 text-emerald-300">الجواب النظامي (المادة 179 - معاملات مدنية):</strong>
-                      «يجوز للمحكمة بناءً على طلب المدين أن تخفض مقدار التعويض إذا أثبت أن التعويض المتفق عليه كان مبالغاً فيه بدرجة كبيرة، أو أن الالتزام نُفذ في جزء منه، ويقع باطلاً كل اتفاق يخالف ذلك.»
-                    </div>
-                  ) : (
-                    <Button
-                      onClick={() => setShowFlashcardAnswer(true)}
-                      className="bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs px-6 py-2 rounded-xl cursor-pointer"
-                    >
-                      <Eye className="w-4 h-4 ml-1.5" /> كشف الإجابة والسند النظامي
-                    </Button>
-                  )}
-
-                  {showFlashcardAnswer && (
-                    <div className="flex items-center justify-center gap-2 pt-2">
-                      <span className="text-xs text-slate-400">تقييم استذكارك:</span>
-                      <Button size="sm" variant="outline" onClick={() => setShowFlashcardAnswer(false)} className="text-xs border-emerald-500/40 text-emerald-300">
-                        سهل جداً (بعد 7 أيام)
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => setShowFlashcardAnswer(false)} className="text-xs border-amber-500/40 text-amber-300">
-                        متوسط (بعد 3 أيام)
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => setShowFlashcardAnswer(false)} className="text-xs border-rose-500/40 text-rose-300">
-                        صعب (إعادة غداً)
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+            <textarea
+              id="clause-input"
+              rows={3}
+              value={clauseText}
+              onChange={(e) => {
+                setClauseText(e.target.value)
+                setHasChecked(false)
+              }}
+              className="w-full bg-[#F5F7F5] border border-[#CCD8CE] rounded-xl p-3.5 text-xs sm:text-sm text-[#1B281F] leading-relaxed focus:bg-white focus:outline-none focus:border-[#1F7A46] focus:ring-1 focus:ring-[#1F7A46] transition-all font-sans"
+              placeholder="اكتب أو الصق نص البند القانوني هنا..."
+            />
           </div>
-        </section>
-    </>
+
+          {/* Action Row */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
+            <div className="text-[11px] text-[#566A5C] flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-[#1F7A46]" />
+              <span>فحص آلي معزول محلياً ضد الأنظمة السعودية السارية</span>
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setClauseText(activePreset.text)
+                  setHasChecked(false)
+                }}
+                className="text-xs border-[#CCD8CE] text-[#4A5D50] hover:text-[#1B281F] cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5 ml-1" />
+                استعادة النموذج
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleRunCheck}
+                disabled={isAnalyzing}
+                className="bg-[#1F7A46] hover:bg-[#165832] text-white text-xs font-bold px-5 h-9 cursor-pointer shadow-xs transition-all"
+              >
+                <Sparkles className="w-3.5 h-3.5 ml-1.5" />
+                {isAnalyzing ? 'جارٍ الفحص والمطابقة...' : 'افحص البند نظامياً'}
+              </Button>
+            </div>
+          </div>
+
+          {/* Instant Audit Result */}
+          {hasChecked && (
+            <div className="mt-4 pt-5 border-t border-[#CCD8CE] space-y-4 animate-in fade-in-50 duration-200">
+              {/* Status Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-[#F5F7F5] p-3 rounded-xl border border-[#CCD8CE]">
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${
+                      auditResult.valid ? 'bg-[#E8EFE9] text-[#1F7A46]' : 'bg-[#FEE2E2] text-[#B91C1C]'
+                    }`}
+                  >
+                    {auditResult.valid ? '✓' : '!'}
+                  </div>
+                  <div>
+                    <span className={`font-bold text-xs sm:text-sm ${auditResult.valid ? 'text-[#1F7A46]' : 'text-[#B91C1C]'}`}>
+                      {auditResult.valid ? 'متوافق مع الضوابط النظامية العامة' : 'تنبيه: رُصد تعارض مع المقتضى النظامي'}
+                    </span>
+                    <span className="text-[11px] text-[#566A5C] block sm:inline sm:mr-2">
+                      ({auditResult.article})
+                    </span>
+                  </div>
+                </div>
+                <div
+                  className={`inline-flex items-center gap-1.5 self-start sm:self-auto px-2.5 py-1 rounded-md bg-white border border-[#CCD8CE] text-xs font-mono font-bold ${
+                    auditResult.valid ? 'text-[#1F7A46]' : 'text-[#B91C1C]'
+                  }`}
+                >
+                  <span>درجة الامتثال:</span>
+                  <span>{auditResult.score} / 100</span>
+                </div>
+              </div>
+
+              {/* Grid: Violation vs Alternative */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Violation / Observation Box */}
+                <div
+                  className={`p-4 rounded-xl border text-xs space-y-1.5 ${
+                    auditResult.valid
+                      ? 'bg-[#F5F7F5] border-[#CCD8CE]'
+                      : 'bg-[#FEF2F2] border-[#FECACA]'
+                  }`}
+                >
+                  <div className={`flex items-center gap-1.5 font-bold ${auditResult.valid ? 'text-[#1B281F]' : 'text-[#991B1B]'}`}>
+                    {auditResult.valid ? (
+                      <CheckCircle2 className="w-4 h-4 text-[#1F7A46]" />
+                    ) : (
+                      <AlertTriangle className="w-4 h-4 text-[#DC2626]" />
+                    )}
+                    <span>{auditResult.valid ? 'نتيجة الفحص النظامي:' : 'وجه المخالفة النظامية:'}</span>
+                  </div>
+                  <p className={`leading-relaxed ${auditResult.valid ? 'text-[#4A5D50]' : 'text-[#7F1D1D]'}`}>
+                    {auditResult.violation}
+                  </p>
+                </div>
+
+                {/* Compliant Alternative Box */}
+                <div className="p-4 rounded-xl bg-[#E8EFE9] border border-[#CCD8CE] text-xs space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 font-bold text-[#1F7A46]">
+                      <CheckCircle2 className="w-4 h-4 text-[#1F7A46]" />
+                      <span>الصياغة البديلة المتوافقة:</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCopyAlternative}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-[#1F7A46] hover:underline cursor-pointer"
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" /> تم النسخ
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" /> نسخ البديل
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-[#1B281F] leading-relaxed font-medium bg-white/70 p-2.5 rounded-lg border border-[#CCD8CE]">
+                    «{auditResult.recommendation}»
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
   )
 }

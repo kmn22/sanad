@@ -1162,3 +1162,14 @@ model BillingWebhookEvent {
 // Digital-signing requests will be modeled when a real signing provider is
 // integrated — the previous standalone DocumentSignature table had no
 // workspace scope or document relation and has been removed.
+
+model WaitlistEntry {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  interest  String?  @default("general")
+  source    String?  @default("landing")
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([createdAt])
+}

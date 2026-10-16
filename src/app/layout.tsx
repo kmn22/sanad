@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, IBM_Plex_Sans_Arabic } from "next/font/google";
+import { Cairo, IBM_Plex_Sans_Arabic } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -8,14 +8,10 @@ import { ReactQueryProvider } from "@/components/providers/ReactQueryProvider";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { PWAInstallBanner } from "@/components/sanad/PWAInstallBanner";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const cairo = Cairo({
+  variable: "--font-cairo",
+  subsets: ["arabic", "latin"],
+  weight: ["700", "800", "900"],
 });
 
 const plexArabic = IBM_Plex_Sans_Arabic({
@@ -25,56 +21,55 @@ const plexArabic = IBM_Plex_Sans_Arabic({
 });
 
 export const metadata: Metadata = {
-  title: "سند — لوحة العمليات اليومية للامتثال والمحاماة",
+  title: "سَنَد — مساعد الصياغة الممتثلة للأنظمة السعودية",
   description:
-    "لوحة العمليات اليومية للمحامين والمنشآت الصغيرة في السعودية. تتبع الامتثال، إدارة القضايا، جلسات تركيز، ولا تفوّت أي تجديد.",
+    "صِغ بنودك في 60 ثانية مع تدقيق نظامي لحظي ضد نظام العمل ونظام المعاملات المدنية. البديل المتوافق فورياً مع سيادة كاملة على بياناتك.",
   metadataBase: new URL(process.env.NEXTAUTH_URL || "https://sanad.sa"),
   keywords: [
     "سند",
     "Sanad",
+    "صياغة عقود",
+    "نظام العمل السعودي",
+    "نظام المعاملات المدنية",
     "محاماة السعودية",
-    "امتثال المنشآت",
-    "تجديد إقامة",
-    "وزارة العدل",
-    "الموارد البشرية",
-    "إدارة قضايا",
-    "بوابة الموكل",
-    "فوترة زاتكا",
+    "امتثال نظامي",
+    "مساعد قانوني",
   ],
   authors: [{ name: "Sanad Legal Tech" }],
   openGraph: {
     type: "website",
     locale: "ar_SA",
-    url: "https://sanad.sa",
-    siteName: "سند (Sanad)",
-    title: "سند — منظومة المحاماة الذكية والامتثال السعودي",
+    url: process.env.NEXTAUTH_URL || "https://sanad.sa",
+    siteName: "سَنَد (Sanad Legal OS)",
+    title: "سَنَد — مساعد الصياغة الممتثلة للأنظمة السعودية",
     description:
-      "منظومة متكاملة للمحامين والشركات: إدارة القضايا، بوابة الموكل الخفيفة بدون كلمات مرور، وفوترة إلكترونية متوافقة مع هيئة الزكاة والضريبة والجمارك.",
+      "صِغ بنودك وعقودك في 60 ثانية مع تدقيق نظامي فوري ضد نظام العمل والمعاملات المدنية. بياناتك لا تغادر بيئتك.",
     images: [
       {
         url: "/og-preview.png",
         width: 1200,
         height: 630,
-        alt: "سند — منظومة المحاماة الذكية",
+        alt: "سَنَد — مساعد الصياغة الممتثلة",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "سند — منظومة المحاماة الذكية والامتثال السعودي",
-    description: "لوحة العمليات اليومية وإدارة القضايا وبوابة الموكل السيادية للمحامين في المملكة العربية السعودية.",
+    title: "سَنَد — مساعد الصياغة الممتثلة للأنظمة السعودية",
+    description:
+      "صِغ بنودك وعقودك في 60 ثانية مع فحص نظامي فوري ضد نظام العمل والمعاملات المدنية.",
     images: ["/og-preview.png"],
   },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "سند",
+    title: "سَنَد",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0f5132",
+  themeColor: "#1F7A46",
   width: "device-width",
   initialScale: 1,
 };
@@ -88,14 +83,14 @@ export default function RootLayout({
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body
         suppressHydrationWarning
-        className={`${geistSans.variable} ${geistMono.variable} ${plexArabic.variable} antialiased bg-background text-foreground`}
-        style={{ fontFamily: 'var(--font-arabic), var(--font-geist-sans), system-ui, sans-serif' }}
+        className={`${cairo.variable} ${plexArabic.variable} antialiased bg-background text-foreground`}
+        style={{ fontFamily: 'var(--font-arabic), system-ui, sans-serif' }}
       >
         <SessionProvider>
           <ReactQueryProvider>
             <ThemeProvider
               attribute="class"
-              defaultTheme="dark"
+              defaultTheme="light"
               enableSystem={false}
               disableTransitionOnChange
             >

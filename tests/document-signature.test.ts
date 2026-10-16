@@ -34,7 +34,10 @@ describe('document signatures', () => {
       checksumSha256: 'abc123',
       operation: 'export',
     })
-    const tampered = `${signature.slice(0, -1)}${signature.endsWith('a') ? 'b' : 'a'}`
+    // Tamper a character inside the ciphertext payload to guarantee decoded byte alteration
+    const parts = signature.split('.')
+    const tamperedPayload = (parts[3][0] === 'a' ? 'b' : 'a') + parts[3].slice(1)
+    const tampered = `${parts[0]}.${parts[1]}.${parts[2]}.${tamperedPayload}`
 
     expect(verifyDocumentSignature(tampered)).toBeNull()
     expect(documentSignatureHeaders(signature)).toEqual({
