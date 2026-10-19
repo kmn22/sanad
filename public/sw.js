@@ -1,6 +1,5 @@
-const CACHE_NAME = 'sanad-pwa-cache-v3';
+const CACHE_NAME = 'sanad-pwa-cache-v4';
 const urlsToCache = [
-  '/',
   '/manifest.json',
   '/logo.svg',
   '/icon-192.png',
@@ -27,18 +26,23 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Network-first for navigations + static; bypass API + auth routes entirely.
+// Network-first for navigations; never return HTML fallbacks for scripts/styles/API.
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
 
   const url = new URL(req.url);
-  // Never cache API / auth / Next data; let the network handle them.
   if (
     url.pathname.startsWith('/api/') ||
-    url.pathname.startsWith('/_next/data/') ||
-    url.pathname.startsWith('/_next/image')
+    url.pathname.startsWith('/_next/')
   ) {
+    return;
+  }
+
+  if (req.mode === 'navigate') {
+    event.respondWith(
+      fetch(req).catch(() => caches.match(req))
+    );
     return;
   }
 
@@ -51,6 +55,6 @@ self.addEventListener('fetch', (event) => {
         }
         return response;
       })
-      .catch(() => caches.match(req).then((m) => m || caches.match('/')))
+      .catch(() => caches.match(req))
   );
 });

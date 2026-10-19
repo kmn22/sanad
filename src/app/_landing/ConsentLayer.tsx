@@ -87,33 +87,35 @@ export function ConsentLayer() {
         </div>
       )}
 
-      {/* Privacy & Cookie Notice Banner (Max ONE floating element, non-intrusive) */}
+      {/* Privacy & Cookie Notice Bar — docked cleanly at the bottom edge so it never covers interactive page cards */}
       {!cookieConsentDismissed && (
         <div
-          className="fixed bottom-4 left-4 right-4 sm:right-auto sm:max-w-md z-40 p-4 rounded-xl bg-white border border-[#CCD8CE] shadow-lg flex flex-col gap-3 animate-in fade-in"
+          className="fixed bottom-0 inset-x-0 z-30 border-t border-[#CCD8CE] bg-white/95 backdrop-blur-md px-4 py-2.5 shadow-md animate-in fade-in"
           dir="rtl"
         >
-          <div className="flex items-start gap-2.5">
-            <ShieldCheck className="w-5 h-5 text-[#1F7A46] shrink-0 mt-0.5" />
-            <p className="text-xs text-[#1B281F] leading-relaxed">
-              نستخدم ملفات تعريف ارتباط محلية وتقنيات مشفرة لتأمين جلسات العمل وضمان الامتثال لنظام حماية البيانات الشخصية السعودي (PDPL).
-            </p>
-          </div>
-          <div className="flex items-center justify-between gap-3 pt-1 border-t border-[#CCD8CE]">
-            <button
-              type="button"
-              onClick={() => setShowPrivacyModal(true)}
-              className="text-[11px] text-[#1F7A46] font-bold hover:underline cursor-pointer"
-            >
-              الاطلاع على السياسة
-            </button>
-            <Button
-              size="sm"
-              onClick={acceptCookies}
-              className="bg-[#1F7A46] hover:bg-[#165832] text-white text-xs font-bold px-4 h-8 cursor-pointer shadow-2xs"
-            >
-              موافق ومتابعة
-            </Button>
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs">
+            <div className="flex items-center gap-2 text-[#1B281F]">
+              <ShieldCheck className="w-4 h-4 text-[#1F7A46] shrink-0" />
+              <span>
+                نستخدم ملفات تعريف ارتباط محلية مشفرة لتأمين الجلسات وفق نظام حماية البيانات الشخصية السعودي (PDPL).
+              </span>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowPrivacyModal(true)}
+                className="text-[11px] text-[#1F7A46] font-bold hover:underline cursor-pointer"
+              >
+                الاطلاع على السياسة
+              </button>
+              <Button
+                size="sm"
+                onClick={acceptCookies}
+                className="bg-[#1F7A46] hover:bg-[#165832] text-white text-xs font-bold px-3.5 h-7 cursor-pointer shadow-2xs"
+              >
+                موافق ومتابعة
+              </Button>
+            </div>
           </div>
         </div>
       )}

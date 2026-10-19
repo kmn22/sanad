@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
-import { Scale, ArrowLeft, Menu, X } from 'lucide-react'
+import { Scale, ArrowLeft, Menu, X, LayoutDashboard } from 'lucide-react'
 
 const NAV_ITEMS = [
   { href: '/#checker', label: 'المصحح', highlight: true },
@@ -15,6 +16,8 @@ const NAV_ITEMS = [
 
 export function LandingHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { data: session } = useSession()
+  const isAuthenticated = Boolean(session?.user)
 
   return (
     <>
@@ -40,7 +43,7 @@ export function LandingHeader() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl font-black tracking-tight text-[#1B281F] font-heading">سَنَد</span>
+                    <span className="text-2xl font-black text-[#1B281F] font-heading">سَنَد</span>
                     <span className="text-[10px] uppercase font-mono tracking-wider border border-[#CCD8CE] text-[#34543F] bg-[#E8EFE9] px-1.5 py-0.5 rounded-md font-semibold">
                       LEGAL OS
                     </span>
@@ -67,17 +70,28 @@ export function LandingHeader() {
 
             {/* Auth Actions + Mobile Toggle */}
             <div className="flex items-center gap-2 sm:gap-3">
-              <Link href="/login">
-                <Button variant="ghost" size="sm" className="text-[#1B281F] hover:text-[#1F7A46] hover:bg-[#E8EFE9] font-medium text-xs sm:text-sm cursor-pointer">
-                  تسجيل الدخول
-                </Button>
-              </Link>
-              <Link href="/register">
-                <Button size="sm" className="bg-[#1F7A46] hover:bg-[#165832] text-white font-bold px-4 py-2 rounded-lg text-xs sm:text-sm shadow-xs transition-all cursor-pointer">
-                  ابدأ مجاناً
-                  <ArrowLeft className="w-3.5 h-3.5 mr-1" />
-                </Button>
-              </Link>
+              {isAuthenticated ? (
+                <Link href="/dashboard">
+                  <Button size="sm" className="bg-[#1F7A46] hover:bg-[#165832] text-white font-bold px-4 py-2 rounded-lg text-xs sm:text-sm shadow-xs transition-all cursor-pointer gap-1.5">
+                    <LayoutDashboard className="w-3.5 h-3.5" />
+                    <span>مساحة العمل</span>
+                  </Button>
+                </Link>
+              ) : (
+                <>
+                  <Link href="/login">
+                    <Button variant="ghost" size="sm" className="text-[#1B281F] hover:text-[#1F7A46] hover:bg-[#E8EFE9] font-medium text-xs sm:text-sm cursor-pointer">
+                      تسجيل الدخول
+                    </Button>
+                  </Link>
+                  <Link href="/register">
+                    <Button size="sm" className="bg-[#1F7A46] hover:bg-[#165832] text-white font-bold px-4 py-2 rounded-lg text-xs sm:text-sm shadow-xs transition-all cursor-pointer">
+                      ابدأ مجاناً
+                      <ArrowLeft className="w-3.5 h-3.5 mr-1" />
+                    </Button>
+                  </Link>
+                </>
+              )}
               <button
                 type="button"
                 aria-label={mobileMenuOpen ? 'إغلاق القائمة' : 'فتح القائمة'}

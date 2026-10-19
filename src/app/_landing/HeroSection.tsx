@@ -12,7 +12,7 @@ export function HeroSection() {
       </div>
 
       {/* Main Headline (The Wedge) */}
-      <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-[#1B281F] leading-[1.25] tracking-tight mb-6 font-heading">
+      <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-[#1B281F] leading-[1.25] mb-6 font-heading">
         صِغ بندك في 60 ثانية — <br />
         <span className="text-[#1F7A46]">
           والنظام يفحصه ضد أنظمة المملكة

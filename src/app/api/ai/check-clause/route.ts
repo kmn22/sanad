@@ -26,13 +26,14 @@ export async function POST(req: Request) {
     }
 
     // Custom clause not covered by a deterministic regex: consult local Ollama
-    // with a short timeout, falling back cleanly if Ollama is busy.
+    // (qwen2.5:14b takes ~9s on cold start; allow 25s before falling back).
     try {
       const res = await fetch(`${OLLAMA_URL}/v1/chat/completions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: OLLAMA_MODEL,
+          temperature: 0.1,
           response_format: { type: 'json_object' },
           messages: [
             {
@@ -45,7 +46,7 @@ export async function POST(req: Request) {
             { role: 'user', content: clauseText },
           ],
         }),
-        signal: AbortSignal.timeout(8_000),
+        signal: AbortSignal.timeout(25_000),
       })
       if (res.ok) {
         const data = await res.json()

@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { trackEvent, ANALYTICS_EVENTS } from '@/lib/analytics/events'
+import { runDeterministicClauseRules, type ClauseCheckResult } from '@/lib/ai/clause-checker'
 
 interface PresetClause {
   id: string
@@ -59,120 +60,15 @@ const PRESET_CLAUSES: PresetClause[] = [
   },
 ]
 
-interface AuditOutcome {
-  valid: boolean
-  score: number
-  law: string
-  article: string
-  violation: string
-  recommendation: string
-}
-
-function evaluateClauseText(rawText: string, fallbackPreset: PresetClause): AuditOutcome {
-  const text = rawText.trim()
-  if (text === fallbackPreset.text.trim()) {
-    return {
-      valid: false,
-      score: fallbackPreset.score,
-      law: fallbackPreset.law,
-      article: fallbackPreset.article,
-      violation: fallbackPreset.violation,
-      recommendation: fallbackPreset.recommendation,
-    }
-  }
-
-  // 1. Non-compete (Saudi Labor Law Art. 83)
-  if (/منافس|عدم العمل|عدم المنافسة/.test(text)) {
-    const hasOverLimit = /خمس|ثلاث|أربع|عشر|[3-9]\s*سنوات|مدى الحياة|دون قيد|كامل المملكة/.test(text)
-    if (hasOverLimit) {
-      return {
-        valid: false,
-        score: 42,
-        law: 'نظام العمل (م/83)',
-        article: 'المادة (83) من نظام العمل السعودي',
-        violation: PRESET_CLAUSES[0].violation,
-        recommendation: PRESET_CLAUSES[0].recommendation,
-      }
-    }
-    return {
-      valid: true,
-      score: 94,
-      law: 'نظام العمل (م/83)',
-      article: 'المادة (83) من نظام العمل السعودي',
-      violation: 'لم يرصد المحرك تجاوزاً للحد الأقصى النظامي (سنتان) أو إطلاقاً غير مقيد للمنع المكاني والنوعي.',
-      recommendation: text,
-    }
-  }
-
-  // 2. Probation period (Saudi Labor Law Art. 53)
-  if (/تجربة|فترة التجربة/.test(text)) {
-    const over90WithoutWrittenExtension = /(180|ستة أشهر|6 أشهر|مائة وثمان)/.test(text) && !/اتفاق كتابي لاحق|تمديد.*كتابي/.test(text)
-    if (over90WithoutWrittenExtension) {
-      return {
-        valid: false,
-        score: 48,
-        law: 'نظام العمل (م/53)',
-        article: 'المادة (53) من نظام العمل السعودي',
-        violation: PRESET_CLAUSES[1].violation,
-        recommendation: PRESET_CLAUSES[1].recommendation,
-      }
-    }
-    return {
-      valid: true,
-      score: 95,
-      law: 'نظام العمل (م/53)',
-      article: 'المادة (53) من نظام العمل السعودي',
-      violation: 'بند فترة التجربة متوافق مع سقف الـ 90 يوماً وضوابط التمديد الكتابي المستقل.',
-      recommendation: text,
-    }
-  }
-
-  // 3. Liquidated damages / judicial review waiver (Civil Transactions Law Art. 179)
-  if (/شرط جزائي|غرامة قطعية|تعويض قطعي|لا يحق للقضاء|دون سلطة للمحكمة|دون رقابة القضاء/.test(text)) {
-    const waivesCourt = /قطعية|قطعي|لا يحق للقضاء|دون سلطة للمحكمة|دون حاجة لإثبات الضرر/.test(text)
-    if (waivesCourt) {
-      return {
-        valid: false,
-        score: 55,
-        law: 'المعاملات المدنية (م/179)',
-        article: 'المادة (179) من نظام المعاملات المدنية',
-        violation: PRESET_CLAUSES[2].violation,
-        recommendation: PRESET_CLAUSES[2].recommendation,
-      }
-    }
-  }
-
-  // 4. Unilateral termination without notice/compensation (Labor Law Art. 75/77/80)
-  if (/إنهاء العقد.*دون إشعار|فصل.*دون تعويض|إنهاء فوري دون مكافأة/.test(text) && !/المادة 80|م80/.test(text)) {
-    return {
-      valid: false,
-      score: 46,
-      law: 'نظام العمل (م/75 و م/77 و م/80)',
-      article: 'المواد (75، 77، 80) من نظام العمل السعودي',
-      violation: 'لا يجوز حرمان العامل من مهلة الإشعار أو مكافأة نهاية الخدمة إلا في الحالات الحصرية الواردة بالمادة (80) من نظام العمل وبعد إتاحة حق سماع أقواله.',
-      recommendation: 'يحق لأي من الطرفين إنهاء العقد غير المحدد المدة لسبب مشروع بموجب إشعار كتابي لا يقل عن (60) يوماً، مع حفظ كامل الحقوق النظامية ومكافأة نهاية الخدمة وفق نظام العمل.',
-    }
-  }
-
-  // 5. Cross-border personal data transfer (PDPL Art. 29)
-  if (/خارج المملكة|خوادم خارجية|نقل البيانات.*دولياً/.test(text) && !/المادة 29|سدايا|ضمانات كافية/.test(text)) {
-    return {
-      valid: false,
-      score: 50,
-      law: 'نظام حماية البيانات الشخصية (م/29)',
-      article: 'المادة (29) من نظام حماية البيانات الشخصية (PDPL)',
-      violation: 'نقل البيانات الشخصية خارج المملكة مقيد بوجود مستوى حماية كافٍ واستيفاء الضوابط والاشتراطات الصادرة عن (سدايا) وتقييم أثر النقل.',
-      recommendation: 'تُحفظ وتُعالج كافة البيانات الشخصية على خوادم محلية داخل المملكة العربية السعودية، ولا يجوز نقلها خارج المملكة إلا بعد استيفاء متطلبات المادة (29) من نظام حماية البيانات الشخصية ولوائحه التنفيذية.',
-    }
-  }
-
+function presetToOutcome(preset: PresetClause): ClauseCheckResult {
   return {
-    valid: true,
-    score: 95,
-    law: 'الأحكام العامة للأنظمة السعودية',
-    article: 'فحص مطابق للضوابط النظامية العامة',
-    violation: 'لم يرصد الفحص الآلي أي تعارض صريح مع المواد الإلزامية المفعلة في نظام العمل أو نظام المعاملات المدنية.',
-    recommendation: text,
+    valid: false,
+    score: preset.score,
+    law: preset.law,
+    article: preset.article,
+    violation: preset.violation,
+    recommendation: preset.recommendation,
+    engine: 'rule',
   }
 }
 
@@ -180,10 +76,10 @@ export function InteractiveDemo() {
   const [selectedPreset, setSelectedPreset] = useState<string>('non-compete')
   const [clauseText, setClauseText] = useState(PRESET_CLAUSES[0].text)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [hasChecked, setHasChecked] = useState(true)
+  const [isDirty, setIsDirty] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [auditResult, setAuditResult] = useState<AuditOutcome>(() =>
-    evaluateClauseText(PRESET_CLAUSES[0].text, PRESET_CLAUSES[0]),
+  const [auditResult, setAuditResult] = useState<ClauseCheckResult>(() =>
+    presetToOutcome(PRESET_CLAUSES[0]),
   )
 
   const activePreset = PRESET_CLAUSES.find((p) => p.id === selectedPreset) || PRESET_CLAUSES[0]
@@ -191,13 +87,21 @@ export function InteractiveDemo() {
   const handleSelectPreset = (preset: PresetClause) => {
     setSelectedPreset(preset.id)
     setClauseText(preset.text)
-    setAuditResult(evaluateClauseText(preset.text, preset))
-    setHasChecked(true)
+    setAuditResult(presetToOutcome(preset))
+    setIsDirty(false)
+    setCopied(false)
+  }
+
+  const handleRestorePreset = () => {
+    setClauseText(activePreset.text)
+    setAuditResult(presetToOutcome(activePreset))
+    setIsDirty(false)
     setCopied(false)
   }
 
   const handleRunCheck = async () => {
-    if (!clauseText.trim()) {
+    const trimmed = clauseText.trim()
+    if (!trimmed) {
       toast.error('الرجاء إدخال نص البند أولاً')
       return
     }
@@ -209,12 +113,16 @@ export function InteractiveDemo() {
       source: 'landing_embedded_demo',
     })
 
-    let outcome = evaluateClauseText(clauseText, activePreset)
+    const matchedPreset = PRESET_CLAUSES.find((p) => p.text.trim() === trimmed)
+    let outcome: ClauseCheckResult = matchedPreset
+      ? presetToOutcome(matchedPreset)
+      : runDeterministicClauseRules(trimmed)
+
     try {
       const res = await fetch('/api/ai/check-clause', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clauseText }),
+        body: JSON.stringify({ clauseText: trimmed }),
       })
       if (res.ok) {
         const data = await res.json()
@@ -223,12 +131,12 @@ export function InteractiveDemo() {
         }
       }
     } catch {
-      // Offline or transient network error — keep client-side deterministic outcome
+      // Offline or transient network error — keep deterministic outcome
     }
 
     setAuditResult(outcome)
     setIsAnalyzing(false)
-    setHasChecked(true)
+    setIsDirty(false)
     trackEvent({
       event: ANALYTICS_EVENTS.CLAUSE_CHECK_COMPLETED,
       score: outcome.score,
@@ -303,7 +211,7 @@ export function InteractiveDemo() {
               value={clauseText}
               onChange={(e) => {
                 setClauseText(e.target.value)
-                setHasChecked(false)
+                setIsDirty(true)
               }}
               className="w-full bg-[#F5F7F5] border border-[#CCD8CE] rounded-xl p-3.5 text-xs sm:text-sm text-[#1B281F] leading-relaxed focus:bg-white focus:outline-none focus:border-[#1F7A46] focus:ring-1 focus:ring-[#1F7A46] transition-all font-sans"
               placeholder="اكتب أو الصق نص البند القانوني هنا..."
@@ -314,17 +222,18 @@ export function InteractiveDemo() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
             <div className="text-[11px] text-[#566A5C] flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-[#1F7A46]" />
-              <span>فحص آلي معزول محلياً ضد الأنظمة السعودية السارية</span>
+              <span>
+                {isDirty
+                  ? 'تم تعديل النص — اضغط «افحص البند نظامياً» لتحديث النتيجة'
+                  : 'فحص آلي معزول محلياً ضد الأنظمة السعودية السارية'}
+              </span>
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  setClauseText(activePreset.text)
-                  setHasChecked(false)
-                }}
+                onClick={handleRestorePreset}
                 className="text-xs border-[#CCD8CE] text-[#4A5D50] hover:text-[#1B281F] cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5 ml-1" />
@@ -343,30 +252,39 @@ export function InteractiveDemo() {
             </div>
           </div>
 
-          {/* Instant Audit Result */}
-          {hasChecked && (
-            <div className="mt-4 pt-5 border-t border-[#CCD8CE] space-y-4 animate-in fade-in-50 duration-200">
-              {/* Status Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-[#F5F7F5] p-3 rounded-xl border border-[#CCD8CE]">
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${
-                      auditResult.valid ? 'bg-[#E8EFE9] text-[#1F7A46]' : 'bg-[#FEE2E2] text-[#B91C1C]'
-                    }`}
-                  >
-                    {auditResult.valid ? '✓' : '!'}
-                  </div>
-                  <div>
-                    <span className={`font-bold text-xs sm:text-sm ${auditResult.valid ? 'text-[#1F7A46]' : 'text-[#B91C1C]'}`}>
-                      {auditResult.valid ? 'متوافق مع الضوابط النظامية العامة' : 'تنبيه: رُصد تعارض مع المقتضى النظامي'}
-                    </span>
-                    <span className="text-[11px] text-[#566A5C] block sm:inline sm:mr-2">
-                      ({auditResult.article})
-                    </span>
-                  </div>
-                </div>
+          {/* Instant Audit Result — stays mounted to prevent layout jump */}
+          <div
+            className={`mt-4 pt-5 border-t border-[#CCD8CE] space-y-4 transition-opacity duration-200 ${
+              isDirty || isAnalyzing ? 'opacity-60' : 'opacity-100'
+            }`}
+          >
+            {/* Status Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-[#F5F7F5] p-3 rounded-xl border border-[#CCD8CE]">
+              <div className="flex items-center gap-2">
                 <div
-                  className={`inline-flex items-center gap-1.5 self-start sm:self-auto px-2.5 py-1 rounded-md bg-white border border-[#CCD8CE] text-xs font-mono font-bold ${
+                  className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${
+                    auditResult.valid ? 'bg-[#E8EFE9] text-[#1F7A46]' : 'bg-[#FEE2E2] text-[#B91C1C]'
+                  }`}
+                >
+                  {auditResult.valid ? '✓' : '!'}
+                </div>
+                <div>
+                  <span className={`font-bold text-xs sm:text-sm ${auditResult.valid ? 'text-[#1F7A46]' : 'text-[#B91C1C]'}`}>
+                    {auditResult.valid ? 'متوافق مع الضوابط النظامية العامة' : 'تنبيه: رُصد تعارض مع المقتضى النظامي'}
+                  </span>
+                  <span className="text-[11px] text-[#566A5C] block sm:inline sm:mr-2">
+                    ({auditResult.article})
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+                {auditResult.engine === 'ollama' && (
+                  <span className="px-2 py-0.5 rounded-md bg-[#E8EFE9] text-[#1F7A46] text-[10px] font-bold">
+                    تحليل الذكاء الاصطناعي السيادي
+                  </span>
+                )}
+                <div
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-[#CCD8CE] text-xs font-mono font-bold ${
                     auditResult.valid ? 'text-[#1F7A46]' : 'text-[#B91C1C]'
                   }`}
                 >
@@ -374,60 +292,60 @@ export function InteractiveDemo() {
                   <span>{auditResult.score} / 100</span>
                 </div>
               </div>
+            </div>
 
-              {/* Grid: Violation vs Alternative */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Violation / Observation Box */}
-                <div
-                  className={`p-4 rounded-xl border text-xs space-y-1.5 ${
-                    auditResult.valid
-                      ? 'bg-[#F5F7F5] border-[#CCD8CE]'
-                      : 'bg-[#FEF2F2] border-[#FECACA]'
-                  }`}
-                >
-                  <div className={`flex items-center gap-1.5 font-bold ${auditResult.valid ? 'text-[#1B281F]' : 'text-[#991B1B]'}`}>
-                    {auditResult.valid ? (
-                      <CheckCircle2 className="w-4 h-4 text-[#1F7A46]" />
+            {/* Grid: Violation vs Alternative */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Violation / Observation Box */}
+              <div
+                className={`p-4 rounded-xl border text-xs space-y-1.5 ${
+                  auditResult.valid
+                    ? 'bg-[#F5F7F5] border-[#CCD8CE]'
+                    : 'bg-[#FEF2F2] border-[#FECACA]'
+                }`}
+              >
+                <div className={`flex items-center gap-1.5 font-bold ${auditResult.valid ? 'text-[#1B281F]' : 'text-[#991B1B]'}`}>
+                  {auditResult.valid ? (
+                    <CheckCircle2 className="w-4 h-4 text-[#1F7A46]" />
+                  ) : (
+                    <AlertTriangle className="w-4 h-4 text-[#DC2626]" />
+                  )}
+                  <span>{auditResult.valid ? 'نتيجة الفحص النظامي:' : 'وجه المخالفة النظامية:'}</span>
+                </div>
+                <p className={`leading-relaxed ${auditResult.valid ? 'text-[#4A5D50]' : 'text-[#7F1D1D]'}`}>
+                  {auditResult.violation}
+                </p>
+              </div>
+
+              {/* Compliant Alternative Box */}
+              <div className="p-4 rounded-xl bg-[#E8EFE9] border border-[#CCD8CE] text-xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 font-bold text-[#1F7A46]">
+                    <CheckCircle2 className="w-4 h-4 text-[#1F7A46]" />
+                    <span>الصياغة البديلة المتوافقة:</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopyAlternative}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#1F7A46] hover:underline cursor-pointer"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="w-3.5 h-3.5" /> تم النسخ
+                      </>
                     ) : (
-                      <AlertTriangle className="w-4 h-4 text-[#DC2626]" />
+                      <>
+                        <Copy className="w-3.5 h-3.5" /> نسخ البديل
+                      </>
                     )}
-                    <span>{auditResult.valid ? 'نتيجة الفحص النظامي:' : 'وجه المخالفة النظامية:'}</span>
-                  </div>
-                  <p className={`leading-relaxed ${auditResult.valid ? 'text-[#4A5D50]' : 'text-[#7F1D1D]'}`}>
-                    {auditResult.violation}
-                  </p>
+                  </button>
                 </div>
-
-                {/* Compliant Alternative Box */}
-                <div className="p-4 rounded-xl bg-[#E8EFE9] border border-[#CCD8CE] text-xs space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 font-bold text-[#1F7A46]">
-                      <CheckCircle2 className="w-4 h-4 text-[#1F7A46]" />
-                      <span>الصياغة البديلة المتوافقة:</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleCopyAlternative}
-                      className="inline-flex items-center gap-1 text-[11px] font-bold text-[#1F7A46] hover:underline cursor-pointer"
-                    >
-                      {copied ? (
-                        <>
-                          <Check className="w-3.5 h-3.5" /> تم النسخ
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3.5 h-3.5" /> نسخ البديل
-                        </>
-                      )}
-                    </button>
-                  </div>
-                  <p className="text-[#1B281F] leading-relaxed font-medium bg-white/70 p-2.5 rounded-lg border border-[#CCD8CE]">
-                    «{auditResult.recommendation}»
-                  </p>
-                </div>
+                <p className="text-[#1B281F] leading-relaxed font-medium bg-white/70 p-2.5 rounded-lg border border-[#CCD8CE]">
+                  «{auditResult.recommendation}»
+                </p>
               </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </section>
