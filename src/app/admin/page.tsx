@@ -19,6 +19,11 @@ export default function AdminPage() {
   const [flags, setFlags] = useState<Record<string, boolean> | null>(null)
   const [auditLogs, setAuditLogs] = useState<any[]>([])
   const [waitlist, setWaitlist] = useState<Array<{ id: string; email: string; interest: string | null; source: string | null; createdAt: string }>>([])
+  const [incidents, setIncidents] = useState<any[]>([])
+  const [registers, setRegisters] = useState<{ processors: any[]; transfers: any[]; dpias: any[]; retentionPolicies: any[]; legalHolds: any[] } | null>(null)
+  const [incidentTitle, setIncidentTitle] = useState('')
+  const [incidentDesc, setIncidentDesc] = useState('')
+  const [incidentSeverity, setIncidentSeverity] = useState('medium')
   const [loadingLogs, setLoadingLogs] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [email, setEmail] = useState('')
@@ -48,7 +53,9 @@ export default function AdminPage() {
       fetch('/api/admin/jobs'),
       fetch('/api/admin/audit-logs'),
       fetch('/api/admin/waitlist'),
-    ]).then(async ([a, b, c, e, f, w]) => {
+      fetch('/api/admin/privacy/incidents'),
+      fetch('/api/admin/privacy/registers'),
+    ]).then(async ([a, b, c, e, f, w, inc, reg]) => {
       if (a.ok) setStatus(await a.json())
       if (b.ok) setRequests(await b.json())
       if (c.ok) setUsers(await c.json())
@@ -61,6 +68,8 @@ export default function AdminPage() {
         const wlData = await w.json()
         setWaitlist(wlData.items || [])
       }
+      if (inc.ok) setIncidents(await inc.json())
+      if (reg.ok) setRegisters(await reg.json())
     })
     fetch('/api/admin/feature-flags').then(async (response) => {
       if (response.ok) setFlags((await response.json()).flags)
@@ -407,6 +416,88 @@ export default function AdminPage() {
                       )}
                     </div>
                   </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="mb-8">
+          <h2 className="text-xl font-bold mb-2">حوادث الخصوصية وسجلات الامتثال (PDPL Registers & Breach Log)</h2>
+          <p className="text-xs text-muted-foreground mb-4">
+            توثيق حوادث البيانات الشخصية (مع حساب مهلة إخطار سدايا 72 ساعة تلقائياً) وسجلات الاحتفاظ والحجز القانوني.
+          </p>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault()
+              const res = await fetch('/api/admin/privacy/incidents', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: incidentTitle, description: incidentDesc, severity: incidentSeverity }),
+              })
+              if (res.ok) {
+                const created = await res.json()
+                setIncidents((prev) => [created, ...prev])
+                setIncidentTitle('')
+                setIncidentDesc('')
+                setMessage('تم تسجيل حادث الخصوصية وحساب مهلة إخطار الهيئة (72 ساعة).')
+              } else {
+                setMessage('تعذر تسجيل الحادث')
+              }
+            }}
+            className="flex flex-wrap gap-2.5 mb-4"
+          >
+            <input
+              value={incidentTitle}
+              onChange={(e) => setIncidentTitle(e.target.value)}
+              required
+              placeholder="عنوان الحادث الأمني / الخصوصية"
+              className="rounded-lg border p-2.5 text-xs flex-1 min-w-[180px]"
+            />
+            <input
+              value={incidentDesc}
+              onChange={(e) => setIncidentDesc(e.target.value)}
+              required
+              placeholder="وصف الحادث والبيانات المتأثرة"
+              className="rounded-lg border p-2.5 text-xs flex-1 min-w-[220px]"
+            />
+            <select
+              aria-label="خطورة الحادث"
+              value={incidentSeverity}
+              onChange={(e) => setIncidentSeverity(e.target.value)}
+              className="rounded-lg border p-2.5 text-xs"
+            >
+              <option value="low">منخفضة</option>
+              <option value="medium">متوسطة</option>
+              <option value="high">عالية</option>
+              <option value="critical">حرجة</option>
+            </select>
+            <button className="rounded-lg bg-emerald-700 hover:bg-emerald-800 px-4 py-2 text-xs text-white font-medium">
+              تسجيل حادث
+            </button>
+          </form>
+
+          {registers && (
+            <div className="grid gap-3 sm:grid-cols-4 mb-3">
+              <Card title="سجل المعالجين" value={String(registers.processors?.length || 0)} />
+              <Card title="تقييمات النقل" value={String(registers.transfers?.length || 0)} />
+              <Card title="سياسات الاحتفاظ" value={String(registers.retentionPolicies?.length || 0)} />
+              <Card title="الحجز القانوني النشط" value={String(registers.legalHolds?.length || 0)} />
+            </div>
+          )}
+
+          {incidents.length > 0 && (
+            <div className="space-y-1.5">
+              {incidents.slice(0, 10).map((inc) => (
+                <div key={inc.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-xs">
+                  <div>
+                    <strong>{inc.title}</strong>
+                    <span className="mx-2 text-muted-foreground">({inc.severity})</span>
+                    <p className="text-muted-foreground mt-0.5">{inc.description}</p>
+                  </div>
+                  <span className="font-mono text-[11px] text-amber-800 dark:text-amber-300">
+                    مهلة الإخطار: {new Date(inc.authorityDueAt).toLocaleString('ar-SA')}
+                  </span>
                 </div>
               ))}
             </div>

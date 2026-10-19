@@ -19,6 +19,7 @@ type PortalRequest = { id: string; title: string; message: string; status: strin
 type Task = { id: string; title: string; status: string; priority: string; dueDate: string | null; assignedTo?: { id: string; name: string | null } | null }
 type WorkflowEvent = { id: string; action: string; createdAt: string; actor?: { id: string; name: string | null } | null }
 type Approval = { id: string; title: string; status: string; decisionNote: string | null; createdAt: string; case?: { id: string; title: string } | null; document?: { id: string; title: string } | null; requestedBy: { id: string; name: string | null }; approver: { id: string; name: string | null } }
+type WorkflowTemplateItem = { id: string; name: string; description: string | null; caseType: string | null; stages: string; isDefault: boolean; _count?: { cases: number } }
 type WorkflowData = { cases: WorkflowCase[]; events: WorkflowEvent[]; requests: PortalRequest[]; tasks: Task[] }
 
 const stages = [
@@ -60,6 +61,8 @@ export default function WorkflowPage() {
   const [request, setRequest] = useState({ title: '', message: '', dueDate: '', assignedToId: '' })
   const [approvals, setApprovals] = useState<Approval[]>([])
   const [approvalForm, setApprovalForm] = useState({ caseId: '', approverId: '', title: '' })
+  const [templates, setTemplates] = useState<WorkflowTemplateItem[]>([])
+  const [templateForm, setTemplateForm] = useState({ name: '', description: '', isDefault: false, selectedStages: stages.map((s) => s.value) })
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -72,10 +75,17 @@ export default function WorkflowPage() {
       setMembers(Array.isArray(team) ? team : [])
       setClients(Array.isArray(clientList) ? clientList : (clientList?.items || []))
       setMyRequests(Array.isArray(mine) ? mine : [])
-      const approvalsResponse = await fetch('/api/approvals')
+      const [approvalsResponse, templatesResponse] = await Promise.all([
+        fetch('/api/approvals'),
+        fetch('/api/workflow-templates'),
+      ])
       if (approvalsResponse.ok) {
         const appr = await approvalsResponse.json()
         setApprovals(Array.isArray(appr) ? appr : (appr?.items || []))
+      }
+      if (templatesResponse.ok) {
+        const tmpl = await templatesResponse.json()
+        setTemplates(Array.isArray(tmpl) ? tmpl : [])
       }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'تعذر تحميل سير العمل')
@@ -164,6 +174,35 @@ export default function WorkflowPage() {
     load()
   }
 
+  async function createTemplate() {
+    setBusy('template')
+    const response = await fetch('/api/workflow-templates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: templateForm.name,
+        description: templateForm.description || null,
+        stages: templateForm.selectedStages,
+        isDefault: templateForm.isDefault,
+      }),
+    })
+    const result = await response.json().catch(() => ({}))
+    setBusy('')
+    if (!response.ok) return toast.error(result.error || 'تعذر إنشاء قالب سير العمل')
+    toast.success('تم حفظ قالب سير العمل')
+    setTemplateForm({ name: '', description: '', isDefault: false, selectedStages: stages.map((s) => s.value) })
+    load()
+  }
+
+  async function deleteTemplate(id: string) {
+    setBusy(`template:${id}`)
+    const response = await fetch(`/api/workflow-templates/${id}`, { method: 'DELETE' })
+    setBusy('')
+    if (!response.ok) return toast.error('تعذر حذف القالب')
+    toast.success('تم حذف القالب')
+    load()
+  }
+
   if (loading && !data) return <div className="space-y-5"><div className="h-28 animate-pulse rounded-3xl bg-muted/50" /><div className="grid grid-cols-2 gap-3 lg:grid-cols-4">{Array.from({ length: 4 }).map((_, index) => <div key={index} className="h-28 animate-pulse rounded-2xl bg-muted/40" />)}</div><div className="h-96 animate-pulse rounded-3xl bg-muted/30" /></div>
   if (error && !data) return <EmptyState icon={AlertCircle} title="تعذر فتح سير العمل" text={`${error}. تحقق من الاتصال ثم حاول مرة أخرى.`} />
   if (!data) return null
@@ -218,6 +257,58 @@ export default function WorkflowPage() {
         const canDecide = item.status === 'pending' && item.approver.id === myUserId
         return <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-background/50 p-3"><div className="min-w-0"><p className="truncate text-sm font-medium">{item.title}</p><p className="mt-0.5 text-xs text-muted-foreground">{item.case?.title || item.document?.title || 'طلب عام'} • {item.requestedBy.name || 'عضو'} → {item.approver.name || 'عضو'}</p></div><div className="flex items-center gap-2">{canDecide ? <><Button size="sm" variant="outline" onClick={() => decideApproval(item.id, 'approved')} disabled={busy === `approval:${item.id}`}><CheckCircle2 className="ms-1 h-3.5 w-3.5" />اعتماد</Button><Button size="sm" variant="ghost" onClick={() => decideApproval(item.id, 'rejected')} disabled={busy === `approval:${item.id}`}><XCircle className="ms-1 h-3.5 w-3.5" />رفض</Button></> : <Badge variant={item.status === 'approved' ? 'default' : item.status === 'rejected' ? 'destructive' : 'secondary'}>{item.status === 'pending' ? 'بانتظار القرار' : item.status === 'approved' ? 'معتمد' : item.status === 'rejected' ? 'مرفوض' : 'ملغي'}</Badge>}</div></div>
       })}</div> : <p className="text-xs text-muted-foreground">لا توجد طلبات اعتماد بعد.</p>}
+    </CardContent></Card>
+
+    <Card className="border-border/60 bg-card/70 shadow-sm backdrop-blur-sm"><CardHeader className="border-b border-border/60 bg-muted/20"><CardTitle className="flex items-center gap-2 text-base"><Gavel className="h-5 w-5 text-primary" />قوالب مسارات القضايا (Workflow Templates)</CardTitle><p className="text-xs text-muted-foreground">خصص مراحل التقاضي الافتراضية لمكتبك أو أنشئ مساراً مخصصاً للقضايا العمالية أو التجارية.</p></CardHeader><CardContent className="space-y-4 p-5">
+      <div className="grid gap-3 sm:grid-cols-[1fr_1.5fr_auto]">
+        <Input value={templateForm.name} onChange={(e) => setTemplateForm((c) => ({ ...c, name: e.target.value }))} placeholder="اسم القالب (مثال: المسار العمالي السريع)" maxLength={120} />
+        <Input value={templateForm.description} onChange={(e) => setTemplateForm((c) => ({ ...c, description: e.target.value }))} placeholder="وصف مختصر للمسار (اختياري)" maxLength={400} />
+        <Button onClick={createTemplate} disabled={!templateForm.name.trim() || templateForm.selectedStages.length < 2 || busy === 'template'}>
+          {busy === 'template' ? <Loader2 className="h-4 w-4 animate-spin" /> : 'حفظ القالب'}
+        </Button>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {stages.map((st) => {
+          const active = templateForm.selectedStages.includes(st.value)
+          return (
+            <button
+              key={st.value}
+              type="button"
+              onClick={() =>
+                setTemplateForm((c) => ({
+                  ...c,
+                  selectedStages: active ? c.selectedStages.filter((v) => v !== st.value) : [...c.selectedStages, st.value],
+                }))
+              }
+              className={`rounded-full border px-3 py-1 text-xs transition cursor-pointer ${
+                active ? 'border-primary bg-primary/15 text-primary font-semibold' : 'border-border/70 text-muted-foreground'
+              }`}
+            >
+              {st.label}
+            </button>
+          )
+        })}
+      </div>
+      {templates.length > 0 && (
+        <div className="grid gap-2 sm:grid-cols-2">
+          {templates.map((tmpl) => (
+            <div key={tmpl.id} className="flex items-center justify-between gap-2 rounded-xl border border-border/60 bg-background/50 p-3 text-xs">
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold truncate">{tmpl.name}</span>
+                  {tmpl.isDefault && <Badge variant="secondary" className="text-[10px]">افتراضي</Badge>}
+                </div>
+                {tmpl.description && <p className="text-muted-foreground truncate mt-0.5">{tmpl.description}</p>}
+              </div>
+              {!tmpl.isDefault && (
+                <Button size="sm" variant="ghost" onClick={() => deleteTemplate(tmpl.id)} disabled={busy === `template:${tmpl.id}`} className="h-7 text-xs text-rose-700">
+                  حذف
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </CardContent></Card>
 
     <Card className="border-border/60 bg-card/70 shadow-sm"><CardHeader><CardTitle className="flex items-center gap-2 text-base"><Clock3 className="h-5 w-5 text-primary" />آخر النشاطات</CardTitle></CardHeader><CardContent>{data.events.length ? <div className="grid gap-2 md:grid-cols-2">{data.events.slice(0, 12).map((event) => <div key={event.id} className="flex items-center gap-3 rounded-xl border border-border/50 bg-background/40 p-3"><span className="h-2 w-2 shrink-0 rounded-full bg-primary" /><div className="min-w-0"><p className="truncate text-sm font-medium">{event.action}</p><p className="text-xs text-muted-foreground">{event.actor?.name || 'النظام'} • {new Date(event.createdAt).toLocaleString('ar-SA')}</p></div></div>)}</div> : <EmptyState icon={Clock3} title="لا يوجد نشاط بعد" text="ستظهر تغييرات القضايا والتعيينات والطلبات هنا." />}</CardContent></Card>

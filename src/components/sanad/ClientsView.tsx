@@ -41,6 +41,9 @@ import {
   FileText,
   MessageSquare,
   Users,
+  Link2,
+  UserPlus,
+  Copy,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLang } from '@/lib/sanad/i18n'
@@ -169,6 +172,49 @@ function ClientCard({
   const isCorporate = client.type === 'corporate'
   const counts = client._count ?? { cases: 0, invoices: 0, communications: 0 }
   const num = (n: number) => (lang === 'ar' ? n.toLocaleString('ar-EG') : n.toString())
+  const [portalLink, setPortalLink] = useState('')
+  const [issuingLink, setIssuingLink] = useState(false)
+  const [inviting, setInviting] = useState(false)
+
+  async function issuePortalLink() {
+    setIssuingLink(true)
+    try {
+      const res = await fetch('/api/portal-links', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId: client.id, sendEmail: true }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'تعذر إنشاء رابط بوابة الموكل')
+      setPortalLink(data.url || '')
+      if (data.url) await navigator.clipboard.writeText(data.url).catch(() => {})
+      toast.success(lang === 'ar' ? 'تم إنشاء ونسخ رابط بوابة الموكل لرفع الملفات ومتابعة القضية' : 'Client portal link copied')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'تعذر إنشاء الرابط')
+    } finally {
+      setIssuingLink(false)
+    }
+  }
+
+  async function inviteClientAccount() {
+    setInviting(true)
+    try {
+      const res = await fetch(`/api/clients/${client.id}/invite`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: client.email, sendEmail: true }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'تعذر إنشاء دعوة حساب الموكل')
+      setPortalLink(data.url || '')
+      if (data.url) await navigator.clipboard.writeText(data.url).catch(() => {})
+      toast.success(lang === 'ar' ? 'تم إنشاء ونسخ رابط تسجيل حساب الموكل' : 'Client invite link copied')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'تعذر إنشاء الدعوة')
+    } finally {
+      setInviting(false)
+    }
+  }
 
   return (
     <Card className="hover:border-primary/40 transition-colors group">
@@ -296,6 +342,45 @@ function ClientCard({
           <p className="text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1.5 line-clamp-2">
             {client.notes}
           </p>
+        )}
+
+        <div className="pt-2 border-t border-border/60 flex flex-wrap items-center gap-1.5">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={issuingLink}
+            onClick={issuePortalLink}
+            className="h-7 text-[11px] gap-1 flex-1 cursor-pointer"
+          >
+            <Link2 className="h-3 w-3 text-primary" />
+            <span>{issuingLink ? '...' : lang === 'ar' ? 'رابط بوابة الموكل' : 'Portal Link'}</span>
+          </Button>
+          {client.email && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={inviting}
+              onClick={inviteClientAccount}
+              className="h-7 text-[11px] gap-1 flex-1 cursor-pointer"
+            >
+              <UserPlus className="h-3 w-3 text-primary" />
+              <span>{inviting ? '...' : lang === 'ar' ? 'دعوة حساب الموكل' : 'Invite Login'}</span>
+            </Button>
+          )}
+        </div>
+
+        {portalLink && (
+          <button
+            type="button"
+            onClick={() => navigator.clipboard.writeText(portalLink).then(() => toast.success(lang === 'ar' ? 'تم نسخ الرابط' : 'Copied'))}
+            className="w-full flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-2.5 py-1.5 text-[11px] font-mono text-primary cursor-pointer"
+            dir="ltr"
+          >
+            <Copy className="h-3 w-3 shrink-0" />
+            <span className="truncate">{portalLink}</span>
+          </button>
         )}
       </CardContent>
     </Card>
