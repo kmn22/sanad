@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { billingConfigured } from '@/lib/billing'
 import { isFeatureEnabled } from '@/lib/feature-flags'
 
 export type EntitlementKey = 'cases' | 'clients' | 'workflow' | 'portal' | 'ai' | 'education'
@@ -36,8 +37,14 @@ export async function getWorkspacePlan(workspaceId: string) {
   const plan = workspace.subscription?.plan
   const subscription = workspace.subscription
   // Workspaces created before billing was introduced retain the legacy trial
-  // behavior until an explicit subscription is attached.
-  const subscriptionActive = !subscription || isSubscriptionActive(subscription)
+  // behavior until an explicit subscription is attached. When Stripe billing
+  // is not configured on the deployment, trialing workspaces remain active so
+  // self-hosted / Alpha deployments are not locked out when the 14-day window
+  // elapses with no checkout provider available.
+  const subscriptionActive =
+    !subscription ||
+    isSubscriptionActive(subscription) ||
+    (!billingConfigured() && subscription.status === 'trialing')
   let entitlements = defaultEntitlements
   if (plan?.features) {
     try {
