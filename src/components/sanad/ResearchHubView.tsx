@@ -68,10 +68,10 @@ export interface ResearchItem {
 }
 
 const TYPE_CONFIG: Record<string, { labelAr: string; labelEn: string; color: string; icon: any }> = {
-  statute: { labelAr: 'نص نظامي', labelEn: 'Statute Article', color: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30', icon: BookOpen },
-  precedent: { labelAr: 'سابقة قضائية', labelEn: 'Precedent', color: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30', icon: Gavel },
-  regulation: { labelAr: 'قرار ولائحة', labelEn: 'Regulation', color: 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30', icon: Scale },
-  doctrine: { labelAr: 'مبدأ فقهي/قانوني', labelEn: 'Doctrine', color: 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30', icon: Shield },
+  statute: { labelAr: 'الأنظمة ولوائحها', labelEn: 'Statutes & Regulations', color: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30', icon: BookOpen },
+  regulation: { labelAr: 'الأوامر والتعاميم', labelEn: 'Orders & Circulars', color: 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30', icon: Scale },
+  precedent: { labelAr: 'السوابق القضائية', labelEn: 'Judicial Precedents', color: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30', icon: Gavel },
+  doctrine: { labelAr: 'الكتب والأبحاث القانونية', labelEn: 'Legal Books & Research', color: 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30', icon: Shield },
   note: { labelAr: 'مذكرة بحثية', labelEn: 'Research Note', color: 'bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30', icon: FileText },
 }
 
@@ -385,6 +385,69 @@ ${dossierConclusion || '—'}
             </Dialog>
           </div>
         </div>
+      </div>
+
+      {/* 1B. 4 Saudi Legal Knowledge Pillar Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          {
+            type: 'statute',
+            title: 'الأنظمة ولوائحها',
+            desc: 'تجد في مكان واحد جميع الأنظمة السعودية مقترنةً بلوائحها التنفيذية وبآخر التحديثات والتعديلات الصادرة عليها',
+            icon: BookOpen,
+          },
+          {
+            type: 'regulation',
+            title: 'الأوامر والتعاميم',
+            desc: 'الاطلاع على آلاف الأوامر والقرارات بوثائقها الأصلية من الجهات الحكومية مع إمكانية البحث في محتوى المستند',
+            icon: Scale,
+          },
+          {
+            type: 'precedent',
+            title: 'السوابق القضائية',
+            desc: 'الاطلاع على آلاف من الأحكام القضائية في المملكة العربية السعودية مع إمكانية البحث بموضوع النزاع',
+            icon: Gavel,
+          },
+          {
+            type: 'doctrine',
+            title: 'الكتب والأبحاث القانونية',
+            desc: 'تصفّح العديد من الكتب والأبحاث القانونية والمصادر الثانوية المتنوعة والمثرية',
+            icon: Layers,
+          },
+        ].map((pillar) => {
+          const Icon = pillar.icon
+          const active = selectedType === pillar.type && activeTab === 'saved'
+          return (
+            <button
+              key={pillar.type}
+              type="button"
+              onClick={() => {
+                setActiveTab('saved')
+                setSelectedType(selectedType === pillar.type ? 'all' : pillar.type)
+              }}
+              className={`text-right rounded-2xl border p-5 transition-all cursor-pointer flex flex-col justify-between ${
+                active
+                  ? 'border-primary bg-primary/5 ring-2 ring-primary/15 shadow-sm'
+                  : 'border-border/80 bg-card hover:border-primary/50 shadow-2xs'
+              }`}
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Icon className="w-6 h-6 text-muted-foreground" />
+                  <span className="text-[10px] font-mono text-muted-foreground">
+                    {items.filter((it) => it.type === pillar.type).length} {lang === 'ar' ? 'مرجع' : 'items'}
+                  </span>
+                </div>
+                <h2 className="text-sm sm:text-base font-bold text-foreground font-heading">
+                  {pillar.title}
+                </h2>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {pillar.desc}
+                </p>
+              </div>
+            </button>
+          )
+        })}
       </div>
 
       {/* 2. Navigation Tabs */}
