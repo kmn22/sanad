@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { billingConfigured } from '@/lib/billing'
 import { isFeatureEnabled } from '@/lib/feature-flags'
 
 export type EntitlementKey = 'cases' | 'clients' | 'workflow' | 'portal' | 'ai' | 'education'
@@ -44,7 +43,7 @@ export async function getWorkspacePlan(workspaceId: string) {
   const subscriptionActive =
     !subscription ||
     isSubscriptionActive(subscription) ||
-    (!billingConfigured() && subscription.status === 'trialing')
+    (!process.env.STRIPE_SECRET_KEY && subscription.status === 'trialing')
   let entitlements = defaultEntitlements
   if (plan?.features) {
     try {
