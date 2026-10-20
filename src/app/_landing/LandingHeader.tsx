@@ -8,6 +8,7 @@ import { Scale, ArrowLeft, Menu, X, LayoutDashboard } from 'lucide-react'
 
 const NAV_ITEMS = [
   { href: '/#checker', label: 'المصحح', highlight: true },
+  { href: '/#summarizer', label: 'تلخيص العقود' },
   { href: '/sandbox', label: 'المعمل التجريبي' },
   { href: '/pricing', label: 'الأسعار والباقات' },
   { href: '/about', label: 'من نحن' },

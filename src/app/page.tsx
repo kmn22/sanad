@@ -1,6 +1,7 @@
 import { LandingHeader } from './_landing/LandingHeader'
 import { HeroSection } from './_landing/HeroSection'
 import { InteractiveDemo } from './_landing/InteractiveDemo'
+import { ContractSummaryShowcase } from './_landing/ContractSummaryShowcase'
 import { HowItWorksSection } from './_landing/HowItWorksSection'
 import { CoveredStatutesSection } from './_landing/CoveredStatutesSection'
 import { TrustLayerSection } from './_landing/TrustLayerSection'
@@ -35,6 +36,9 @@ export default function LandingPage() {
 
         {/* Section 2: Embedded Live Clause Checker */}
         <InteractiveDemo />
+
+        {/* Section 2B: Full Contract Summarizer & 6-Point Risk Breakdown */}
+        <ContractSummaryShowcase />
 
         {/* Section 3: How It Works */}
         <HowItWorksSection />

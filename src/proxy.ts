@@ -69,6 +69,7 @@ export async function proxy(req: NextRequest) {
     pathname === '/api/waitlist' ||
     pathname === '/api/analytics/events' ||
     pathname === '/api/ai/check-clause' ||
+    pathname === '/api/ai/summarize-contract' ||
     pathname.startsWith('/api/portal/') ||
     pathname.startsWith('/api/cron/')
 
