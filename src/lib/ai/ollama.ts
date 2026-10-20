@@ -10,20 +10,24 @@ export interface ChatMessage {
  * Saudi-legal-grounded system prompts. Keep specific so the model returns
  * citation-ready Arabic without flowery preambles.
  */
+// Strip any stray CJK characters that Qwen models occasionally emit mid-generation.
+function stripStrayCjk(text: string): string {
+  return text.replace(/[\u3000-\u303f\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff00-\uffef]+/g, '')
+}
+
 export const SAUDI_PROMPTS = {
   draft:
-    'أنت محامٍ سعودي محترف. اكتب المستند المطلوب بصياغة قانونية سعودية دقيقة. ' +
+    'أنت محامٍ سعودي محترف. اكتب المستند المطلوب باللغة العربية الفصحى فقط وبصياغة قانونية سعودية دقيقة (يُمنع استخدام أي لغة أخرى أو حروف غير عربية). ' +
     'اعتمد على: نظام المعاملات المدنية (المرسوم م/191)، نظام العمل السعودي، ونظام الشركات. ' +
     'استخدم Markdown نظيف. ابدأ مباشرة بعنوان المستند بدون أي مقدمات أو شروحات.',
   analyze:
-    'You are a Saudi legal auditor. Analyze the document and respond with strict JSON only — no markdown, no prose. ' +
-    'Ground analysis in: Saudi Civil Transactions Law (Royal Decree M/191), Labor Law, Companies Law. ' +
-    'Flag missing standard clauses and cite the relevant statute in the description when possible.',
+    'أنت مدقق ومستشار قانوني سعودي. حلل المستند وأعد JSON فقط باللغة العربية الفصحى — بدون أي نص إضافي أو حروف غير عربية. ' +
+    'اعتمد على نظام المعاملات المدنية، نظام العمل، ونظام الشركات.',
   cards:
-    'أنت أستاذ قانون سعودي. استخرج المصطلحات القانونية من النص بدقة. أعد JSON فقط بدون شرح أو Markdown. ' +
+    'أنت أستاذ قانون سعودي. استخرج المصطلحات القانونية من النص بدقة باللغة العربية الفصحى فقط. أعد JSON فقط بدون شرح أو Markdown. ' +
     'اربط كل مصطلح بمصدره النظامي السعودي (نظام المعاملات المدنية، نظام العمل، إلخ) عند الإمكان.',
   search:
-    'أنت مساعد قانوني سعودي. أجب باختصار ووضوح بالعربية الفصحى. ' +
+    'أنت مساعد قانوني سعودي. أجب باختصار ووضوح باللغة العربية الفصحى فقط. ' +
     'إذا كان السؤال يتعلق بنظام أو مادة، اذكر النظام والمادة. لا تخترع مراجع.',
 } as const
 
@@ -33,6 +37,7 @@ export async function ollamaChat(messages: ChatMessage[], opts: { json?: boolean
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: OLLAMA_MODEL,
+      temperature: 0.2,
       messages,
       ...(opts.json ? { response_format: { type: 'json_object' } } : {}),
     }),
@@ -42,7 +47,7 @@ export async function ollamaChat(messages: ChatMessage[], opts: { json?: boolean
     throw new Error(`Ollama request failed with status ${res.status}`)
   }
   const data = await res.json()
-  return data.choices?.[0]?.message?.content ?? ''
+  return stripStrayCjk(data.choices?.[0]?.message?.content ?? '')
 }
 
 /**
@@ -55,6 +60,7 @@ export async function* ollamaChatStream(messages: ChatMessage[]): AsyncGenerator
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: OLLAMA_MODEL,
+      options: { temperature: 0.2 },
       messages,
       stream: true,
     }),
@@ -77,7 +83,7 @@ export async function* ollamaChatStream(messages: ChatMessage[]): AsyncGenerator
       if (!trimmed) continue
       try {
         const obj = JSON.parse(trimmed)
-        const chunk = obj?.message?.content
+        const chunk = stripStrayCjk(obj?.message?.content ?? '')
         if (chunk) yield chunk
         if (obj?.done) return
       } catch {
