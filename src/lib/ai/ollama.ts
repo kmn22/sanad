@@ -1,20 +1,20 @@
 export const OLLAMA_URL = process.env.OLLAMA_URL || 'http://host.docker.internal:11434'
-export const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:14b'
+export const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen3-coder:30b'
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant'
   content: string
 }
 
+// Strip any stray CJK / Kana / Thai tokens that multilingual models occasionally emit.
+function stripForeignNoise(text: string): string {
+  return text.replace(/[\u0e00-\u0e7f\u3000-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff00-\uffef]+/g, '')
+}
+
 /**
  * Saudi-legal-grounded system prompts. Keep specific so the model returns
  * citation-ready Arabic without flowery preambles.
  */
-// Strip any stray CJK characters that Qwen models occasionally emit mid-generation.
-function stripStrayCjk(text: string): string {
-  return text.replace(/[\u3000-\u303f\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff00-\uffef]+/g, '')
-}
-
 export const SAUDI_PROMPTS = {
   draft:
     'أنت محامٍ سعودي محترف. اكتب المستند المطلوب باللغة العربية الفصحى فقط وبصياغة قانونية سعودية دقيقة (يُمنع استخدام أي لغة أخرى أو حروف غير عربية). ' +
@@ -31,23 +31,29 @@ export const SAUDI_PROMPTS = {
     'إذا كان السؤال يتعلق بنظام أو مادة، اذكر النظام والمادة. لا تخترع مراجع.',
 } as const
 
-export async function ollamaChat(messages: ChatMessage[], opts: { json?: boolean } = {}): Promise<string> {
-  const res = await fetch(`${OLLAMA_URL}/v1/chat/completions`, {
+export async function ollamaChat(
+  messages: ChatMessage[],
+  opts: { json?: boolean; timeoutMs?: number } = {},
+): Promise<string> {
+  const res = await fetch(`${OLLAMA_URL}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: OLLAMA_MODEL,
-      temperature: 0.2,
       messages,
-      ...(opts.json ? { response_format: { type: 'json_object' } } : {}),
+      stream: false,
+      keep_alive: '24h',
+      options: { temperature: 0.2, num_ctx: 4096 },
+      ...(opts.json ? { format: 'json' } : {}),
     }),
-    signal: AbortSignal.timeout(120_000),
+    signal: AbortSignal.timeout(opts.timeoutMs ?? 120_000),
   })
   if (!res.ok) {
     throw new Error(`Ollama request failed with status ${res.status}`)
   }
   const data = await res.json()
-  return stripStrayCjk(data.choices?.[0]?.message?.content ?? '')
+  const content = data?.message?.content ?? data?.choices?.[0]?.message?.content ?? ''
+  return stripForeignNoise(content)
 }
 
 /**
@@ -60,7 +66,8 @@ export async function* ollamaChatStream(messages: ChatMessage[]): AsyncGenerator
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: OLLAMA_MODEL,
-      options: { temperature: 0.2 },
+      keep_alive: '24h',
+      options: { temperature: 0.2, num_ctx: 4096 },
       messages,
       stream: true,
     }),
@@ -83,7 +90,7 @@ export async function* ollamaChatStream(messages: ChatMessage[]): AsyncGenerator
       if (!trimmed) continue
       try {
         const obj = JSON.parse(trimmed)
-        const chunk = stripStrayCjk(obj?.message?.content ?? '')
+        const chunk = stripForeignNoise(obj?.message?.content ?? '')
         if (chunk) yield chunk
         if (obj?.done) return
       } catch {

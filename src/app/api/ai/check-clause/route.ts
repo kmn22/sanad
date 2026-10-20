@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { requestIp } from '@/lib/audit'
 import { readJsonLimited, safeErrorResponse } from '@/lib/http'
 import { rateLimit } from '@/lib/rate-limit'
-import { OLLAMA_URL, OLLAMA_MODEL } from '@/lib/ai/ollama'
+import { ollamaChat } from '@/lib/ai/ollama'
 import { runDeterministicClauseRules, type ClauseCheckResult } from '@/lib/ai/clause-checker'
 
 export async function POST(req: Request) {
@@ -26,48 +26,37 @@ export async function POST(req: Request) {
     }
 
     // Custom clause not covered by a deterministic regex: consult local Ollama
-    // (qwen2.5:14b takes ~9s on cold start; allow 25s before falling back).
+    // via ollamaChat (pinned in GPU VRAM with num_ctx=4096 and keep_alive=24h).
     try {
-      const res = await fetch(`${OLLAMA_URL}/v1/chat/completions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: OLLAMA_MODEL,
-          temperature: 0.1,
-          response_format: { type: 'json_object' },
-          messages: [
-            {
-              role: 'system',
-              content:
-                'أنت مدقق عقود سعودي. افحص البند التعاقدي التالي مقابل نظام العمل السعودي ونظام المعاملات المدنية ونظام حماية البيانات الشخصية (PDPL). ' +
-                'أعد كائن JSON فقط بالحقول التالية بالعربية: ' +
-                '{"valid": boolean, "score": number (0-100), "law": string, "article": string, "violation": string, "recommendation": string}.',
-            },
-            { role: 'user', content: clauseText },
-          ],
-        }),
-        signal: AbortSignal.timeout(25_000),
-      })
-      if (res.ok) {
-        const data = await res.json()
-        const raw = data?.choices?.[0]?.message?.content
-        if (typeof raw === 'string') {
-          const parsed = JSON.parse(raw)
-          if (
-            typeof parsed.valid === 'boolean' &&
-            typeof parsed.violation === 'string' &&
-            typeof parsed.recommendation === 'string'
-          ) {
-            return NextResponse.json({
-              valid: parsed.valid,
-              score: typeof parsed.score === 'number' ? Math.max(0, Math.min(100, Math.round(parsed.score))) : parsed.valid ? 92 : 52,
-              law: typeof parsed.law === 'string' && parsed.law ? parsed.law.slice(0, 120) : 'الأنظمة السعودية السارية',
-              article: typeof parsed.article === 'string' && parsed.article ? parsed.article.slice(0, 160) : 'ضوابط الصياغة النظامية',
-              violation: parsed.violation.slice(0, 800),
-              recommendation: parsed.recommendation.slice(0, 1000),
-              engine: 'ollama',
-            } satisfies ClauseCheckResult)
-          }
+      const raw = await ollamaChat(
+        [
+          {
+            role: 'system',
+            content:
+              'أنت مدقق عقود سعودي. افحص البند التعاقدي التالي مقابل نظام العمل السعودي ونظام المعاملات المدنية ونظام حماية البيانات الشخصية (PDPL). ' +
+              'أعد كائن JSON فقط بالحقول التالية باللغة العربية الفصحى: ' +
+              '{"valid": boolean, "score": number (0-100), "law": string, "article": string, "violation": string, "recommendation": string}.',
+          },
+          { role: 'user', content: clauseText },
+        ],
+        { json: true, timeoutMs: 25_000 },
+      )
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (
+          typeof parsed.valid === 'boolean' &&
+          typeof parsed.violation === 'string' &&
+          typeof parsed.recommendation === 'string'
+        ) {
+          return NextResponse.json({
+            valid: parsed.valid,
+            score: typeof parsed.score === 'number' ? Math.max(0, Math.min(100, Math.round(parsed.score))) : parsed.valid ? 92 : 52,
+            law: typeof parsed.law === 'string' && parsed.law ? parsed.law.slice(0, 120) : 'الأنظمة السعودية السارية',
+            article: typeof parsed.article === 'string' && parsed.article ? parsed.article.slice(0, 160) : 'ضوابط الصياغة النظامية',
+            violation: parsed.violation.slice(0, 800),
+            recommendation: parsed.recommendation.slice(0, 1000),
+            engine: 'ollama',
+          } satisfies ClauseCheckResult)
         }
       }
     } catch {
