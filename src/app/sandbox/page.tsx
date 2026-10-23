@@ -17,17 +17,19 @@ import {
   Copy,
   Check,
   ShieldCheck,
+  FileText,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { trackEvent, ANALYTICS_EVENTS } from '@/lib/analytics/events'
+import { ContractSummaryShowcase } from '../_landing/ContractSummaryShowcase'
 
 export default function SandboxPage() {
   // 30-minute session countdown (1800 seconds)
   const [secondsLeft, setSecondsLeft] = useState(1800)
-  const [activeTab, setActiveTab] = useState<'cases' | 'drafting' | 'invoices'>('cases')
+  const [activeTab, setActiveTab] = useState<'cases' | 'drafting' | 'summarizer' | 'invoices'>('cases')
 
   // Demo seeded data
   const [cases, setCases] = useState([
@@ -111,7 +113,7 @@ export default function SandboxPage() {
     try {
       const params = new URLSearchParams(window.location.search)
       const tabParam = params.get('tab')
-      if (tabParam === 'drafting' || tabParam === 'cases' || tabParam === 'invoices') {
+      if (tabParam === 'drafting' || tabParam === 'summarizer' || tabParam === 'cases' || tabParam === 'invoices') {
         setActiveTab(tabParam)
       }
     } catch {}
@@ -325,6 +327,19 @@ export default function SandboxPage() {
 
           <button
             type="button"
+            onClick={() => setActiveTab('summarizer')}
+            className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors cursor-pointer rounded-t-lg ${
+              activeTab === 'summarizer'
+                ? 'border-[#1F7A46] text-[#1F7A46] font-bold bg-[#E8EFE9]/40'
+                : 'border-transparent text-[#4A5D50] hover:text-[#1B281F]'
+            }`}
+          >
+            <FileText className="h-4 w-4 text-[#1F7A46]" />
+            <span>تلخيص العقود وكشف المخاطر</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setActiveTab('cases')}
             className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors cursor-pointer rounded-t-lg ${
               activeTab === 'cases'
@@ -471,6 +486,12 @@ export default function SandboxPage() {
                 </div>
               )}
             </Card>
+          </div>
+        )}
+
+        {activeTab === 'summarizer' && (
+          <div className="animate-in fade-in">
+            <ContractSummaryShowcase />
           </div>
         )}
 
