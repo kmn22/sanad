@@ -13,13 +13,13 @@ export function LandingFooter() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-[#1B281F] font-heading">سَنَد</span>
+                <span className="text-lg font-bold text-[#1B281F] font-heading">مَقَرّ</span>
                 <span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-[#E8EFE9] text-[#1F7A46] border border-[#CCD8CE]">
-                  Sanad Legal OS
+                  Maqar Workspace
                 </span>
               </div>
               <p className="text-[11px] text-[#566A5C]">
-                مساعد الصياغة القانونية الممتثلة للأنظمة السعودية
+                المساحة الافتراضية السيادية للاستشارات والعمليات
               </p>
             </div>
           </div>
@@ -45,8 +45,8 @@ export function LandingFooter() {
             </div>
             <div>
               <span className="font-bold text-[#1B281F] block">التواصل المباشر والاستفسارات المهنية</span>
-              <a href="mailto:ahmed@sanad.sa" className="text-[#1F7A46] hover:underline font-mono">
-                ahmed@sanad.sa
+              <a href="mailto:contact@maqar.sa" className="text-[#1F7A46] hover:underline font-mono">
+                contact@maqar.sa
               </a>
             </div>
           </div>
@@ -67,12 +67,12 @@ export function LandingFooter() {
         {/* SBA Regulatory Notice */}
         <div className="p-4 rounded-xl bg-[#F5F7F5] border border-[#CCD8CE] text-[11px] text-[#4A5D50] leading-relaxed">
           <strong className="text-[#1B281F] block mb-1">إشعار تنظيمي ومهني:</strong>
-          منظومة <strong>سَنَد (SANAD Legal OS)</strong> هي برمجية تقنية مساندة لإدارة ومراجعة الصياغة القانونية ومساعدة الممارسين القانونيين والشركات في المملكة العربية السعودية. لا تُعد المنظومة مكتب محاماة ولا تقدم استشارات قانونية موجهة للأفراد أو خدمات الترافع المباشر دون محامٍ مرخص من الهيئة السعودية للمحامين.
+          منظومة <strong>مَقَرّ (MAQAR Workspace)</strong> هي مساحة عمل رقمية وبرمجية تقنية مساندة لإدارة الاستشارات والعمليات المهنية ومساعدة الممارسين والمستشارين والشركات في المملكة العربية السعودية. لا تُعد المنظومة مكتب محاماة ولا تقدم استشارات قانونية موجهة للأفراد أو خدمات الترافع المباشر دون محامٍ مرخص من الهيئة السعودية للمحامين.
         </div>
 
         {/* Bottom Legal Copyright */}
         <div className="pt-4 border-t border-[#CCD8CE] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#566A5C]">
-          <p>© {new Date().getFullYear()} سَنَد للتقنية القانونية. الرياض، المملكة العربية السعودية.</p>
+          <p>© {new Date().getFullYear()} مَقَرّ للتقنيات المهنية. الرياض، المملكة العربية السعودية.</p>
 
           <div className="flex items-center gap-4 text-[11px] font-medium text-[#1B281F]">
             <Link href="/privacy" className="hover:text-[#1F7A46] underline">سياسة الخصوصية</Link>

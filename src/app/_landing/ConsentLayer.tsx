@@ -4,6 +4,10 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { ShieldCheck, X, Shield } from 'lucide-react'
 import Link from 'next/link'
+import { getMigratedItem, setMigratedItem } from '@/lib/storage-migration'
+
+const MAQAR_CONSENT_KEY = 'maqar_cookie_consent'
+const LEGACY_CONSENT_KEY = 'sanad_cookie_consent'
 
 export function ConsentLayer() {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false)
@@ -11,7 +15,7 @@ export function ConsentLayer() {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('sanad_cookie_consent')
+      const saved = getMigratedItem(MAQAR_CONSENT_KEY, LEGACY_CONSENT_KEY)
       if (!saved) {
         setCookieConsentDismissed(false)
       }
@@ -20,7 +24,7 @@ export function ConsentLayer() {
 
   const acceptCookies = () => {
     try {
-      localStorage.setItem('sanad_cookie_consent', 'true')
+      setMigratedItem(MAQAR_CONSENT_KEY, LEGACY_CONSENT_KEY, 'true')
     } catch {}
     setCookieConsentDismissed(true)
   }
@@ -52,17 +56,17 @@ export function ConsentLayer() {
 
             <div className="p-6 overflow-y-auto space-y-4 text-xs sm:text-sm text-[#1B281F] leading-relaxed">
               <div className="p-3 rounded-xl bg-[#E8EFE9] border border-[#CCD8CE] text-[#34543F] text-xs font-medium">
-                تلتزم منصة سَنَد بنظام حماية البيانات الشخصية السعودي الصادر بالمرسوم الملكي رقم (م/19) وتعديلاته وقرارات الهيئة السعودية للبيانات والذكاء الاصطناعي (سدايا).
+                تلتزم منصة مَقَرّ (Maqar) بنظام حماية البيانات الشخصية السعودي الصادر بالمرسوم الملكي رقم (م/19) وتعديلاته وقرارات الهيئة السعودية للبيانات والذكاء الاصطناعي (سدايا).
               </div>
 
               <h4 className="text-[#1B281F] font-bold text-sm pt-1">1. السيادة المكانية للبيانات وتوطين الاستضافة</h4>
               <p className="text-[#4A5D50] text-xs">
-                تُحفظ كافة ملفات القضايا، المستندات، ومسودات العقود محلياً داخل حدود المملكة العربية السعودية، ولا يتم نقل أي بيانات سرية أو شخصية إلى خوادم خارجية.
+                تُحفظ كافة ملفات الاستشارات، العقود، والقضايا ومسودات الأعمال محلياً داخل حدود المملكة العربية السعودية، ولا يتم نقل أي بيانات سرية أو مهنية إلى خوادم خارجية غير مرخصة.
               </p>
 
-              <h4 className="text-[#1B281F] font-bold text-sm pt-1">2. عدم استخدام بيانات الموكلين لتدريب الذكاء الاصطناعي</h4>
+              <h4 className="text-[#1B281F] font-bold text-sm pt-1">2. عدم استخدام بيانات العملاء لتدريب الذكاء الاصطناعي</h4>
               <p className="text-[#4A5D50] text-xs">
-                نلتزم التزاماً صارماً بموجب ميثاق سرية المحاماة بعدم استخدام نصوص العقود أو مستندات الموكلين لتدريب أي نماذج ذكاء اصطناعي عامة.
+                نلتزم التزاماً صارماً بموجب ميثاق السرية المهنية بعدم استخدام نصوص العقود، الاستشارات، أو مستندات العملاء لتدريب أي نماذج ذكاء اصطناعي عامة.
               </p>
 
               <h4 className="text-[#1B281F] font-bold text-sm pt-1">3. حقوق أصحاب البيانات الشخصية</h4>

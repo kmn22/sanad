@@ -64,5 +64,8 @@ for i in $(seq 1 30); do
   sleep 2
 done
 
+# 8. Pre-load the local AI model so the first user request is not a cold start
+bash "$(dirname "$0")/scripts/warm-ai.sh" || true
+
 echo "=== [SANAD] Docker Deployment Completed Successfully! ==="
 docker compose ps

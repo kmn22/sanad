@@ -54,6 +54,10 @@ import {
   formatHijri,
   type DashboardData,
 } from '@/lib/sanad/types'
+import { getMigratedItem } from '@/lib/storage-migration'
+
+const MAQAR_ONBOARDING_KEY = 'maqar_lawyer_onboarding_completed'
+const LEGACY_ONBOARDING_KEY = 'sanad_lawyer_onboarding_completed'
 
 interface Props {
   data: DashboardData
@@ -75,7 +79,7 @@ export function DashboardView({ data, onNavigate }: Props) {
   useEffect(() => {
     setIsMounted(true)
     try {
-      const done = localStorage.getItem('sanad_lawyer_onboarding_completed')
+      const done = getMigratedItem(MAQAR_ONBOARDING_KEY, LEGACY_ONBOARDING_KEY)
       if (!done) {
         setShowOnboarding(true)
       }

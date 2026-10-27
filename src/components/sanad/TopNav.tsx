@@ -7,6 +7,7 @@ import { useLang } from '@/lib/sanad/i18n'
 import { useTheme } from 'next-themes'
 import { signOut, useSession } from 'next-auth/react'
 import { NotificationCenter } from '@/components/sanad/NotificationCenter'
+import { FeedbackButton } from '@/components/sanad/FeedbackButton'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,7 +41,7 @@ export function TopNav({
   const workspaceType = (session?.user as { workspaceType?: string } | undefined)?.workspaceType
   const educationEnabled = workspaceType === 'academic'
   const userName = session?.user?.name || (persona === 'lawyer' ? 'المحامي الممارس' : 'طالب قانون')
-  const userEmail = session?.user?.email || (persona === 'lawyer' ? 'lawyer@sanad.sa' : 'student@sanad.sa')
+  const userEmail = session?.user?.email || (persona === 'lawyer' ? 'lawyer@maqar.sa' : 'student@maqar.sa')
   const initialLetter = userName.trim().charAt(0) || (persona === 'lawyer' ? 'م' : 'ط')
 
   const now = new Date()
@@ -54,7 +55,7 @@ export function TopNav({
         <div className="flex items-center justify-between h-14">
           <div className="flex items-center gap-3">
             <div className="relative flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-800 text-white font-bold text-base shadow-sm ring-1 ring-emerald-400/30">
-              <span className="translate-y-[-1px]">س</span>
+              <span className="translate-y-[-1px]">م</span>
               <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-background" />
             </div>
             <div className="leading-tight text-start">
@@ -80,7 +81,7 @@ export function TopNav({
           >
             <div className="flex items-center gap-2">
               <Search className="h-3.5 w-3.5 text-primary transition-transform group-hover:scale-110" />
-              <span className="text-xs">{lang === 'ar' ? 'بحث في القضايا والمستندات...' : 'Search cases, docs...'}</span>
+              <span className="text-xs">{lang === 'ar' ? 'بحث في الملفات والمستندات...' : 'Search matters, docs...'}</span>
             </div>
             <kbd className="text-[10px] bg-background px-1.5 py-0.5 rounded border border-border/80 font-mono shadow-2xs">
               ⌘K
@@ -147,6 +148,7 @@ export function TopNav({
               <span>معمل تجريبي</span>
             </a>
 
+            <FeedbackButton />
             <NotificationCenter />
 
             <Button

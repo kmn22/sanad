@@ -25,10 +25,10 @@ export function LandingHeader() {
       {/* Top Announcement Bar */}
       <div className="border-b border-[#CCD8CE] bg-[#E8EFE9] px-4 py-2 text-center text-xs font-medium text-[#1B281F] flex items-center justify-center gap-2">
         <span className="flex h-2 w-2 rounded-full bg-[#1F7A46]" />
-        <span>منصة سعودية مساندة للمحامين — صياغة ممتثلة وتدقيق نظامي لحظي</span>
+        <span>المساحة الافتراضية السيادية للاستشارات والعمليات المهنية في السعودية</span>
         <span className="text-[#566A5C] hidden sm:inline">•</span>
         <Link href="/about" className="text-[#1F7A46] font-bold hover:underline inline-flex items-center gap-1">
-          تعرّف على سَنَد <ArrowLeft className="w-3 h-3 inline" />
+          تعرّف على مَقَرّ <ArrowLeft className="w-3 h-3 inline" />
         </Link>
       </div>
 
@@ -44,12 +44,12 @@ export function LandingHeader() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl font-black text-[#1B281F] font-heading">سَنَد</span>
+                    <span className="text-2xl font-black text-[#1B281F] font-heading">مَقَرّ</span>
                     <span className="text-[10px] uppercase font-mono tracking-wider border border-[#CCD8CE] text-[#34543F] bg-[#E8EFE9] px-1.5 py-0.5 rounded-md font-semibold">
-                      LEGAL OS
+                      WORKSPACE
                     </span>
                   </div>
-                  <span className="text-[11px] text-[#4A5D50] hidden sm:block">مساعد الصياغة الممتثلة للأنظمة السعودية</span>
+                  <span className="text-[11px] text-[#4A5D50] hidden sm:block">المساحة الافتراضية السيادية للاستشارات والعمليات</span>
                 </div>
               </Link>
             </div>

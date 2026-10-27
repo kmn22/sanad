@@ -3,6 +3,7 @@ import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
 import { readJsonLimited, safeErrorResponse } from '@/lib/http'
 import { executeLegalRag } from '@/lib/ai/rag-engine'
 import { db } from '@/lib/db'
+import { checkAiUsage, incrementUsage } from '@/lib/saas/entitlements'
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,8 +26,14 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    const quota = await checkAiUsage(workspaceId)
+    if (!quota.allowed) {
+      return NextResponse.json({ error: 'AI usage limit reached for the current plan', code: quota.code, used: quota.used, limit: quota.limit }, { status: 403 })
+    }
+
     // Execute Semantic Arabic Legal RAG Pipeline
     const ragResult = await executeLegalRag(prompt, workspaceId)
+    await incrementUsage(workspaceId, 'ai_requests')
 
     return NextResponse.json({
       success: true,

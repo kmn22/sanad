@@ -21,50 +21,52 @@ const plexArabic = IBM_Plex_Sans_Arabic({
 });
 
 export const metadata: Metadata = {
-  title: "سَنَد — مساعد الصياغة الممتثلة للأنظمة السعودية",
+  title: "مَقَرّ — المساحة الافتراضية السيادية للاستشارات والعمليات",
   description:
-    "صِغ بنودك في 60 ثانية مع تدقيق نظامي لحظي ضد نظام العمل ونظام المعاملات المدنية. البديل المتوافق فورياً مع سيادة كاملة على بياناتك.",
-  metadataBase: new URL(process.env.NEXTAUTH_URL || "https://sanad.sa"),
+    "مقرّك المهني المتكامل لإدارة الاستشارات، القضايا، العقود، والفوترة مع بوابة موكلين تفاعلية وسيادة تامة على بياناتك.",
+  metadataBase: new URL(process.env.NEXTAUTH_URL || "https://maqar.sa"),
   keywords: [
-    "سند",
-    "Sanad",
+    "مقر",
+    "Maqar",
+    "مساحة عمل افتراضية",
+    "مكتب افتراضي",
+    "بوابة الموكلين",
     "صياغة عقود",
-    "نظام العمل السعودي",
+    "استشارات قانونية",
     "نظام المعاملات المدنية",
-    "محاماة السعودية",
+    "نظام العمل السعودي",
     "امتثال نظامي",
-    "مساعد قانوني",
   ],
-  authors: [{ name: "Sanad Legal Tech" }],
+  authors: [{ name: "Maqar Technologies" }],
   openGraph: {
     type: "website",
     locale: "ar_SA",
-    url: process.env.NEXTAUTH_URL || "https://sanad.sa",
-    siteName: "سَنَد (Sanad Legal OS)",
-    title: "سَنَد — مساعد الصياغة الممتثلة للأنظمة السعودية",
+    url: process.env.NEXTAUTH_URL || "https://maqar.sa",
+    siteName: "مَقَرّ (Maqar Workspace)",
+    title: "مَقَرّ — المساحة الافتراضية السيادية للاستشارات والعمليات",
     description:
-      "صِغ بنودك وعقودك في 60 ثانية مع تدقيق نظامي فوري ضد نظام العمل والمعاملات المدنية. بياناتك لا تغادر بيئتك.",
+      "مقرّك المهني المتكامل لإدارة الاستشارات، القضايا، العقود، وبوابات الموكلين التفاعلية.",
     images: [
       {
         url: "/og-preview.png",
         width: 1200,
         height: 630,
-        alt: "سَنَد — مساعد الصياغة الممتثلة",
+        alt: "مَقَرّ — مساحتك المهنية المتكاملة",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "سَنَد — مساعد الصياغة الممتثلة للأنظمة السعودية",
+    title: "مَقَرّ — المساحة الافتراضية السيادية للاستشارات والعمليات",
     description:
-      "صِغ بنودك وعقودك في 60 ثانية مع فحص نظامي فوري ضد نظام العمل والمعاملات المدنية.",
+      "مقرّك المهني المتكامل لإدارة الاستشارات، القضايا، العقود، وبوابات الموكلين التفاعلية.",
     images: ["/og-preview.png"],
   },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "سَنَد",
+    title: "مَقَرّ",
   },
 };
 

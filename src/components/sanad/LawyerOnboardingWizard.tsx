@@ -20,6 +20,10 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
+import { setMigratedItem } from '@/lib/storage-migration'
+
+const MAQAR_ONBOARDING_KEY = 'maqar_lawyer_onboarding_completed'
+const LEGACY_ONBOARDING_KEY = 'sanad_lawyer_onboarding_completed'
 
 interface Props {
   isOpen: boolean
@@ -87,14 +91,14 @@ export function LawyerOnboardingWizard({ isOpen, onClose, onComplete }: Props) {
   }
 
   const handleFinish = () => {
-    localStorage.setItem('sanad_lawyer_onboarding_completed', 'true')
-    toast.success('مرحباً بك في سند! تم إعداد مساحة عملك بنجاح.')
+    setMigratedItem(MAQAR_ONBOARDING_KEY, LEGACY_ONBOARDING_KEY, 'true')
+    toast.success('مرحباً بك في مَقَرّ! تم إعداد مساحتك الافتراضية بنجاح.')
     if (onComplete) onComplete()
     onClose()
   }
 
   const handleSkip = () => {
-    localStorage.setItem('sanad_lawyer_onboarding_completed', 'true')
+    setMigratedItem(MAQAR_ONBOARDING_KEY, LEGACY_ONBOARDING_KEY, 'true')
     toast.info('تم تخطي معالج التهيئة. يمكنك تعديل بياناتك لاحقاً من الإعدادات.')
     onClose()
   }
@@ -109,10 +113,10 @@ export function LawyerOnboardingWizard({ isOpen, onClose, onComplete }: Props) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold">
-                س
+                م
               </div>
               <div>
-                <h3 className="font-bold text-base">معالج تهيئة مكتب المحاماة</h3>
+                <h3 className="font-bold text-base">معالج تهيئة المقر الافتراضي</h3>
                 <span className="text-xs text-muted-foreground">خطوة {currentStep} من {totalSteps}</span>
               </div>
             </div>

@@ -1,16 +1,16 @@
-# سند (Sanad)
+# مَقَرّ (Maqar)
 
-**منصة العمليات القانونية للمحامين وطلاب القانون في السعودية**
-*Legal operations platform for Saudi lawyers and law students*
+**المساحة الافتراضية السيادية للاستشارات والعمليات المهنية في السعودية**
+*Sovereign virtual workspace & client headquarters for Saudi advisory, legal, and professional practices*
 
-> 🟢 **Live:** https://sanad.tail963524.ts.net
+> 🟢 **Live Demo:** https://sanad.tail963524.ts.net
 > 🔑 Create an account at `/register`
 
 ---
 
-## What is Sanad?
+## What is Maqar?
 
-Sanad is a multi-tenant SaaS that unifies a Saudi law office's day:
+Maqar is a sovereign, multi-tenant virtual workspace platform designed for advisors, lawyers, and consulting practices:
 
 - 📋 **Cases & Compliance** — Kanban board, hearing dates, expiry tracking, confidential-matter isolation
 - 👥 **Team workflow** — Owner-issued invitations, role-based access (owner / lawyer / staff / auditor / student / client), case assignments, approval chains, workflow templates
@@ -27,7 +27,9 @@ Sanad is a multi-tenant SaaS that unifies a Saudi law office's day:
 
 ## Screenshots
 
-> _Add screenshots in `download/` — see `PITCH.md` for the recommended shot list._
+> _Add screenshots in `docs/screenshots/` — see `docs/PITCH.md` for the recommended shot list._
+
+> Contributing? Read [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the code layout and conventions.
 
 ---
 

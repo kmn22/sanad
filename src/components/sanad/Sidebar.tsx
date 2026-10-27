@@ -16,7 +16,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ persona, view, setView, data, studentData }: SidebarProps) {
-  const { t } = useLang()
+  const { lang, t } = useLang()
   const [backingUp, setBackingUp] = useState(false)
 
   const triggerBackup = async () => {
@@ -95,7 +95,7 @@ export function Sidebar({ persona, view, setView, data, studentData }: SidebarPr
     )
   }
 
-  // Grouped Lawyer Navigation
+  // Grouped Lawyer / Advisory Navigation
   const LAWYER_SECTIONS = [
     {
       titleKey: 'operations',
@@ -109,28 +109,28 @@ export function Sidebar({ persona, view, setView, data, studentData }: SidebarPr
     },
     {
       titleKey: 'practice',
-      titleAr: 'العمل القانوني',
-      titleEn: 'Legal Practice',
+      titleAr: 'الاستشارات والملفات',
+      titleEn: 'Advisory & Matters',
       items: [
         {
           key: 'cases',
           icon: NAV_ICONS.cases,
-          badge: data && data.stats.urgentCases > 0 ? { text: `${data.stats.urgentCases} عاجل`, tone: 'rose' } : null,
+          badge: data && data.stats.urgentCases > 0 ? { text: `${data.stats.urgentCases} ${lang === 'ar' ? 'عاجل' : 'urgent'}`, tone: 'rose' } : null,
         },
         {
           key: 'documents',
           icon: NAV_ICONS.documents,
-          badge: { text: 'صياغة AI', tone: 'emerald' },
+          badge: { text: lang === 'ar' ? 'صياغة AI' : 'AI Draft', tone: 'emerald' },
         },
         {
           key: 'research',
           icon: NAV_ICONS.research,
-          badge: { text: 'مركز الأبحاث', tone: 'blue' },
+          badge: { text: lang === 'ar' ? 'مركز الأبحاث' : 'Research', tone: 'blue' },
         },
         {
           key: 'briefs',
           icon: NAV_ICONS.briefs,
-          badge: { text: 'النشرة', tone: 'emerald' },
+          badge: { text: lang === 'ar' ? 'النشرة' : 'Briefs', tone: 'emerald' },
         },
         {
           key: 'tasks',
@@ -142,8 +142,8 @@ export function Sidebar({ persona, view, setView, data, studentData }: SidebarPr
     },
     {
       titleKey: 'tools',
-      titleAr: 'المالية والأدوات',
-      titleEn: 'Tools & Finance',
+      titleAr: 'المالية والامتثال',
+      titleEn: 'Finance & Compliance',
       items: [
         {
           key: 'compliance',
@@ -161,10 +161,10 @@ export function Sidebar({ persona, view, setView, data, studentData }: SidebarPr
   return (
     <aside className="hidden lg:block w-60 shrink-0">
       <nav className="sticky top-20 space-y-5 pb-6">
-        {LAWYER_SECTIONS.map((section, sIdx) => (
+        {LAWYER_SECTIONS.map((section) => (
           <div key={section.titleKey} className="space-y-1">
             <p className="px-3 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider mb-1.5">
-              {section.titleAr}
+              {lang === 'ar' ? section.titleAr : section.titleEn}
             </p>
             {section.items.map((item) => {
               const Icon = item.icon
@@ -211,7 +211,7 @@ export function Sidebar({ persona, view, setView, data, studentData }: SidebarPr
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                نظام محلي آمن
+                {lang === 'ar' ? 'نظام سيادي محلي آمن' : 'Sovereign Local System'}
               </span>
               <kbd className="text-[9px] bg-background px-1.5 py-0.5 rounded border border-border/80 text-muted-foreground font-mono">
                 ⌘K
@@ -226,10 +226,10 @@ export function Sidebar({ persona, view, setView, data, studentData }: SidebarPr
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={backingUp ? 'animate-spin' : ''}>
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>
               </svg>
-              <span>{backingUp ? 'جاري النسخ...' : t('common.backup_data')}</span>
+              <span>{backingUp ? (lang === 'ar' ? 'جاري النسخ...' : 'Backing up...') : t('common.backup_data')}</span>
             </button>
             <p className="text-[9px] text-muted-foreground/80 leading-normal text-center">
-              بياناتك مشفرة ومحفوظة بالكامل على جهازك
+              {lang === 'ar' ? 'بياناتك مشفرة ومحفوظة بالكامل على جهازك' : 'Your data is encrypted & stored locally on your machine'}
             </p>
           </div>
         </div>

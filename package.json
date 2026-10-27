@@ -1,7 +1,7 @@
 {
   "name": "sanad",
   "version": "1.0.0-alpha.1",
-  "description": "سند — منصة العمليات اليومية للامتثال والمحاماة (Sanad Legal Platform)",
+  "description": "مقر — المساحة الافتراضية السيادية للاستشارات والعمليات (Maqar Workspace)",
   "private": true,
   "packageManager": "npm@10.9.4",
   "engines": {

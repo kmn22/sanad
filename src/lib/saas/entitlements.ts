@@ -82,6 +82,25 @@ function currentPeriod(now = new Date()) {
   return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`
 }
 
+function currentDay(now = new Date()) {
+  return now.toISOString().slice(0, 10)
+}
+
+// Beta guard: a per-workspace daily AI ceiling so a single tenant cannot
+// monopolise the shared local GPU. 0 / unset disables the cap.
+export function betaAiDailyLimit() {
+  const value = Number(process.env.BETA_AI_DAILY_LIMIT ?? 0)
+  return Number.isFinite(value) && value > 0 ? value : 0
+}
+
+export async function getDailyAiUsage(workspaceId: string, now = new Date()) {
+  const row = await db.usageMetric.findUnique({
+    where: { workspaceId_metric_period: { workspaceId, metric: 'ai_requests_daily', period: currentDay(now) } },
+    select: { quantity: true },
+  })
+  return row?.quantity ?? 0
+}
+
 export async function getUsageQuantity(workspaceId: string, metric: string, now = new Date()) {
   const row = await db.usageMetric.findUnique({
     where: { workspaceId_metric_period: { workspaceId, metric, period: currentPeriod(now) } },
@@ -109,6 +128,11 @@ export async function checkAiUsage(workspaceId: string): Promise<UsageCheck> {
   if (plan.subscription && !plan.subscription.active) return fail('SUBSCRIPTION_INACTIVE')
   if (!plan.entitlements.ai) return fail('AI_NOT_INCLUDED')
   if (!(await isFeatureEnabled(workspaceId, 'ai_drafting'))) return fail('AI_FLAG_DISABLED')
+  const dailyLimit = betaAiDailyLimit()
+  if (dailyLimit > 0) {
+    const usedToday = await getDailyAiUsage(workspaceId)
+    if (usedToday >= dailyLimit) return { allowed: false, code: 'AI_DAILY_LIMIT_REACHED', used: usedToday, limit: dailyLimit }
+  }
   const limit = plan.plan.aiRequestLimit
   if (limit > 0) {
     const used = await getUsageQuantity(workspaceId, 'ai_requests')
@@ -174,11 +198,17 @@ export async function canInviteWorkspaceMember(workspaceId: string) {
 
 export async function incrementUsage(workspaceId: string, metric: string, amount = 1, now = new Date()) {
   const period = currentPeriod(now)
-  return db.usageMetric.upsert({
-    where: { workspaceId_metric_period: { workspaceId, metric, period } },
-    create: { workspaceId, metric, period, quantity: amount },
-    update: { quantity: { increment: amount } },
-  })
+  const upsert = (m: string, p: string) =>
+    db.usageMetric.upsert({
+      where: { workspaceId_metric_period: { workspaceId, metric: m, period: p } },
+      create: { workspaceId, metric: m, period: p, quantity: amount },
+      update: { quantity: { increment: amount } },
+    })
+  if (metric === 'ai_requests') {
+    const [monthly] = await Promise.all([upsert(metric, period), upsert('ai_requests_daily', currentDay(now))])
+    return monthly
+  }
+  return upsert(metric, period)
 }
 
 export async function hasEntitlement(workspaceId: string, key: EntitlementKey) {

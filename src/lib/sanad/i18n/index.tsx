@@ -4,6 +4,8 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { ar, type TranslationKey } from './ar'
 import { en } from './en'
 
+import { getMigratedItem, setMigratedItem } from '@/lib/storage-migration'
+
 export type { TranslationKey }
 
 export type Lang = 'ar' | 'en'
@@ -17,7 +19,8 @@ interface LangCtx {
 
 const Ctx = createContext<LangCtx | null>(null)
 
-const STORAGE_KEY = 'sanad.lang'
+const MAQAR_STORAGE_KEY = 'maqar.lang'
+const LEGACY_STORAGE_KEY = 'sanad.lang'
 
 // ---- Translation catalogs ----
 const translations: Record<Lang, Record<string, string>> = { ar, en }
@@ -26,7 +29,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   // Lazy initializer reads localStorage once on first client render — no effect needed
   const [lang, setLangState] = useState<Lang>(() => {
     if (typeof window === 'undefined') return 'ar'
-    const saved = window.localStorage.getItem(STORAGE_KEY)
+    const saved = getMigratedItem(MAQAR_STORAGE_KEY, LEGACY_STORAGE_KEY)
     return saved === 'ar' || saved === 'en' ? saved : 'ar'
   })
 
@@ -39,7 +42,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   const setLang = (l: Lang) => {
     setLangState(l)
-    if (typeof window !== 'undefined') localStorage.setItem(STORAGE_KEY, l)
+    setMigratedItem(MAQAR_STORAGE_KEY, LEGACY_STORAGE_KEY, l)
   }
 
   const toggle = () => setLang(lang === 'ar' ? 'en' : 'ar')

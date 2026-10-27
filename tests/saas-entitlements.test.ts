@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { isSubscriptionActive } from '../src/lib/saas/entitlements'
+import { afterEach, describe, expect, it } from 'vitest'
+import { betaAiDailyLimit, isSubscriptionActive } from '../src/lib/saas/entitlements'
 
 const now = new Date('2026-10-07T12:00:00.000Z')
 
@@ -40,5 +40,27 @@ describe('subscription entitlement gate', () => {
 
   it('treats a missing subscription as inactive when checked directly', () => {
     expect(isSubscriptionActive(null, now)).toBe(false)
+  })
+})
+
+describe('beta daily AI ceiling', () => {
+  const original = process.env.BETA_AI_DAILY_LIMIT
+  afterEach(() => {
+    if (original === undefined) delete process.env.BETA_AI_DAILY_LIMIT
+    else process.env.BETA_AI_DAILY_LIMIT = original
+  })
+
+  it('is disabled when unset, zero, negative or malformed', () => {
+    delete process.env.BETA_AI_DAILY_LIMIT
+    expect(betaAiDailyLimit()).toBe(0)
+    for (const raw of ['0', '-5', 'abc', '']) {
+      process.env.BETA_AI_DAILY_LIMIT = raw
+      expect(betaAiDailyLimit()).toBe(0)
+    }
+  })
+
+  it('returns the configured positive ceiling', () => {
+    process.env.BETA_AI_DAILY_LIMIT = '150'
+    expect(betaAiDailyLimit()).toBe(150)
   })
 })
