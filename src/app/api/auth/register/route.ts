@@ -28,7 +28,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Too many registration attempts. Please try again later.' }, { status: 429 })
     }
 
-    const { name, email, password, inviteToken, privacyNoticeVersion, acceptPrivacy, accountType, organizationName } = await req.json()
+    const { name, email, password, inviteToken, privacyNoticeVersion, acceptPrivacy, acceptBetaTerms, accountType, organizationName } = await req.json()
     if (typeof email !== 'string' || !email.includes('@')) {
       return NextResponse.json({ error: 'البريد الإلكتروني غير صالح' }, { status: 400 })
     }
@@ -42,6 +42,9 @@ export async function POST(req: Request) {
     }
     if (acceptPrivacy !== true || privacyNoticeVersion !== PRIVACY_NOTICE_VERSION) {
       return NextResponse.json({ error: 'Current privacy notice acceptance is required' }, { status: 400 })
+    }
+    if (acceptBetaTerms !== true) {
+      return NextResponse.json({ error: 'يلزم الإقرار بشروط النسخة التجريبية وحدود الذكاء الاصطناعي' }, { status: 400 })
     }
     const displayName = typeof name === 'string' && name.trim() ? name.trim().slice(0, 100) : cleanEmail.split('@')[0]
     const userAgent = req.headers.get('user-agent')?.slice(0, 500)
@@ -80,6 +83,7 @@ export async function POST(req: Request) {
             clientId,
             emailVerified: new Date(), // the invite link already proved mailbox ownership
             privacyNoticeVersion: PRIVACY_NOTICE_VERSION,
+            betaTermsAcceptedAt: new Date(),
           },
         })
         await tx.workspaceMembership.create({
@@ -124,6 +128,14 @@ export async function POST(req: Request) {
     const workspaceName =
       orgName || (type === 'student' ? `مساحة ${displayName} الدراسية` : `مكتب ${displayName}`)
 
+    const workspaceCap = Number(process.env.BETA_MAX_WORKSPACES ?? 0)
+    if (workspaceCap > 0 && (await db.workspace.count({ where: { status: 'active' } })) >= workspaceCap) {
+      return NextResponse.json(
+        { error: 'اكتمل عدد مساحات العمل المتاحة في النسخة التجريبية حالياً. سجّل في قائمة الانتظار وسنفتح لك الوصول قريباً.', code: 'BETA_CAPACITY_REACHED' },
+        { status: 503 },
+      )
+    }
+
     const verifyToken = generateToken()
     await db.$transaction(async (tx) => {
       const workspace = await tx.workspace.create({ data: { name: workspaceName, type: workspaceType } })
@@ -136,6 +148,7 @@ export async function POST(req: Request) {
           accountType: type,
           workspaceId: workspace.id,
           privacyNoticeVersion: PRIVACY_NOTICE_VERSION,
+            betaTermsAcceptedAt: new Date(),
         },
       })
       const isAcademic = type === 'student' && isAcademicEmail(cleanEmail)

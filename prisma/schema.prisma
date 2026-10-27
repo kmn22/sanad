@@ -32,10 +32,12 @@ model User {
   mfaSecret            String?
   mfaRecoveryCodes     String?
   privacyNoticeVersion String?
+  betaTermsAcceptedAt  DateTime?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
   workspace        Workspace?       @relation(fields: [workspaceId], references: [id])
+  feedback         Feedback[]
   client           Client?          @relation(fields: [clientId], references: [id], onDelete: SetNull)
   notifications    Notification[]
   assignedTasks    Task[]           @relation("TaskAssignee")
@@ -68,6 +70,7 @@ model Workspace {
   updatedAt        DateTime @updatedAt
 
   users          User[]
+  feedback       Feedback[]
   clients        Client[]
   cases          LegalCase[]
   documents      LegalDocument[]
@@ -1162,6 +1165,28 @@ model BillingWebhookEvent {
 // Digital-signing requests will be modeled when a real signing provider is
 // integrated — the previous standalone DocumentSignature table had no
 // workspace scope or document relation and has been removed.
+
+// Beta feedback & bug reports submitted from inside the authenticated app.
+model Feedback {
+  id          String    @id @default(cuid())
+  workspaceId String
+  userId      String
+  type        String    @default("suggestion") // bug | suggestion | question | other
+  message     String
+  pagePath    String?
+  userAgent   String?
+  status      String    @default("open") // open | triaged | resolved | dismissed
+  adminNote   String?
+  resolvedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([status, createdAt])
+}
 
 model WaitlistEntry {
   id        String   @id @default(cuid())

@@ -70,6 +70,7 @@ export default function RegisterPage() {
   const [invitation, setInvitation] = useState<Invitation | null>(null)
   const [inviteError, setInviteError] = useState('')
   const [acceptPrivacy, setAcceptPrivacy] = useState(false)
+  const [acceptBetaTerms, setAcceptBetaTerms] = useState(false)
   const [loading, setLoading] = useState(false)
   const [registrationError, setRegistrationError] = useState('')
   const [doneInfo, setDoneInfo] = useState<{ delivery?: string; devVerifyUrl?: string } | null>(null)
@@ -117,6 +118,7 @@ export default function RegisterPage() {
           email: email.trim(),
           password,
           acceptPrivacy,
+          acceptBetaTerms,
           privacyNoticeVersion: PRIVACY_NOTICE_VERSION,
           ...(invitation ? { inviteToken } : { accountType, organizationName: orgName.trim() }),
         }),
@@ -301,11 +303,18 @@ export default function RegisterPage() {
                   </span>
                 </label>
 
+                <label htmlFor="reg-beta" className="flex items-start gap-2.5 text-xs text-[#1B281F] cursor-pointer rounded-lg border border-amber-200 bg-amber-50/60 p-2.5">
+                  <input id="reg-beta" type="checkbox" checked={acceptBetaTerms} onChange={(e) => setAcceptBetaTerms(e.target.checked)} required className="mt-0.5 accent-[#1F7A46]" />
+                  <span className="leading-relaxed">
+                    أدرك أن سَنَد <b>نسخة تجريبية (Beta)</b> وليس مكتب محاماة ولا يقدم استشارات قانونية، وأن مخرجات الذكاء الاصطناعي مساعِدة فقط وتتطلب مراجعة محامٍ مرخّص قبل الاعتماد عليها، وأن الفواتير الصادرة منه مسوّدات داخلية غير معتمدة من هيئة الزكاة والضريبة والجمارك.
+                  </span>
+                </label>
+
                 <Button
                   type="submit"
                   id="register-submit"
                   className="w-full h-11 mt-2 bg-[#1F7A46] hover:bg-[#165832] text-white text-xs font-bold shadow-xs cursor-pointer transition-all"
-                  disabled={loading || !canSubmit || !acceptPrivacy}
+                  disabled={loading || !canSubmit || !acceptPrivacy || !acceptBetaTerms}
                 >
                   {loading ? (
                     <span className="flex items-center gap-2">
