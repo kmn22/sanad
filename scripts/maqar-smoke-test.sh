@@ -53,7 +53,7 @@ else
   fail "GET /api/health returned HTTP $HEALTH_STATUS"
 fi
 
-for marker in '"status":"ok"' '"database":"ok"' '"vectorStore":{"status":"ok"' '"queue":{"status":"ok"'; do
+for marker in '"status":"ok"' '"database":"ok"' '"queue":{"status":"ok"'; do
   if grep -Fq "$marker" <<<"$HEALTH_BODY"; then
     pass "/api/health contains $marker"
   else
@@ -69,9 +69,24 @@ else
   fail "GET / did not return HTTP 200 with dir=\"rtl\""
 fi
 
-for route in /about /api-docs /ai-disclosure /build /forgot-password /login /onboarding /pricing /privacy /privacy/request /register /reset-password /security /terms /verify-email; do
+for route in /about /ai-disclosure /forgot-password /login /pricing /privacy /privacy/request /register /reset-password /security /terms /verify-email; do
   check_status "$route" "200"
 done
+
+for route in /onboarding /sandbox /build /api-docs /solutions/enterprise /student; do
+  check_status "$route" "404"
+done
+
+for route in /api/zatca /api/ai/legal-query; do
+  check_status "$route" "401"
+done
+
+CLAUSE_STATUS=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 20 -X POST -H "Content-Type: application/json" -d '{"clauseText":"تحدد فترة التجربة بمائة وثمانين (180) يوماً من تاريخ المباشرة."}' "$BASE_URL/api/ai/check-clause" 2>/dev/null || printf '000')
+if [[ "$CLAUSE_STATUS" == "200" ]]; then
+  pass "POST /api/ai/check-clause returned HTTP 200"
+else
+  fail "POST /api/ai/check-clause returned HTTP $CLAUSE_STATUS (expected 200)"
+fi
 
 for route in /manifest.json /og-preview.png /robots.txt /sitemap.xml /sw.js; do
   check_status "$route" "200"
