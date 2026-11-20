@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
+  experimental: {
+    agentUpgrade: "security",
+  },
   // file-storage.ts resolves upload paths from env at runtime, which makes
   // Turbopack trace the whole project into the standalone output. Exclude the
   // non-runtime directories explicitly to keep the deployed image lean.
