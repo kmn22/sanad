@@ -3,7 +3,7 @@ import path from 'path'
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { emailConfigured } from '@/lib/email'
-import { canManageUsers, forbiddenJson, getAuthContext, unauthorizedJson } from '@/lib/auth/workspace'
+import { canManageUsers, forbiddenJson, getAuthContext, isPlatformSuperAdmin, unauthorizedJson } from '@/lib/auth/workspace'
 
 const startedAt = Date.now()
 
@@ -26,12 +26,14 @@ export async function GET() {
   const auth = await getAuthContext()
   if (!auth) return unauthorizedJson()
   if (!canManageUsers(auth)) return forbiddenJson()
+  const superAdmin = isPlatformSuperAdmin(auth)
+  const jobScope = superAdmin ? {} : { workspaceId: auth.workspaceId }
   const [overduePrivacyRequests, openIncidents, queuedJobs, failedJobs, backup] = await Promise.all([
     db.dataSubjectRequest.count({ where: { workspaceId: auth.workspaceId, status: { notIn: ['completed', 'rejected'] }, dueAt: { lt: new Date() } } }),
     db.privacyIncident.count({ where: { workspaceId: auth.workspaceId, status: { not: 'closed' } } }),
-    db.backgroundJob.count({ where: { status: 'queued' } }),
-    db.backgroundJob.count({ where: { status: 'failed' } }),
-    lastBackupAt(),
+    db.backgroundJob.count({ where: { ...jobScope, status: 'queued' } }),
+    db.backgroundJob.count({ where: { ...jobScope, status: 'failed' } }),
+    superAdmin ? lastBackupAt() : Promise.resolve(null),
   ])
   return NextResponse.json({
     emailConfigured: emailConfigured(),

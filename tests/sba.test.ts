@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { SBA_EXAM_QUESTIONS } from '../src/lib/sanad/student/sbaQuestionBank'
+import { SBA_EXAM_QUESTIONS } from '../src/lib/core/student/sbaQuestionBank'
 
 describe('Saudi Bar Association (SBA) Question Bank', () => {
   it('contains questions covering core Saudi statutes', () => {

@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { FirmPortalFrame } from './FirmPortal'
 
 export const metadata: Metadata = {
-  title: 'بوابة المكتب — سند',
+  title: 'بوابة المكتب — مقر',
   description: 'إدارة مكتب المحاماة: الفريق، توزيع القضايا، الفوترة، الموكّلون والأداء.',
   robots: { index: false, follow: false },
 }

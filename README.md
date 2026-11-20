@@ -134,9 +134,29 @@ docker run --rm --network host -v "$PWD:/work" -w /work \
   npx playwright test
 ```
 
-Suites: `e2e/smoke.spec.ts` (public/API gates), `e2e/auth.spec.ts` (sign-in),
+Suites: `e2e/smoke.spec.ts` (public/API gates), `e2e/maqar-complete-smoke.spec.ts`
+(complete public, protected-page, authenticated-API, asset, and business-API smoke gate),
+`e2e/auth.spec.ts` (sign-in),
 `e2e/flows.spec.ts` (invitation→register→login, client portal upload, approval
 chain, MFA enforcement), `e2e/a11y.spec.ts` (axe WCAG 2.1 AA).
+
+Run the complete non-destructive deployment gate with:
+
+```bash
+E2E_BASE_URL=https://your-domain.example \
+E2E_OWNER_EMAIL=... E2E_OWNER_PASSWORD=... \
+npm run test:smoke
+```
+
+Without owner credentials, the public, asset, health, and anonymous access-control
+checks still run; authenticated checks are explicitly skipped.
+
+The deployment-friendly wrapper runs the same checks and adds the anonymous HTTP
+gate:
+
+```bash
+bash scripts/maqar-smoke-test.sh https://your-domain.example
+```
 
 CI runs the full chain on every push: Postgres service → migrations → seed →
 build → standalone server → Playwright + axe. See `.github/workflows/ci.yml`.

@@ -4,12 +4,12 @@ import React, { useState } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { CalendarDays, Gavel, MessagesSquare, Network } from 'lucide-react'
-import { NAV_ICONS } from '@/lib/sanad/constants'
+import { NAV_ICONS } from '@/lib/core/constants'
 import { PortalShell, type NavSection } from '@/components/portal/PortalShell'
 import { useLawyerDashboard } from '@/components/portal/usePortalData'
 import { lawyerHref } from './sections'
 
-const CommandPalette = dynamic(() => import('@/components/sanad/CommandPalette').then((m) => m.CommandPalette))
+const CommandPalette = dynamic(() => import('@/components/core/CommandPalette').then((m) => m.CommandPalette))
 
 const icon = (key: string, fallback: React.ComponentType<{ className?: string }>) => NAV_ICONS[key] || fallback
 

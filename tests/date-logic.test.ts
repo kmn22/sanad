@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { filterTaskStats } from '../src/lib/sanad/task-stats'
+import { filterTaskStats } from '../src/lib/core/task-stats'
 
 interface MockTask {
   id: string

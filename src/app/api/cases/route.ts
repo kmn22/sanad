@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getTenantDb } from '@/lib/db'
 import { createCaseSchema } from '@/lib/validations'
 import { getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 import { canWrite, denyUnless, enforceMutationBudget, caseAccessWhere } from '@/lib/auth/capabilities'
@@ -10,17 +10,18 @@ import { logError } from '@/lib/observability'
 export async function GET(req: NextRequest) {
   const auth = await getAuthContext()
   if (!auth) return unauthorizedJson()
+  const tdb = getTenantDb(auth)
   const workspaceId = auth.workspaceId
   const { limit, cursor } = parsePagination(new URL(req.url))
   const [rows, total] = await Promise.all([
-    db.legalCase.findMany({
-      where: { workspaceId, deletedAt: null, ...caseAccessWhere(auth) },
+    tdb.legalCase.findMany({
+      where: { workspaceId, orgId: auth.orgId, deletedAt: null, ...caseAccessWhere(auth) },
       orderBy: { updatedAt: 'desc' },
       include: { _count: { select: { timeEntries: true } } },
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     }),
-    db.legalCase.count({ where: { workspaceId, deletedAt: null, ...caseAccessWhere(auth) } }),
+    tdb.legalCase.count({ where: { workspaceId, orgId: auth.orgId, deletedAt: null, ...caseAccessWhere(auth) } }),
   ])
   return NextResponse.json(paginatedResponse(rows, limit, { total }))
 }
@@ -36,6 +37,7 @@ export async function POST(req: NextRequest) {
   if (!(await hasEntitlement(auth.workspaceId, 'cases'))) {
     return NextResponse.json({ error: 'Case management is not included in the current plan', code: 'CASES_NOT_INCLUDED' }, { status: 403 })
   }
+  const tdb = getTenantDb(auth)
   const workspaceId = auth.workspaceId
 
   let rawBody: unknown
@@ -52,12 +54,13 @@ export async function POST(req: NextRequest) {
 
   try {
     if (parsed.data.clientId) {
-      const client = await db.client.findFirst({ where: { id: parsed.data.clientId, workspaceId }, select: { id: true } })
+      const client = await tdb.client.findFirst({ where: { id: parsed.data.clientId, workspaceId }, select: { id: true } })
       if (!client) return notFoundJson()
     }
-    const c = await db.legalCase.create({
+    const c = await tdb.legalCase.create({
       data: {
         ...parsed.data,
+        orgId: auth.orgId,
         workspaceId,
         // A confidential case is only visible to its assigned team — auto-lead the creator.
         assignments: parsed.data.confidential

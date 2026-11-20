@@ -9,12 +9,20 @@ export async function POST(req: NextRequest) {
   const workspaceId = typeof body?.workspaceId === 'string' ? body.workspaceId : ''
   const membership = await db.workspaceMembership.findFirst({
     where: { workspaceId, userId: auth.userId, status: 'active', workspace: { status: 'active' } },
-    select: { workspaceId: true, role: true },
+    select: { workspaceId: true, role: true, workspace: { select: { orgId: true } } },
   })
   if (!membership) return notFoundJson()
   if (membership.workspaceId === auth.workspaceId) return NextResponse.json({ ok: true, requiresSignIn: false })
   await db.$transaction(async (tx) => {
-    await tx.user.update({ where: { id: auth.userId }, data: { workspaceId: membership.workspaceId, role: membership.role, sessionVersion: { increment: 1 } } })
+    await tx.user.update({
+      where: { id: auth.userId },
+      data: {
+        workspaceId: membership.workspaceId,
+        orgId: membership.workspace.orgId,
+        role: membership.role,
+        sessionVersion: { increment: 1 },
+      },
+    })
     await tx.auditLog.create({ data: { workspaceId: membership.workspaceId, userId: auth.userId, action: 'workspace.switch', entityType: 'Workspace', entityId: membership.workspaceId } })
   })
   return NextResponse.json({ ok: true, requiresSignIn: true })

@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { AlertTriangle, Briefcase, UserPlus, UsersRound, X } from 'lucide-react'
 import { toast } from 'sonner'
-import { useLang } from '@/lib/sanad/i18n'
+import { useLang } from '@/lib/core/i18n'
 import { PortalPageHeader, StatTile, useBilingual } from '@/components/portal/PortalShell'
 import { FirmLoading } from './shared'
 import { ROLE_LABELS } from './shared'

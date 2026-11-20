@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getTenantDb } from '@/lib/db'
 import { createTaskSchema } from '@/lib/validations'
 import { getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 import { canAccessCase, canWrite, denyUnless, enforceMutationBudget, caseLinkedAccessWhere } from '@/lib/auth/capabilities'
@@ -9,15 +9,16 @@ import { parsePagination, paginatedResponse } from '@/lib/http'
 export async function GET(req: NextRequest) {
   const auth = await getAuthContext()
   if (!auth) return unauthorizedJson()
+  const tdb = getTenantDb(auth)
   const { limit, cursor } = parsePagination(new URL(req.url))
   const [rows, total] = await Promise.all([
-    db.task.findMany({
+    tdb.task.findMany({
       where: { workspaceId: auth.workspaceId, deletedAt: null, ...caseLinkedAccessWhere(auth) },
       orderBy: { dueDate: 'asc' },
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     }),
-    db.task.count({ where: { workspaceId: auth.workspaceId, deletedAt: null, ...caseLinkedAccessWhere(auth) } }),
+    tdb.task.count({ where: { workspaceId: auth.workspaceId, deletedAt: null, ...caseLinkedAccessWhere(auth) } }),
   ])
   return NextResponse.json(paginatedResponse(rows, limit, { total }))
 }
@@ -30,19 +31,20 @@ export async function POST(req: NextRequest) {
     if (denied) return denied
     const budgeted = await enforceMutationBudget(auth)
     if (budgeted) return budgeted
+    const tdb = getTenantDb(auth)
 
     const rawBody = await req.json()
     const parsed = createTaskSchema.parse(rawBody)
     if (parsed.caseId) {
-      const legalCase = await db.legalCase.findFirst({ where: { id: parsed.caseId, workspaceId: auth.workspaceId, deletedAt: null }, select: { id: true } })
+      const legalCase = await tdb.legalCase.findFirst({ where: { id: parsed.caseId, workspaceId: auth.workspaceId, orgId: auth.orgId, deletedAt: null }, select: { id: true } })
       if (!legalCase || !(await canAccessCase(auth, legalCase.id))) return notFoundJson()
     }
     if (parsed.assignedToId) {
       // `disabledAt: null` filters out disabled users (correct field name on the schema)
-      const assignee = await db.user.findFirst({ where: { id: parsed.assignedToId, workspaceId: auth.workspaceId, disabledAt: null }, select: { id: true } })
+      const assignee = await tdb.user.findFirst({ where: { id: parsed.assignedToId, workspaceId: auth.workspaceId, orgId: auth.orgId, disabledAt: null }, select: { id: true } })
       if (!assignee) return notFoundJson()
     }
-    const task = await db.task.create({ data: { ...parsed, workspaceId: auth.workspaceId } })
+    const task = await tdb.task.create({ data: { ...parsed, workspaceId: auth.workspaceId } })
     await recordWorkflowEvent({ workspaceId: auth.workspaceId, caseId: task.caseId, taskId: task.id, actorId: auth.userId, action: 'task_create', toState: task.status })
     // Use parsed.assignedToId — the Prisma create return type omits relation fields
     if (parsed.assignedToId && parsed.assignedToId !== auth.userId) {

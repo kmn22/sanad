@@ -41,21 +41,32 @@ const describeWithDb = hasDb ? describe : describe.skip
 // ---------------------------------------------------------------------------
 
 const db = new PrismaClient()
+const LEGACY_ORG_ID = 'org-legacy-migrated-practice'
+const RUN_ID = Date.now().toString(36)
 
 /** Create a minimal workspace + user and return their IDs. */
 async function createWorkspace(suffix: string) {
-  const ws = await db.workspace.create({ data: { name: `Test Workspace ${suffix}` } })
-  const user = await db.user.create({
-    data: {
-      email: `test-${suffix}@sanad-test.local`,
-      password: hashPassword('TestPass2026!'),
-      role: 'lawyer',
-      workspaceId: ws.id,
-      emailVerified: new Date(),
-    },
+  return db.$transaction(async (tx) => {
+    const ws = await tx.workspace.create({
+      data: {
+        name: `Test Workspace ${suffix}`,
+        orgId: LEGACY_ORG_ID,
+      },
+    })
+    const user = await tx.user.create({
+      data: {
+        email: `test-${suffix}-${RUN_ID}@sanad-test.local`,
+        password: hashPassword('TestPass2026!'),
+        role: 'lawyer',
+        orgId: LEGACY_ORG_ID,
+        workspaceId: ws.id,
+        emailVerified: new Date(),
+      },
+    })
+    await tx.workspaceMembership.create({ data: { workspaceId: ws.id, userId: user.id, role: 'lawyer', status: 'active' } })
+    await tx.membership.create({ data: { userId: user.id, orgId: LEGACY_ORG_ID, role: 'ASSOCIATE', isActive: true } })
+    return { workspaceId: ws.id, userId: user.id }
   })
-  await db.workspaceMembership.create({ data: { workspaceId: ws.id, userId: user.id, role: 'lawyer', status: 'active' } })
-  return { workspaceId: ws.id, userId: user.id }
 }
 
 /** IDs created during setup — used in afterAll cleanup. */
@@ -75,6 +86,20 @@ let portalRequestAId: string
 // ---------------------------------------------------------------------------
 
 beforeAll(async () => {
+  if (!hasDb) return
+  await db.organization.upsert({
+    where: { id: LEGACY_ORG_ID },
+    create: {
+      id: LEGACY_ORG_ID,
+      name: 'Legacy Migrated Practice',
+      slug: 'legacy-migrated-practice',
+      type: 'LAW_FIRM',
+      tier: 'PROFESSIONAL',
+      isActive: true,
+    },
+    update: {},
+  })
+
   wsA = await createWorkspace('A')
   wsB = await createWorkspace('B')
 
@@ -160,28 +185,50 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
-  // Delete in reverse FK order — most restrictive first. Covers every
-  // workspace-scoped table this suite (or helpers like runRetentionSweep)
-  // can create, so a mid-test failure cannot strand RESTRICT-guarded rows.
-  const wsIds = [wsA.workspaceId, wsB.workspaceId]
-  const userIds = [wsA.userId, wsB.userId]
-  await db.legalHold.deleteMany({ where: { workspaceId: { in: wsIds } } })
-  await db.retentionPolicy.deleteMany({ where: { workspaceId: { in: wsIds } } })
-  await db.notification.deleteMany({ where: { workspaceId: { in: wsIds } } })
-  await db.usageMetric.deleteMany({ where: { workspaceId: { in: wsIds } } })
-  await db.portalFile.deleteMany({ where: { workspaceId: { in: wsIds } } })
-  await db.portalRequest.deleteMany({ where: { workspaceId: { in: wsIds } } })
-  await db.portalAccess.deleteMany({ where: { workspaceId: { in: wsIds } } })
-  await db.invoice.deleteMany({ where: { workspaceId: { in: wsIds } } })
-  await db.complianceItem.deleteMany({ where: { workspaceId: { in: wsIds } } })
-  await db.legalDocument.deleteMany({ where: { workspaceId: { in: wsIds } } })
-  await db.task.deleteMany({ where: { workspaceId: { in: wsIds } } })
-  await db.legalCase.deleteMany({ where: { workspaceId: { in: wsIds } } })
-  await db.client.deleteMany({ where: { workspaceId: { in: wsIds } } })
-  await db.workspaceMembership.deleteMany({ where: { workspaceId: { in: wsIds } } })
-  await db.user.deleteMany({ where: { id: { in: userIds } } })
-  await db.workspace.deleteMany({ where: { id: { in: wsIds } } })
-  await db.$disconnect()
+  if (!hasDb) return
+  try {
+    // Delete in reverse FK order — most restrictive first. Covers every
+    // workspace-scoped table this suite (or helpers like runRetentionSweep)
+    // can create, so a mid-test failure cannot strand RESTRICT-guarded rows.
+    const wsIds = [wsA?.workspaceId, wsB?.workspaceId].filter((id): id is string => Boolean(id))
+    if (wsIds.length > 0) {
+      const wsUsers = await db.user.findMany({
+        where: { workspaceId: { in: wsIds } },
+        select: { id: true },
+      })
+      const userIds = Array.from(
+        new Set([
+          ...[wsA?.userId, wsB?.userId].filter((id): id is string => Boolean(id)),
+          ...wsUsers.map((u) => u.id),
+        ])
+      )
+      await db.legalHold.deleteMany({ where: { workspaceId: { in: wsIds } } })
+      await db.retentionPolicy.deleteMany({ where: { workspaceId: { in: wsIds } } })
+      await db.notification.deleteMany({ where: { workspaceId: { in: wsIds } } })
+      await db.usageMetric.deleteMany({ where: { workspaceId: { in: wsIds } } })
+      await db.portalFile.deleteMany({ where: { workspaceId: { in: wsIds } } })
+      await db.portalRequest.deleteMany({ where: { workspaceId: { in: wsIds } } })
+      await db.portalAccess.deleteMany({ where: { workspaceId: { in: wsIds } } })
+      await db.invoice.deleteMany({ where: { workspaceId: { in: wsIds } } })
+      await db.complianceItem.deleteMany({ where: { workspaceId: { in: wsIds } } })
+      await db.documentVersion.deleteMany({ where: { workspaceId: { in: wsIds } } })
+      await db.legalDocument.deleteMany({ where: { workspaceId: { in: wsIds } } })
+      await db.approval.deleteMany({ where: { workspaceId: { in: wsIds } } })
+      await db.task.deleteMany({ where: { workspaceId: { in: wsIds } } })
+      await db.caseAssignment.deleteMany({ where: { workspaceId: { in: wsIds } } })
+      await db.workflowTemplate.deleteMany({ where: { workspaceId: { in: wsIds } } })
+      await db.legalCase.deleteMany({ where: { workspaceId: { in: wsIds } } })
+      await db.client.deleteMany({ where: { workspaceId: { in: wsIds } } })
+      await db.workspaceMembership.deleteMany({ where: { workspaceId: { in: wsIds } } })
+      if (userIds.length > 0) {
+        await db.membership.deleteMany({ where: { userId: { in: userIds } } })
+        await db.user.deleteMany({ where: { id: { in: userIds } } })
+      }
+      await db.workspace.deleteMany({ where: { id: { in: wsIds } } })
+    }
+  } finally {
+    await db.$disconnect()
+  }
 })
 
 // ---------------------------------------------------------------------------
@@ -457,17 +504,22 @@ describeWithDb('Confidential case access', () => {
   let assignedUserId: string
 
   beforeAll(async () => {
-    const assigned = await db.user.create({
-      data: {
-        email: `assigned-${Date.now()}@sanad-test.local`,
-        password: hashPassword('TestPass2026!'),
-        role: 'lawyer',
-        workspaceId: wsA.workspaceId,
-        emailVerified: new Date(),
-      },
+    const assigned = await db.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          email: `assigned-${Date.now()}@sanad-test.local`,
+          password: hashPassword('TestPass2026!'),
+          role: 'lawyer',
+          orgId: LEGACY_ORG_ID,
+          workspaceId: wsA.workspaceId,
+          emailVerified: new Date(),
+        },
+      })
+      await tx.workspaceMembership.create({ data: { workspaceId: wsA.workspaceId, userId: user.id, role: 'lawyer', status: 'active' } })
+      await tx.membership.create({ data: { userId: user.id, orgId: LEGACY_ORG_ID, role: 'ASSOCIATE', isActive: true } })
+      return user
     })
     assignedUserId = assigned.id
-    await db.workspaceMembership.create({ data: { workspaceId: wsA.workspaceId, userId: assigned.id, role: 'lawyer', status: 'active' } })
     const c = await db.legalCase.create({
       data: {
         title: 'Confidential matter',

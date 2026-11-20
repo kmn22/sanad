@@ -50,13 +50,13 @@ function looksUtf16(bytes: Buffer) {
 
 function uploadRoot() {
   if (process.env.UPLOAD_ROOT) return process.env.UPLOAD_ROOT
-  return process.env.NODE_ENV === 'production' ? '/app/uploads' : '/tmp/sanad-uploads'
+  return process.env.NODE_ENV === 'production' ? '/app/uploads' : '/tmp/maqar-uploads'
 }
 
-function encryptionKey() {
+function encryptionKey(domainPrefix: 'maqar-file-storage' | 'sanad-file-storage' = 'maqar-file-storage') {
   const source = process.env.FILE_ENCRYPTION_KEY || process.env.BACKUP_ENCRYPTION_KEY
   if (!source) throw new Error('File encryption is not configured')
-  return createHash('sha256').update(`sanad-file-storage:${source}`).digest()
+  return createHash('sha256').update(`${domainPrefix}:${source}`).digest()
 }
 
 export function sanitizeFilename(name: string) {
@@ -105,9 +105,16 @@ export async function readEncryptedFile(key: string) {
   if (!fullPath.startsWith(path.resolve(uploadRoot()))) throw new Error('Invalid file path')
   const data = await readFile(fullPath)
   if (data.length < 29) throw new Error('Invalid stored file')
-  const decipher = createDecipheriv('aes-256-gcm', encryptionKey(), data.subarray(0, 12))
-  decipher.setAuthTag(data.subarray(data.length - 16))
-  return Buffer.concat([decipher.update(data.subarray(12, data.length - 16)), decipher.final()])
+  for (const prefix of ['maqar-file-storage', 'sanad-file-storage'] as const) {
+    try {
+      const decipher = createDecipheriv('aes-256-gcm', encryptionKey(prefix), data.subarray(0, 12))
+      decipher.setAuthTag(data.subarray(data.length - 16))
+      return Buffer.concat([decipher.update(data.subarray(12, data.length - 16)), decipher.final()])
+    } catch {
+      // Try legacy KDF prefix fallback if primary fails
+    }
+  }
+  throw new Error('Unable to decrypt stored file')
 }
 
 export async function deleteEncryptedFile(key: string) {

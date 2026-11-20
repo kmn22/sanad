@@ -3,17 +3,23 @@ import { MetadataRoute } from 'next'
 export const dynamic = 'force-dynamic'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = (process.env.NEXTAUTH_URL || 'https://sanad.sa').replace(/\/$/, '')
+  const baseUrl = (process.env.NEXTAUTH_URL || 'https://maqar.sa').replace(/\/$/, '')
   const currentDate = new Date()
 
   const routes = [
     '',
+    '/solutions',
+    '/solutions/enterprise',
+    '/solutions/firms',
+    '/solutions/academy',
     '/pricing',
+    '/onboarding',
     '/sandbox',
     '/about',
     '/security',
     '/build',
     '/login',
+    '/signup',
     '/register',
     '/privacy',
     '/terms',

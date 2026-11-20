@@ -2,10 +2,10 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:
 
 const VERSION = 'v1'
 
-function signatureKey() {
+function signatureKey(domainPrefix: 'maqar-document-signature' | 'sanad-document-signature' = 'maqar-document-signature') {
   const source = process.env.DOCUMENT_SIGNATURE_KEY || process.env.FILE_ENCRYPTION_KEY || process.env.BACKUP_ENCRYPTION_KEY
   if (!source) throw new Error('Document signature encryption is not configured')
-  return createHash('sha256').update(`sanad-document-signature:${source}`).digest()
+  return createHash('sha256').update(`${domainPrefix}:${source}`).digest()
 }
 
 export type DocumentSignatureInput = {
@@ -42,43 +42,46 @@ export function createDocumentSignature(input: DocumentSignatureInput) {
 export function verifyDocumentSignature(signature: string) {
   const [version, encodedIv, encodedTag, encodedPayload] = signature.split('.')
   if (version !== VERSION || !encodedIv || !encodedTag || !encodedPayload) return null
-  try {
-    const decipher = createDecipheriv('aes-256-gcm', signatureKey(), Buffer.from(encodedIv, 'base64url'))
-    decipher.setAuthTag(Buffer.from(encodedTag, 'base64url'))
-    const payload = Buffer.concat([
-      decipher.update(Buffer.from(encodedPayload, 'base64url')),
-      decipher.final(),
-    ]).toString('utf8')
-    const parsed: unknown = JSON.parse(payload)
-    if (!parsed || typeof parsed !== 'object') return null
-    const value = parsed as Record<string, unknown>
-    if (
-      value.version !== VERSION ||
-      typeof value.userId !== 'string' ||
-      typeof value.workspaceId !== 'string' ||
-      typeof value.documentId !== 'string' ||
-      typeof value.checksumSha256 !== 'string' ||
-      !['download', 'export', 'print'].includes(String(value.operation)) ||
-      typeof value.issuedAt !== 'string'
-    ) return null
-    return {
-      version: VERSION,
-      userId: value.userId,
-      workspaceId: value.workspaceId,
-      documentId: value.documentId,
-      checksumSha256: value.checksumSha256,
-      operation: value.operation as DocumentSignatureInput['operation'],
-      issuedAt: value.issuedAt,
+  for (const prefix of ['maqar-document-signature', 'sanad-document-signature'] as const) {
+    try {
+      const decipher = createDecipheriv('aes-256-gcm', signatureKey(prefix), Buffer.from(encodedIv, 'base64url'))
+      decipher.setAuthTag(Buffer.from(encodedTag, 'base64url'))
+      const payload = Buffer.concat([
+        decipher.update(Buffer.from(encodedPayload, 'base64url')),
+        decipher.final(),
+      ]).toString('utf8')
+      const parsed: unknown = JSON.parse(payload)
+      if (!parsed || typeof parsed !== 'object') continue
+      const value = parsed as Record<string, unknown>
+      if (
+        value.version !== VERSION ||
+        typeof value.userId !== 'string' ||
+        typeof value.workspaceId !== 'string' ||
+        typeof value.documentId !== 'string' ||
+        typeof value.checksumSha256 !== 'string' ||
+        !['download', 'export', 'print'].includes(String(value.operation)) ||
+        typeof value.issuedAt !== 'string'
+      ) continue
+      return {
+        version: VERSION,
+        userId: value.userId,
+        workspaceId: value.workspaceId,
+        documentId: value.documentId,
+        checksumSha256: value.checksumSha256,
+        operation: value.operation as DocumentSignatureInput['operation'],
+        issuedAt: value.issuedAt,
+      }
+    } catch {
+      // Try legacy KDF prefix fallback
     }
-  } catch {
-    return null
   }
+  return null
 }
 
 export function documentSignatureHeaders(signature: string) {
   return {
-    'X-Sanad-Document-Signature': signature,
-    'X-Sanad-Document-Signature-Version': VERSION,
+    'X-Maqar-Document-Signature': signature,
+    'X-Maqar-Document-Signature-Version': VERSION,
   }
 }
 

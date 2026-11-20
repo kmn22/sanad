@@ -1,4 +1,4 @@
-// Sanad — Arabic demo seed for the solo Saudi lawyer persona.
+// Maqar (مقر) — Arabic demo seed for the solo Saudi lawyer persona.
 // Generates a lived-in dataset: clients, cases, documents, invoices,
 // compliance, tasks, time entries, communications, and daily briefs.
 import { PrismaClient } from '@prisma/client'
@@ -21,10 +21,10 @@ async function main() {
   } catch {}
   if (
     process.env.NODE_ENV === 'production' ||
-    process.env.SANAD_ALLOW_DESTRUCTIVE_SEED !== '1' ||
+    process.env.MAQAR_ALLOW_DESTRUCTIVE_SEED !== '1' ||
     !['localhost', '127.0.0.1', '::1', 'db', 'postgres'].includes(databaseHost)
   ) {
-    throw new Error('Refusing to run destructive demo seed. Explicit opt-in and a local database are required; production is never allowed.')
+    throw new Error('Refusing to run destructive demo seed. Explicit opt-in (MAQAR_ALLOW_DESTRUCTIVE_SEED=1) and a local database are required; production is never allowed.')
   }
 
   // Wipe in dependency order
@@ -42,13 +42,13 @@ async function main() {
   await db.workspace.deleteMany()
 
   const workspace = await db.workspace.create({
-    data: { name: 'مكتب أحمد القحطاني للمحاماة', domain: 'sanad-demo' },
+    data: { name: 'مكتب أحمد القحطاني للمحاماة', domain: 'maqar-demo' },
   })
   const ws = { workspaceId: workspace.id }
 
   await db.user.create({
     data: {
-      email: 'ahmed@sanad.sa',
+      email: 'ahmed@maqar.sa',
       name: 'أحمد القحطاني',
       role: 'lawyer',
       password: hashPassword('admin'),
@@ -68,7 +68,7 @@ async function main() {
     { name: 'منشأة الخليج التقنية', type: 'corporate', company: 'منشأة الخليج التقنية', nationalId: '2050778901', phone: '+966138777234', email: 'legal@gulftech-est.sa', address: 'الخبر، الكورنيش', notes: 'تجديد سجل تجاري عاجل' },
     { name: 'محمد عبدالله الحارثي', type: 'individual', nationalId: '1087654321', phone: '+966551234987', email: 'mohammed.h@gmail.com', address: 'مكة، العزيزية', notes: 'استشارة قانون أحوال شخصية' },
     { name: 'شركة أرامكو السعودية للخدمات', type: 'corporate', company: 'شركة أرامكو السعودية للخدمات', nationalId: '1010001122', phone: '+966138712345', email: 'legal-services@aramco.com', address: 'الظهران', notes: 'مراجعة عقود موردين' },
-    { name: 'نورة الدوسري', type: 'individual', nationalId: '1078123456', phone: '+966500112233', email: 'noura.d@sanad.sa', address: 'الرياض', notes: 'موظفة المكتب — عقد التسويق' },
+    { name: 'نورة الدوسري', type: 'individual', nationalId: '1078123456', phone: '+966500112233', email: 'noura.d@maqar.sa', address: 'الرياض', notes: 'موظفة المكتب — عقد التسويق' },
     { name: 'مطعم الديوانية', type: 'corporate', company: 'مطعم الديوانية الشعبي', nationalId: '4030112334', phone: '+966126889912', email: 'manager@diwanieh.sa', address: 'جدة، شارع الأمير سلطان', notes: 'نزاع إيجار محل تجاري' },
     { name: 'سارة بنت فهد', type: 'individual', nationalId: '1098765432', phone: '+966502345678', email: 'sara.f@hotmail.com', address: 'الرياض، حي الياسمين', notes: 'وكالة شرعية ومستندات شخصية' },
     { name: 'مؤسسة النخيل للمقاولات', type: 'corporate', company: 'مؤسسة النخيل للمقاولات', nationalId: '4030998877', phone: '+966114556677', email: 'projects@palmcontracting.sa', address: 'الرياض، الصناعية الثانية', notes: 'مطالبات مالية مع مقاول من الباطن' },

@@ -34,7 +34,7 @@ export default function AcceptPrivacyPage() {
             <div className="bg-[#1F7A46] p-2 rounded-xl text-white">
               <Scale className="w-5 h-5 stroke-[2.2]" />
             </div>
-            <span className="text-xl font-black text-[#1B281F] font-heading">سَنَد</span>
+            <span className="text-xl font-black text-[#1B281F] font-heading">مقر</span>
           </Link>
           <span className="inline-flex items-center gap-1 text-xs text-[#1F7A46] bg-[#E8EFE9] px-2.5 py-1 rounded-full font-bold">
             <ShieldCheck className="w-3.5 h-3.5" /> إصدار {PRIVACY_NOTICE_VERSION}

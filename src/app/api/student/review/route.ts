@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { SBA_EXAM_QUESTIONS } from '@/lib/sanad/student/sbaQuestionBank'
+import { SBA_EXAM_QUESTIONS } from '@/lib/core/student/sbaQuestionBank'
 import { getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
 import { requireEducation } from '@/lib/saas/entitlements'
 

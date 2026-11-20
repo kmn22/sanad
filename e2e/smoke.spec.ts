@@ -4,7 +4,23 @@ test.describe('public surface', () => {
   test('landing page renders', async ({ page }) => {
     const response = await page.goto('/')
     expect(response?.ok()).toBeTruthy()
-    await expect(page.locator('body')).toContainText('سَنَد')
+    await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
+    await expect(page.locator('body')).toContainText(/مقر|مَقَرّ/)
+  })
+
+  test('onboarding route loads with all three persona cards (Corporate, Law Firm, Student)', async ({ page }) => {
+    const response = await page.goto('/onboarding')
+    expect(response?.ok()).toBeTruthy()
+    await expect(page.locator('body')).toContainText('منشأة تجارية / إدارة قانونية')
+    await expect(page.locator('body')).toContainText('مكتب أو شركة محاماة')
+    await expect(page.locator('body')).toContainText('باحث / طالب قانون')
+  })
+
+  test('corporate, practice, and academy persona dashboards render without 500 errors', async ({ page }) => {
+    for (const route of ['/dashboard/corporate', '/dashboard/practice', '/dashboard/academy']) {
+      const response = await page.goto(route)
+      expect(response?.ok()).toBeTruthy()
+    }
   })
 
   test('login page renders the sign-in form', async ({ page }) => {
@@ -72,12 +88,15 @@ test.describe('access control', () => {
 })
 
 test.describe('API surface', () => {
-  test('health endpoint reports database connectivity', async ({ request }) => {
+  test('health endpoint reports database, vector store, and queue connectivity', async ({ request }) => {
     const response = await request.get('/api/health')
     expect(response.ok()).toBeTruthy()
     const body = await response.json()
     expect(body.status).toBe('ok')
     expect(body.database).toBe('ok')
+    expect(body.vectorStore?.status).toBe('ok')
+    expect(body.vectorStore?.indexedStatutoryChunks).toBeGreaterThan(0)
+    expect(body.queue?.status).toBe('ok')
   })
 
   const guardedApis = ['/api/workflow', '/api/memberships', '/api/saas/status', '/api/approvals', '/api/admin/jobs']

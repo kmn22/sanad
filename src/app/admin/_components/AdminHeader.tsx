@@ -14,7 +14,7 @@ export function AdminHeader({ v }: { v: AdminState }) {
             <span>/</span>
             <span>لوحة الإدارة</span>
           </div>
-          <h1 className="text-3xl font-bold">إدارة سند والامتثال</h1>
+          <h1 className="text-3xl font-bold">إدارة مقر والحوكمة والامتثال</h1>
           <p className="text-sm text-muted-foreground mt-1">الرقابة الإدارية، طلبات نظام حماية البيانات الشخصية، وسجلات التدقيق.</p>
         </div>
         <button

@@ -17,10 +17,10 @@ function isTestDatabase(url: string | undefined): boolean {
 }
 
 export const E2E = {
-  ownerEmail: 'e2e.owner@sanad.test',
-  lawyerEmail: 'e2e.lawyer@sanad.test',
-  adminEmail: 'e2e.admin@sanad.test',
-  password: 'Sanad-E2E-Passw0rd!',
+  ownerEmail: 'e2e.owner@maqar.test',
+  lawyerEmail: 'e2e.lawyer@maqar.test',
+  adminEmail: 'e2e.admin@maqar.test',
+  password: 'Maqar-E2E-Passw0rd!',
   workspaceName: 'مكتب الاختبار الآلي',
   // Fixed TOTP secret so Playwright can compute login codes deterministically.
   adminMfaSecret: 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP',
@@ -40,49 +40,76 @@ async function main() {
     update: { seatLimit: 50 },
   })
 
+  const org = await db.organization.upsert({
+    where: { id: 'org-maqar-e2e-firm' },
+    create: {
+      id: 'org-maqar-e2e-firm',
+      name: E2E.workspaceName,
+      slug: 'maqar-e2e-firm',
+      type: 'LAW_FIRM',
+      tier: 'PROFESSIONAL',
+      isActive: true,
+    },
+    update: {
+      name: E2E.workspaceName,
+      type: 'LAW_FIRM',
+      tier: 'PROFESSIONAL',
+      isActive: true,
+    },
+  })
+
   const existingOwner = await db.user.findUnique({ where: { email: E2E.ownerEmail } })
   const workspace = existingOwner?.workspaceId
     ? await db.workspace.findUnique({ where: { id: existingOwner.workspaceId } })
     : null
   const ws = workspace ?? (await db.workspace.create({
-    data: { name: E2E.workspaceName, type: 'firm', status: 'active', onboardingStatus: 'completed' },
+    data: { name: E2E.workspaceName, orgId: org.id, type: 'firm', status: 'active', onboardingStatus: 'completed' },
   }))
-  if (ws.onboardingStatus !== 'completed' || ws.status !== 'active') {
-    await db.workspace.update({ where: { id: ws.id }, data: { status: 'active', onboardingStatus: 'completed' } })
+  if (ws.onboardingStatus !== 'completed' || ws.status !== 'active' || ws.orgId !== org.id) {
+    await db.workspace.update({ where: { id: ws.id }, data: { orgId: org.id, status: 'active', onboardingStatus: 'completed' } })
   }
 
   const password = hashPassword(E2E.password)
   const owner = await db.user.upsert({
     where: { email: E2E.ownerEmail },
-    create: { email: E2E.ownerEmail, name: 'مالك الاختبار', role: 'workspace_owner', accountType: 'firm', password, workspaceId: ws.id, emailVerified: new Date(), privacyNoticeVersion: '2026-09-28' },
-    update: { password, emailVerified: new Date(), privacyNoticeVersion: '2026-09-28', disabledAt: null, lockedUntil: null, failedLoginAttempts: 0, sessionVersion: { increment: 1 } },
+    create: { email: E2E.ownerEmail, name: 'مالك الاختبار', role: 'workspace_owner', accountType: 'firm', password, orgId: org.id, workspaceId: ws.id, emailVerified: new Date(), privacyNoticeVersion: '2026-09-28' },
+    update: { password, orgId: org.id, workspaceId: ws.id, emailVerified: new Date(), privacyNoticeVersion: '2026-09-28', disabledAt: null, lockedUntil: null, failedLoginAttempts: 0, sessionVersion: { increment: 1 } },
   })
   const lawyer = await db.user.upsert({
     where: { email: E2E.lawyerEmail },
-    create: { email: E2E.lawyerEmail, name: 'محامي الاختبار', role: 'lawyer', accountType: 'lawyer', password, workspaceId: ws.id, emailVerified: new Date(), privacyNoticeVersion: '2026-09-28' },
-    update: { password, emailVerified: new Date(), privacyNoticeVersion: '2026-09-28', disabledAt: null, lockedUntil: null, failedLoginAttempts: 0, sessionVersion: { increment: 1 } },
+    create: { email: E2E.lawyerEmail, name: 'محامي الاختبار', role: 'lawyer', accountType: 'lawyer', password, orgId: org.id, workspaceId: ws.id, emailVerified: new Date(), privacyNoticeVersion: '2026-09-28' },
+    update: { password, orgId: org.id, workspaceId: ws.id, emailVerified: new Date(), privacyNoticeVersion: '2026-09-28', disabledAt: null, lockedUntil: null, failedLoginAttempts: 0, sessionVersion: { increment: 1 } },
   })
   const admin = await db.user.upsert({
     where: { email: E2E.adminEmail },
     create: {
-      email: E2E.adminEmail, name: 'مدير الاختبار', role: 'workspace_owner', accountType: 'firm', password, workspaceId: ws.id,
+      email: E2E.adminEmail, name: 'مدير الاختبار', role: 'workspace_owner', accountType: 'firm', password, orgId: org.id, workspaceId: ws.id,
       emailVerified: new Date(), privacyNoticeVersion: '2026-09-28',
       mfaEnabled: true, mfaSecret: encryptMfaSecret(E2E.adminMfaSecret),
       mfaRecoveryCodes: JSON.stringify([hashRecoveryCode(E2E.adminRecoveryCode)]),
     },
     update: {
-      password, emailVerified: new Date(), privacyNoticeVersion: '2026-09-28', disabledAt: null, lockedUntil: null, failedLoginAttempts: 0,
+      password, orgId: org.id, workspaceId: ws.id, emailVerified: new Date(), privacyNoticeVersion: '2026-09-28', disabledAt: null, lockedUntil: null, failedLoginAttempts: 0,
       mfaEnabled: true, mfaSecret: encryptMfaSecret(E2E.adminMfaSecret),
       mfaRecoveryCodes: JSON.stringify([hashRecoveryCode(E2E.adminRecoveryCode)]),
       sessionVersion: { increment: 1 },
     },
   })
 
-  for (const [user, role, isOwner] of [[owner, 'workspace_owner', true], [lawyer, 'lawyer', false], [admin, 'workspace_owner', false]] as const) {
+  for (const [user, role, isOwner, orgRole] of [
+    [owner, 'workspace_owner', true, 'MANAGING_PARTNER'],
+    [lawyer, 'lawyer', false, 'ASSOCIATE'],
+    [admin, 'workspace_owner', false, 'MANAGING_PARTNER'],
+  ] as const) {
     await db.workspaceMembership.upsert({
       where: { workspaceId_userId: { workspaceId: ws.id, userId: user.id } },
       create: { workspaceId: ws.id, userId: user.id, role, status: 'active', isOwner },
       update: { role, status: 'active', isOwner },
+    })
+    await db.membership.upsert({
+      where: { userId_orgId: { userId: user.id, orgId: org.id } },
+      create: { userId: user.id, orgId: org.id, role: orgRole, isActive: true },
+      update: { role: orgRole, isActive: true },
     })
   }
 
@@ -98,7 +125,7 @@ async function main() {
   const client = (await db.client.findFirst({ where: { workspaceId: ws.id, name: 'عميل اختبار آلي' } }))
     ?? (await db.client.create({ data: { workspaceId: ws.id, name: 'عميل اختبار آلي', type: 'individual', phone: '+966500000001' } }))
   const kase = (await db.legalCase.findFirst({ where: { workspaceId: ws.id, title: 'قضية اختبار E2E' } }))
-    ?? (await db.legalCase.create({ data: { workspaceId: ws.id, title: 'قضية اختبار E2E', clientId: client.id, clientName: client.name, caseType: 'litigation', stage: 'intake', priority: 'normal' } }))
+    ?? (await db.legalCase.create({ data: { workspaceId: ws.id, orgId: org.id, title: 'قضية اختبار E2E', clientId: client.id, clientName: client.name, caseType: 'litigation', stage: 'intake', priority: 'normal' } }))
   await db.invoice.upsert({
     where: { workspaceId_number: { workspaceId: ws.id, number: 'E2E-DRAFT-0001' } },
     create: { number: 'E2E-DRAFT-0001', workspaceId: ws.id, clientId: client.id, caseId: kase.id, subtotal: 100, vatRate: 15, vatAmount: 15, total: 115, status: 'draft' },

@@ -63,7 +63,7 @@ export async function POST(req: Request) {
           try {
             await sendTransactionalEmail({
               to: recipient,
-              subject: 'إعادة تعيين كلمة المرور — سند',
+              subject: 'إعادة تعيين كلمة المرور — مقر',
               heading: 'إعادة تعيين كلمة المرور',
               text: `مرحباً ${recipientName}، طلبت إعادة تعيين كلمة المرور. الرابط صالح لمدة ساعة واحدة. إذا لم تطلب ذلك فتجاهل هذه الرسالة — كلمة مرورك لم تتغير.`,
               actionUrl: link,

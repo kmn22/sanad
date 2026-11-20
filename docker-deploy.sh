@@ -4,7 +4,7 @@ set -e
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
 
-echo "=== [SANAD] Starting Safe Automated Docker Deploy ==="
+echo "=== [MAQAR] Starting Safe Automated Docker Deploy ==="
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 set -a
 source "$ROOT/.env"
@@ -40,25 +40,27 @@ if [ -n "$(git status --porcelain)" ]; then
 fi
 git pull origin main
 
-# 4. Migrate database schema safely
+# 4. Purge local stale build artifacts and migrate database schema safely
+rm -rf "$ROOT/.next" "$ROOT/dist" "$ROOT/tsconfig.tsbuildinfo" "$ROOT/node_modules/.cache"
 DATABASE_URL="postgresql://sanad:${POSTGRES_PASSWORD}@127.0.0.1:5432/sanad" npx prisma migrate deploy
 
-# 5. Validate Compose config and rebuild
+# 5. Validate Compose config and rebuild without stale Docker layer cache
 docker compose config -q
-docker compose build app
+docker compose build --no-cache --pull app
+docker builder prune -f --filter "until=24h" || true
 
-# 6. Recreate container
-docker compose up -d app
+# 6. Recreate container cleanly without stale layers
+docker compose up -d --force-recreate --remove-orphans app
 
 # 7. Wait for the app to be ready (up to ~60s)
-echo "Waiting for sanad-web to become healthy..."
+echo "Waiting for Maqar container (sanad-web) to become healthy..."
 for i in $(seq 1 30); do
   if curl -sf -o /dev/null http://localhost:3001/api/health; then
-    echo "✓ sanad-web is healthy"
+    echo "✓ Maqar app container is healthy"
     break
   fi
   if [ "$i" -eq 30 ]; then
-    echo "ERROR: sanad-web did not become healthy in time. Check: docker compose logs app" >&2
+    echo "ERROR: Maqar container did not become healthy in time. Check: docker compose logs app" >&2
     exit 1
   fi
   sleep 2
@@ -67,5 +69,5 @@ done
 # 8. Pre-load the local AI model so the first user request is not a cold start
 bash "$(dirname "$0")/scripts/warm-ai.sh" || true
 
-echo "=== [SANAD] Docker Deployment Completed Successfully! ==="
+echo "=== [MAQAR] Docker Deployment Completed Successfully! ==="
 docker compose ps

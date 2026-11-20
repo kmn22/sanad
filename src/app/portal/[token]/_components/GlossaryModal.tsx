@@ -31,7 +31,7 @@ export function GlossaryModal({ v }: { v: PortalView }) {
 
             <div className="p-4 overflow-y-auto space-y-3 flex-1 text-xs">
               <p className="text-muted-foreground leading-relaxed">
-                في سند، نؤمن بأن لغة القانون حق للموكل أن يفهمها دون غموض. يوضح هذا الجدول ترجمة المصطلحات الرسمية إلى لغة يومية ميسرة:
+                في مقر، نؤمن بأن لغة القانون حق للموكل أن يفهمها دون غموض. يوضح هذا الجدول ترجمة المصطلحات الرسمية إلى لغة يومية ميسرة:
               </p>
 
               <div className="space-y-2">

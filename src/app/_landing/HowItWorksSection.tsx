@@ -26,7 +26,7 @@ export function HowItWorksSection() {
     <section className="py-14 px-4 sm:px-6 lg:px-8 mx-auto max-w-5xl">
       <div className="text-center mb-10">
         <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1B281F] font-heading">
-          كيف يعمل سَنَد في مكتبك؟
+          كيف يعمل «مقر» في منشأتك ومكتبك؟
         </h2>
         <p className="text-sm text-[#4A5D50] mt-1.5 max-w-lg mx-auto">
           ثلاث خطوات واضحة ومباشرة تحول الصياغة اليدوية إلى تجربة مدققة تضمن سلامة الموقف النظامي.

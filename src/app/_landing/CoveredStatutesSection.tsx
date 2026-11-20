@@ -202,7 +202,7 @@ export function CoveredStatutesSection() {
               <span>قاعدة المعرفة القانونية السعودية الشاملة</span>
             </h2>
             <p className="text-xs sm:text-sm text-[#4A5D50] mt-1">
-              كل مخرج في سَنَد مستند إلى أربعة روافد نظامية وقضائية سعودية موثقة ومحدثة
+              كل مخرج في «مقر» مستند إلى أربعة روافد نظامية وقضائية سعودية موثقة ومحدثة
             </p>
           </div>
           <div className="text-[11px] font-mono text-[#34543F] bg-white px-3.5 py-1.5 rounded-full border border-[#CCD8CE] self-start md:self-auto font-bold shadow-2xs">

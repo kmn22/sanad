@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useSession } from 'next-auth/react'
 import { getLawyerDashboard } from '@/app/actions/dashboard'
 import { getStudentDashboard } from '@/app/actions/studentDashboard'
-import type { DashboardData, StudentDashboardData } from '@/lib/sanad/types'
+import type { DashboardData, StudentDashboardData } from '@/lib/core/types'
 import { getFirmDashboard, type FirmDashboard } from '@/app/actions/firmDashboard'
 
 /**

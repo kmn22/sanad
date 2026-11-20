@@ -38,19 +38,25 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    ports:
+      - "127.0.0.1:3101:3001"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER:-sanad}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-sanad_staging}
+      VECTOR_DATABASE_URL: ${VECTOR_DATABASE_URL:-postgresql://${POSTGRES_USER:-sanad}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-sanad_staging}}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?set in .env.staging}
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3101}
       FILE_ENCRYPTION_KEY: ${FILE_ENCRYPTION_KEY:?set in .env.staging}
       DOCUMENT_SIGNATURE_KEY: ${DOCUMENT_SIGNATURE_KEY:-${FILE_ENCRYPTION_KEY}}
-      BACKUP_ENCRYPTION_KEY: ${BACKUP_ENCRYPTION_KEY:-}
+      BACKUP_ENCRYPTION_KEY: ${BACKUP_ENCRYPTION_KEY:-${FILE_ENCRYPTION_KEY}}
       MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY:-}
+      VAULT_MASTER_KMS_KEY: ${VAULT_MASTER_KMS_KEY:-${FILE_ENCRYPTION_KEY}}
+      AUDIT_LOG_HMAC_SECRET: ${AUDIT_LOG_HMAC_SECRET:-${DOCUMENT_SIGNATURE_KEY:-${FILE_ENCRYPTION_KEY}}}
+      ESIGNATURE_SIGNING_SECRET: ${ESIGNATURE_SIGNING_SECRET:-${DOCUMENT_SIGNATURE_KEY:-${FILE_ENCRYPTION_KEY}}}
       OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
       CRON_SECRET: ${CRON_SECRET:-}
-    ports:
-      - "127.0.0.1:3101:3001"
     volumes:
       - staging-uploads:/app/uploads
       - staging-backups:/app/backups

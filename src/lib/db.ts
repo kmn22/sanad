@@ -1,4 +1,9 @@
 import { Prisma, PrismaClient } from '@prisma/client'
+import {
+  createAsyncContextTenantPrisma,
+  createTenantScopedPrisma,
+  type TenantScopeContext,
+} from '@/lib/security/prisma-tenant-extension'
 
 // Money columns are DECIMAL in Postgres (exact) — but JSON APIs keep emitting
 // plain numbers so every existing client contract is unchanged. Prisma's
@@ -18,3 +23,16 @@ export const db =
   })
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
+
+/**
+ * Returns a tenant-isolated Prisma Client (`$extends`) that automatically
+ * injects `orgId` and `workspaceId` on every scoped query and mutation.
+ */
+export function getTenantDb(ctx: TenantScopeContext) {
+  return createTenantScopedPrisma(db, ctx)
+}
+
+/**
+ * Context-aware Prisma Client bound to `runWithTenantContext(...)` (`AsyncLocalStorage`).
+ */
+export const asyncTenantDb = createAsyncContextTenantPrisma(db)

@@ -22,7 +22,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       if (!client) return notFoundJson()
     }
     if (parsed.caseId) {
-      const legalCase = await db.legalCase.findFirst({ where: { id: parsed.caseId, workspaceId: auth.workspaceId, deletedAt: null }, select: { id: true } })
+      const legalCase = await db.legalCase.findFirst({ where: { id: parsed.caseId, workspaceId: auth.workspaceId, orgId: auth.orgId, deletedAt: null }, select: { id: true } })
       if (!legalCase || !(await canAccessCase(auth, legalCase.id))) return notFoundJson()
     }
 
@@ -32,7 +32,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     const updated = await db.$transaction(async (tx) => {
-      const row = await tx.invoice.update({ where: { id }, data: parsed })
+      const res = await tx.invoice.updateMany({ where: { id, workspaceId: auth.workspaceId, deletedAt: null }, data: parsed })
+      if (!res.count) return null
+      const row = await tx.invoice.findFirst({ where: { id, workspaceId: auth.workspaceId } })
       await tx.auditLog.create({
         data: {
           workspaceId: auth.workspaceId,
@@ -45,6 +47,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       })
       return row
     })
+    if (!updated) return notFoundJson()
     return NextResponse.json(updated)
   } catch (err: any) {
     if (err?.name === 'ZodError') {
@@ -68,7 +71,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   if (hold) return hold
   await db.$transaction(async (tx) => {
     await tx.timeEntry.updateMany({ where: { invoiceId: id, workspaceId: auth.workspaceId }, data: { invoiced: false, invoiceId: null } })
-    await tx.invoice.update({ where: { id }, data: { deletedAt: new Date() } })
+    await tx.invoice.updateMany({ where: { id, workspaceId: auth.workspaceId }, data: { deletedAt: new Date() } })
     await tx.auditLog.create({
       data: { workspaceId: auth.workspaceId, userId: auth.userId, action: 'invoice.delete', entityType: 'Invoice', entityId: id },
     })

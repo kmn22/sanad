@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requestIp, writeAudit } from '@/lib/audit'
-import { canManageUsers, forbiddenJson, getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
+import { canManageUsers, forbiddenJson, getAuthContext, isPlatformSuperAdmin, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 
 const ASSIGNABLE_ROLES = new Set(['lawyer', 'staff', 'student', 'auditor'])
 
@@ -10,8 +10,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (!auth) return unauthorizedJson()
   if (!canManageUsers(auth)) return forbiddenJson()
   const { id } = await params
+  const superAdmin = isPlatformSuperAdmin(auth)
   const target = await db.user.findFirst({
-    where: { id, ...(auth.role === 'admin' ? {} : { workspaceId: auth.workspaceId }) },
+    where: { id, ...(superAdmin ? {} : { workspaceId: auth.workspaceId, orgId: auth.orgId }) },
   })
   if (!target) return notFoundJson()
 
@@ -24,8 +25,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
 
   const updated = await db.$transaction(async (tx) => {
-    const user = await tx.user.update({
-      where: { id },
+    const scopedCount = await tx.user.updateMany({
+      where: { id, ...(superAdmin ? {} : { workspaceId: auth.workspaceId, orgId: auth.orgId }) },
       data: {
         role,
         disabledAt: disabled === undefined ? undefined : disabled ? new Date() : null,
@@ -36,6 +37,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         mfaSecret: mfaReset ? null : undefined,
         mfaRecoveryCodes: mfaReset ? null : undefined,
       },
+    })
+    if (scopedCount.count === 0) return null
+    const user = await tx.user.findFirst({
+      where: { id, ...(superAdmin ? {} : { workspaceId: auth.workspaceId, orgId: auth.orgId }) },
       select: { id: true, email: true, name: true, role: true, disabledAt: true, lockedUntil: true, sessionVersion: true, mfaEnabled: true },
     })
     if (target.workspaceId) {
@@ -50,6 +55,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
     return user
   })
+  if (!updated) return notFoundJson()
 
   await writeAudit({
     workspaceId: target.workspaceId,

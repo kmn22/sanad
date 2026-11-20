@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { canManageUsers, forbiddenJson, getAuthContext, unauthorizedJson } from '@/lib/auth/workspace'
+import { canManageUsers, forbiddenJson, getAuthContext, isPlatformSuperAdmin, unauthorizedJson } from '@/lib/auth/workspace'
 
 export async function GET() {
   const auth = await getAuthContext()
@@ -8,7 +8,7 @@ export async function GET() {
   if (!canManageUsers(auth)) return forbiddenJson()
 
   const users = await db.user.findMany({
-    where: auth.role === 'admin' ? {} : { workspaceId: auth.workspaceId },
+    where: isPlatformSuperAdmin(auth) ? {} : { workspaceId: auth.workspaceId, orgId: auth.orgId },
     select: {
       id: true,
       email: true,

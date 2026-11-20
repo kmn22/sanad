@@ -3,7 +3,7 @@
 import React from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Banknote, Briefcase, Gavel, LayoutDashboard, Settings, ShieldCheck, Users, UsersRound } from 'lucide-react'
-import { NAV_ICONS } from '@/lib/sanad/constants'
+import { NAV_ICONS } from '@/lib/core/constants'
 import { PortalShell, type NavSection } from '@/components/portal/PortalShell'
 import { useFirmDashboard } from '@/components/portal/usePortalData'
 

@@ -9,5 +9,5 @@ if [ -n "$DATABASE_URL" ]; then
   }
 fi
 
-echo "[entrypoint] Starting Sanad Production Server on port ${PORT:-3001}..."
+echo "[entrypoint] Starting Maqar Production Server on port ${PORT:-3001}..."
 exec node server.js

@@ -8,12 +8,13 @@ import {
   Scale,
   CheckCircle2,
   X,
-  Sparkles,
-  ShieldCheck,
   Building2,
   GraduationCap,
   Briefcase,
+  ShieldCheck,
   ChevronDown,
+  ArrowLeft,
+  Landmark,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -24,99 +25,215 @@ export default function PricingPage() {
   const tiers = [
     {
       id: 'student',
-      name: 'طالب ومتدرب',
-      badge: 'مجاني للجامعات',
-      target: 'لطلاب كليات القانون والمتدربين بالبريد الجامعي (.edu.sa)',
+      name: 'الأكاديمية والطلاب',
+      englishTier: 'Academic / Free',
+      categoryBadge: 'البحث الأكاديمي وبنك السوابق',
+      badge: 'مجاني للجامعات (.edu.sa)',
+      target: 'لطلاب كليات القانون والباحثين والمتدربين بالبريد الجامعي السعودي',
       priceMonthly: 0,
       priceYearly: 0,
-      ctaText: 'ابدأ دراستك مجاناً',
-      ctaHref: '/register?plan=student',
+      isCustom: false,
+      ctaText: 'ابدأ مجاناً بالبريد الجامعي',
+      ctaHref: '/onboarding?persona=LAW_STUDENT',
       recommended: false,
       icon: GraduationCap,
       features: [
-        'تسجيل فوري مجاني بالبريد الجامعي (.edu.sa)',
-        'فحص صياغة العقود وتدقيق الضمانات (حتى 20 عقداً شهرياً)',
-        'بنك نصوص ومواد الأنظمة السعودية وتطبيقاتها القضائية',
-        'نظام التكرار المتباعد لبطاقات استذكار المصطلحات',
-        'شهادات إتمام إلكترونية للمسارات التدريبية',
+        'تفعيل فوري مجاني بالبريد الجامعي (.edu.sa)',
+        'بنك السوابق القضائية والمبادئ النظامية السعودية',
+        'محرك البحث الدلالي في الأنظمة واللوائح مع الحواشي',
+        'محاكي الصياغة القضائية والتعاقدية التفاعلي (20 عقداً/شهر)',
+        'بطاقات الاستذكار بالتكرار المتباعد واختبارات SBA',
       ],
       notIncluded: [
-        'تدقيق وفحص غير محدود للعقود واللوائح',
-        'بوابة الموكل السيادية عبر روابط WhatsApp',
-        'تعدد المستخدمين وإدارة مقاعد الفريق',
+        'إدارة القضايا والموكلين وحاسبة المواعيد القضائية',
+        'إدارة دورة حياة العقود المؤسسية (Enterprise CLM)',
       ],
     },
     {
       id: 'solo',
-      name: 'ممارس فردي',
-      badge: 'الباقة المعتمدة للممارس المستقل',
-      target: 'للمحامي المرخص والمستشار القانوني الفردي المستقل',
+      name: 'المحامي المستقل',
+      englishTier: 'Solo Lawyer',
+      categoryBadge: 'إدارة الممارسة القانونية الفردية',
+      badge: 'مثالي للممارس المستقل',
+      target: 'للمحامي المرخص والمستشار القانوني المستقل',
       priceMonthly: 199,
       priceYearly: 159,
-      ctaText: 'ابدأ تجربة مجانية (14 يوماً)',
-      ctaHref: '/register?plan=solo',
-      recommended: true, // As required by the plan: Solo practitioner is the highlighted default
+      isCustom: false,
+      ctaText: 'ابدأ الآن (تجربة 14 يوماً)',
+      ctaHref: '/onboarding?persona=LAW_FIRM&tier=solo',
+      recommended: false,
       icon: Briefcase,
       features: [
         'فحص وتدقيق لحظي غير محدود للعقود ضد نظام العمل والمعاملات المدنية',
-        'اقتراح البدائل النظامية المتوافقة وحساب المهل تلقائياً',
-        'محرك ذكاء اصطناعي محلي سيادي دون نقل البيانات لخوادم خارجية',
-        'بوابة الموكل السيادية المشفرة مع روابط WhatsApp بدون كلمات مرور',
-        'إدارة حتى 50 موكلاً وقضية نشطة مع سجل الحركات',
-        'مسودات فواتير داخلية مسبقة التهيئة للضريبة',
-        'تطبيق جوال PWA يعمل بدون اتصال داخل قاعات المحاكم',
-        'دعم فني واستجابة خلال يوم عمل واحد',
+        'إدارة القضايا والجلسات وحاسبة المهل النظامية (حتى 50 ملفاً)',
+        'منضدة صياغة اللوائح والمذكرات الجوابية والاعتراضية',
+        'بوابة الموكل السيادية المشفرة بروابط آمنة بدون كلمات مرور',
+        'مسودات فواتير الأتعاب وحساب الضريبة (15%)',
+        'تطبيق جوال PWA يعمل داخل قاعات المحاكم',
       ],
       notIncluded: [
-        'مقاعد متعددة لفريق العمل وإدارة الأدوار (RBAC)',
-        'تخصيص شعار وهوية المكتب على بوابة الموكل',
+        'تعدد مقاعد الفريق وصلاحيات الأدوار (RBAC)',
+        'مصفوفة اعتمادات العقود المؤسسية (Enterprise CLM)',
       ],
     },
     {
       id: 'firm',
-      name: 'مكتب محاماة',
-      badge: 'للمكاتب والشركات',
+      name: 'مكاتب المحاماة Pro',
+      englishTier: 'Law Firm Pro',
+      categoryBadge: 'إدارة الممارسة والمحاكم المتكاملة',
+      badge: 'الأكثر اختياراً للمكاتب',
       target: 'لمكاتب وشركات المحاماة التي تدير قضايا وفرق عمل مشتركة',
       priceMonthly: 499,
       priceYearly: 399,
-      ctaText: 'ابدأ اشتراك المكتب',
-      ctaHref: '/register?plan=firm',
-      recommended: false,
+      isCustom: false,
+      ctaText: 'ابدأ اشتراك المكتب الاحترافي',
+      ctaHref: '/onboarding?persona=LAW_FIRM&tier=firm_pro',
+      recommended: true,
       icon: Building2,
       features: [
-        'كافة مزايا باقة الممارس الفردي للصياغة والتدقيق النظامي',
-        'عدد موكلين وقضايا وعقود غير محدود',
-        'يشمل 5 مقاعد لفريق العمل (مع إمكانية إضافة مقاعد إضافية)',
-        'صلاحيات دقيقة للأدوار: شريك / محامٍ / متدرب / محاسب (RBAC)',
-        'تخصيص كامل لهوية وشعار المكتب على بوابة الموكل',
-        'تقارير الشركاء الشهرية التنفيذية (PDF)',
-        'قناة دعم فني خاصة ومدير حساب مخصص عبر WhatsApp',
-        'نسخ احتياطي سيادي مشفر للبيانات يومياً',
+        'كافة مزايا باقة المحامي المستقل للصياغة وإدارة المحاكم',
+        'عدد قضايا وموكلين وجلسات وعقود غير محدود',
+        'يشمل 5 مقاعد لفريق المكتب (+ إمكانية التوسع)',
+        'صلاحيات دقيقة للأدوار وعزل القضايا السرية (RBAC)',
+        'تخصيص شعار وهوية المكتب على بوابة الموكلين',
+        'تقارير الشركاء المالية والتنفيذية وفوترة مهيأة لـ ZATCA',
+        'نسخ احتياطي سيادي مشفر يومياً ودعم فني مخصص',
+      ],
+      notIncluded: [
+        'تكامل الدخول الموحد للمنشآت (Enterprise SSO / SAML)',
+      ],
+    },
+    {
+      id: 'enterprise',
+      name: 'المنشآت والشركات',
+      englishTier: 'Enterprise Custom',
+      categoryBadge: 'إدارة دورة حياة العقود والحوكمة (CLM)',
+      badge: 'للإدارات القانونية والمنشآت',
+      target: 'للشركات القابضة والمنشآت والإدارات القانونية والجهات المؤسسية',
+      priceMonthly: 1499,
+      priceYearly: 1199,
+      isCustom: true,
+      ctaText: 'اطلب عرض سعر وتهيئة مؤسسية',
+      ctaHref: '/onboarding?persona=ENTERPRISE_CORP',
+      recommended: false,
+      icon: Landmark,
+      features: [
+        'منظومة إدارة دورة حياة العقود المؤسسية الكاملة (Enterprise CLM)',
+        'تقييم آلي لمخاطر البنود التعاقدية ومؤشرات الالتزام',
+        'مصفوفة صلاحيات واعتمادات متعددة المستويات بين الإدارات',
+        'رادار الالتزامات التعاقدية وتنبيهات التجديد والضمانات البنكية',
+        'سجلات الحوكمة المؤسسية والامتثال لنظام الشركات و PDPL',
+        'دخول موحد للمنشآت (SSO / SAML 2.0 / النفاذ الموحد)',
+        'خيار استضافة سحابية خاصة أو محلية مع اتفاقية مستوى خدمة (SLA)',
       ],
       notIncluded: [],
     },
   ]
 
+  const comparisonGroups = [
+    {
+      category: '1. إدارة الممارسة والقضايا والمحاكم (Practice & Court Management)',
+      rows: [
+        {
+          feature: 'إدارة ملفات القضايا والجلسات القضائية',
+          student: 'نماذج تدريبية',
+          solo: 'حتى 50 قضية نشطة',
+          firm: 'غير محدود + قضايا سرية',
+          enterprise: 'سجل النزاعات المؤسسية',
+        },
+        {
+          feature: 'حاسبة المواعيد الإجرائية والمهل النظامية (م/187 مرافعات)',
+          student: 'للتدريب الأكاديمي',
+          solo: '✓ شاملة التنبيهات',
+          firm: '✓ شاملة التنبيهات للفريق',
+          enterprise: '✓',
+        },
+        {
+          feature: 'بوابة الموكلين السيادية المشفرة',
+          student: '—',
+          solo: '✓ مشمولة',
+          firm: '✓ بهوية وشعار المكتب',
+          enterprise: 'بوابة الأطراف والموردين',
+        },
+        {
+          feature: 'إدارة مقاعد الفريق وتوزيع المهام (RBAC) والفوترة',
+          student: 'مستخدم واحد',
+          solo: 'مستخدم واحد',
+          firm: '5 مقاعد (+ مقاعد إضافية)',
+          enterprise: 'مقاعد وإدارات غير محدودة',
+        },
+      ],
+    },
+    {
+      category: '2. إدارة دورة حياة العقود والحوكمة المؤسسية (Enterprise CLM & Governance)',
+      rows: [
+        {
+          feature: 'فحص وتدقيق البنود ضد نظام المعاملات المدنية ونظام العمل',
+          student: '20 عقداً شهرياً',
+          solo: 'غير محدود',
+          firm: 'غير محدود',
+          enterprise: 'غير محدود + قواعد مخصصة',
+        },
+        {
+          feature: 'دورة حياة العقد الكاملة (CLM) ومصفوفة الاعتمادات المتدرجة',
+          student: '—',
+          solo: 'مسودات فردية',
+          firm: 'اعتماد شريك المكتب',
+          enterprise: '✓ مصفوفة صلاحيات متعددة الإدارات',
+        },
+        {
+          feature: 'رادار الالتزامات وتنبيهات التجديد التلقائي والضمانات',
+          student: '—',
+          solo: 'تنبيهات أساسية',
+          firm: '✓ لعقود الموكلين',
+          enterprise: '✓ رادار التزامات مؤسسي شامل',
+        },
+        {
+          feature: 'الدخول الموحد (SSO / SAML) واستضافة معزولة واتفاقية SLA',
+          student: '—',
+          solo: '—',
+          firm: 'اختياري',
+          enterprise: '✓ مشمول بالكامل',
+        },
+      ],
+    },
+    {
+      category: '3. بنك السوابق والبحث النظامي والأكاديمي (Precedent Bank & Statutory RAG)',
+      rows: [
+        {
+          feature: 'بنك السوابق القضائية والأنظمة السعودية المحدثة',
+          student: '✓ وصول كامل',
+          solo: '✓ وصول كامل',
+          firm: '✓ وصول كامل',
+          enterprise: '✓ وصول كامل',
+        },
+        {
+          feature: 'محاكي الصياغة الأكاديمي وبطاقات التكرار المتباعد (SBA)',
+          student: '✓ مشمول بالكامل',
+          solo: '✓',
+          firm: '✓ لتدريب المحامين المتدربين',
+          enterprise: '—',
+        },
+      ],
+    },
+  ]
+
   const faqs = [
     {
-      q: 'هل نصوص العقود وأسرار الموكلين آمنة ومحلية؟',
-      a: 'نعم تماماً. صُمم سَنَد بنموذج سيادي محلي (Local-First). نموذج الفحص والصياغة يعمل محلياً في بيئة معزولة، ولا تُرفع مستنداتك أو بيانات موكليك لأي نماذج ذكاء اصطناعي تجارية عامة، بما يتوافق بدقة مع نظام حماية البيانات الشخصية السعودي (PDPL).',
+      q: 'ما الفرق الجوهري بين باقة «مكاتب المحاماة Pro» وباقة «المنشآت والشركات (Enterprise CLM)»؟',
+      a: 'باقة «مكاتب المحاماة Pro» مصممة لإدارة الممارسة القانونية والتقاضي (إدارة القضايا، الجلسات، المهل النظامية، بوابة الموكلين، وفوترة الساعات والأتعاب). أما باقة «المنشآت والشركات» فتركز على إدارة دورة حياة العقود المؤسسية (CLM)، ومصفوفة الاعتمادات بين الإدارات (القانونية، المالية، المشتريات)، وتقييم المخاطر التعاقدية، وسجلات الحوكمة والامتثال.',
     },
     {
-      q: 'ما هي الأنظمة التي يفحص المحرك نصوص العقود ضدها؟',
-      a: 'يركز المحرك على فحص الضمانات والمواد الإلزامية في نظام العمل السعودي (مثل المادة 83 الخاصة بعدم المنافسة، والمادة 53 الخاصة بفترة التجربة) ونظام المعاملات المدنية (مثل المادة 179 الخاصة بالشرط الجزائي، والمادة 174 الخاصة بالظروف الطارئة والقوة القاهرة)، مع استمرار التحديث.',
+      q: 'هل نصوص العقود وأسرار القضايا والموكلين آمنة ومحلية داخل المملكة؟',
+      a: 'نعم تماماً. صُمم «مقر» بنموذج سيادي محلي يعالج النصوص والمستندات في بيئة معزولة ومشفرة (AES-256)، ولا تُستخدم بياناتك لتدريب أي نماذج ذكاء اصطناعي عامة، بما يتوافق مع نظام حماية البيانات الشخصية السعودي (PDPL).',
     },
     {
-      q: 'كيف تعمل بوابة الموكل وهل يحتاج لكلمة مرور؟',
-      a: 'لا يحتاج الموكل لأي كلمة مرور. يمكنك توليد رابط سحري آمن ومشفر بنقرة زر واحدة ومشاركته مع الموكل عبر WhatsApp، ليطلع على المستندات والخط الزمني لقضيته في واجهة بسيطة.',
+      q: 'كيف يستفيد طلاب كليات القانون والباحثون من الباقة الأكاديمية المجانية؟',
+      a: 'يكفي التسجيل بالبريد الجامعي السعودي المعتمد (.edu.sa)، ليتم تفعيل الحساب الأكاديمي مجاناً مع وصول كامل لبنك السوابق القضائية، محرك البحث الدلالي في الأنظمة، ومحاكي الصياغة القضائية.',
     },
     {
-      q: 'هل فواتير سَنَد الحالية معتمدة من هيئة الزكاة (ZATCA)؟',
-      a: 'خصائص الفواتير الحالية داخلية وتجريبية لحساب الأتعاب والضريبة ولا تمثل ربطاً معتمداً مع منصة فاتورة. يخضع التكامل المعتمد للتطوير وسيتاح ضمن التحديثات القادمة.',
-    },
-    {
-      q: 'كيف يستفيد طلاب كليات القانون من الباقة المجانية؟',
-      a: 'يكفي التسجيل بالبريد الجامعي السعودي المعتمد الصادر من جامعتك (.edu.sa)، ويتم تفعيل حساب الطالب فوراً بكافة مزايا التدريب وبنك الأنظمة مجاناً.',
+      q: 'هل يمكن الترقية بين الباقات أو تخصيص عدد المقاعد لاحقاً؟',
+      a: 'بكل تأكيد. يمكنك البدء بتجربة مجانية لمدة 14 يوماً ثم الترقية أو إضافة مقاعد جديدة لفريقك في أي وقت من لوحة إعدادات المقر.',
     },
   ]
 
@@ -124,7 +241,7 @@ export default function PricingPage() {
     <div className="min-h-screen flex flex-col bg-[#F5F7F5] font-sans text-[#1B281F]" dir="rtl">
       <LandingHeader />
 
-      <main className="flex-1 py-12 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full space-y-12">
+      <main className="flex-1 py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-12">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-xs text-[#566A5C]">
           <Link href="/" className="hover:text-[#1F7A46]">الرئيسية</Link>
@@ -134,27 +251,37 @@ export default function PricingPage() {
 
         {/* Hero Header */}
         <section className="text-center space-y-4 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E8EFE9] border border-[#CCD8CE] text-[#1F7A46] text-xs font-bold">
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#E8EFE9] border border-[#CCD8CE] text-[#1F7A46] text-xs font-bold">
             <Scale className="w-3.5 h-3.5" />
-            <span>باقات استثمارية واضحة ومحلية</span>
+            <span>باقات «مقر» — المقر الرقمي للعمليات القانونية والحوكمة</span>
           </div>
           <h1 className="text-3xl md:text-5xl font-black tracking-tight text-[#1B281F] font-heading leading-tight">
-            استثمار يحمي وقتك ويرفع موثوقية صياغاتك
+            باقات مصممة للأكاديميين، المحامين، مكاتب المحاماة، والشركات
           </h1>
-          <p className="text-sm md:text-base text-[#4A5D50] max-w-xl mx-auto leading-relaxed">
-            اختر الباقة المناسبة لمكتبك وابدأ فوراً بفحص وتدقيق العقود واللوائح دون الحاجة لبطاقة ائتمانية.
+          <p className="text-sm md:text-base text-[#4A5D50] max-w-2xl mx-auto leading-relaxed">
+            فصل واضح بين أدوات إدارة الممارسة والتقاضي لمكاتب المحاماة، ومنظومة إدارة دورة حياة العقود والحوكمة (CLM) للمنشآت، ومختبر البحث الأكاديمي.
           </p>
 
-          {/* Billing Switcher Toggle */}
+          {/* Annual / Monthly Billing Switcher Toggle */}
           <div className="pt-4 flex items-center justify-center gap-3">
-            <span className={`text-xs font-bold ${billingCycle === 'monthly' ? 'text-[#1F7A46]' : 'text-[#566A5C]'}`}>
-              دفع شهري
-            </span>
+            <button
+              type="button"
+              onClick={() => setBillingCycle('monthly')}
+              data-testid="billing-monthly"
+              className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                billingCycle === 'monthly'
+                  ? 'bg-[#1F7A46] text-white'
+                  : 'text-[#566A5C] hover:text-[#1B281F]'
+              }`}
+            >
+              دفع شهري (Monthly)
+            </button>
             <button
               type="button"
               onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'yearly' : 'monthly')}
+              data-testid="billing-toggle"
               className="w-13 h-7 bg-[#1F7A46] rounded-full p-0.5 transition-colors relative cursor-pointer"
-              aria-label="تبديل دورة الفوترة"
+              aria-label="تبديل دورة الفوترة سنوي أو شهري"
             >
               <div
                 className={`w-6 h-6 bg-white rounded-full shadow-xs transition-transform ${
@@ -162,19 +289,26 @@ export default function PricingPage() {
                 }`}
               />
             </button>
-            <div className="flex items-center gap-1.5">
-              <span className={`text-xs font-bold ${billingCycle === 'yearly' ? 'text-[#1F7A46]' : 'text-[#566A5C]'}`}>
-                دفع سنوي
-              </span>
+            <button
+              type="button"
+              onClick={() => setBillingCycle('yearly')}
+              data-testid="billing-yearly"
+              className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                billingCycle === 'yearly'
+                  ? 'bg-[#1F7A46] text-white'
+                  : 'text-[#566A5C] hover:text-[#1B281F]'
+              }`}
+            >
+              <span>دفع سنوي (Annual)</span>
               <span className="bg-[#E8EFE9] text-[#1F7A46] border border-[#CCD8CE] text-[11px] px-2 py-0.5 rounded-full font-bold">
                 وفّر 20%
               </span>
-            </div>
+            </button>
           </div>
         </section>
 
-        {/* Pricing Cards Grid */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+        {/* 4-Tier Pricing Cards Grid */}
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
           {tiers.map((tier) => {
             const Icon = tier.icon
             const price = billingCycle === 'yearly' ? tier.priceYearly : tier.priceMonthly
@@ -182,7 +316,8 @@ export default function PricingPage() {
             return (
               <div
                 key={tier.id}
-                className={`relative rounded-2xl flex flex-col justify-between p-6 sm:p-7 transition-all bg-white border ${
+                data-testid={`pricing-tier-${tier.id}`}
+                className={`relative rounded-2xl flex flex-col justify-between p-6 transition-all bg-white border ${
                   tier.recommended
                     ? 'border-[#1F7A46] shadow-md ring-2 ring-[#1F7A46]/20'
                     : 'border-[#CCD8CE] shadow-xs'
@@ -197,36 +332,69 @@ export default function PricingPage() {
                 )}
 
                 <div className="space-y-4">
+                  {/* Category Pill */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-md bg-[#E8EFE9] text-[#1F7A46] border border-[#CCD8CE]">
+                      {tier.categoryBadge}
+                    </span>
+                    <span className="text-[10px] font-mono text-[#566A5C]">{tier.englishTier}</span>
+                  </div>
+
                   {/* Title & Icon */}
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-start justify-between gap-2">
                     <div>
-                      <h3 className="text-xl font-bold font-heading text-[#1B281F]">{tier.name}</h3>
-                      <p className="text-xs text-[#566A5C] mt-0.5">{tier.target}</p>
+                      <h2 className="text-xl font-bold font-heading text-[#1B281F]">{tier.name}</h2>
+                      <p className="text-xs text-[#566A5C] mt-1 leading-relaxed">{tier.target}</p>
                     </div>
-                    <div className="p-2.5 rounded-xl bg-[#E8EFE9] text-[#1F7A46]">
+                    <div className="p-2.5 rounded-xl bg-[#E8EFE9] text-[#1F7A46] shrink-0">
                       <Icon className="h-5 w-5" />
                     </div>
                   </div>
 
                   {/* Price */}
-                  <div className="pt-2 pb-2 border-b border-[#CCD8CE]">
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-4xl font-extrabold tracking-tight font-heading text-[#1B281F]">
-                        {price}
-                      </span>
-                      <span className="text-xs text-[#566A5C] font-semibold">
-                        ر.س / شهرياً
-                      </span>
-                    </div>
-                    {billingCycle === 'yearly' && tier.priceMonthly > 0 && (
-                      <p className="text-[11px] text-[#1F7A46] mt-1 font-semibold">
-                        تُدفع سنوياً بقيمة {price * 12} ر.س (توفير {(tier.priceMonthly - tier.priceYearly) * 12} ر.س)
-                      </p>
+                  <div className="pt-2 pb-3 border-b border-[#CCD8CE]">
+                    {tier.isCustom ? (
+                      <div>
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-2xl font-extrabold tracking-tight font-heading text-[#1B281F]">
+                            باقة مؤسسية مخصصة
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[#1F7A46] mt-1 font-semibold">
+                          تبدأ من {price} ر.س / شهرياً • تسعير حسب حجم العقود والإدارات
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-4xl font-extrabold tracking-tight font-heading text-[#1B281F]">
+                            {price === 0 ? 'مجاناً' : price}
+                          </span>
+                          {price > 0 && (
+                            <span className="text-xs text-[#566A5C] font-semibold">
+                              ر.س / شهرياً
+                            </span>
+                          )}
+                        </div>
+                        {price === 0 ? (
+                          <p className="text-[11px] text-[#1F7A46] mt-1 font-semibold">
+                            مجاناً طوال فترة الدراسة الجامعية (.edu.sa)
+                          </p>
+                        ) : billingCycle === 'yearly' ? (
+                          <p className="text-[11px] text-[#1F7A46] mt-1 font-semibold">
+                            تُدفع سنوياً بقيمة {price * 12} ر.س (توفير {(tier.priceMonthly - tier.priceYearly) * 12} ر.س)
+                          </p>
+                        ) : (
+                          <p className="text-[11px] text-[#566A5C] mt-1">
+                            فوترة شهرية مرنة بدون التزام سنوي
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
 
                   {/* Features List */}
-                  <div className="space-y-2.5 text-xs pt-2">
+                  <div className="space-y-2.5 text-xs pt-1">
                     <p className="font-bold text-[#1B281F]">المزايا المضمنة:</p>
                     {tier.features.map((feat, i) => (
                       <div key={i} className="flex items-start gap-2">
@@ -235,7 +403,7 @@ export default function PricingPage() {
                       </div>
                     ))}
                     {tier.notIncluded.map((feat, i) => (
-                      <div key={i} className="flex items-start gap-2 opacity-50">
+                      <div key={i} className="flex items-start gap-2 opacity-55">
                         <X className="h-4 w-4 text-[#566A5C] shrink-0 mt-0.5" />
                         <span className="text-[#566A5C] leading-relaxed">{feat}</span>
                       </div>
@@ -243,7 +411,7 @@ export default function PricingPage() {
                   </div>
                 </div>
 
-                <div className="pt-6 mt-6 border-t border-[#CCD8CE]">
+                <div className="pt-5 mt-5 border-t border-[#CCD8CE]">
                   <Link href={tier.ctaHref} className="w-full block">
                     <Button
                       className={`w-full text-xs font-bold h-11 cursor-pointer transition-all ${
@@ -252,7 +420,8 @@ export default function PricingPage() {
                           : 'bg-[#F5F7F5] hover:bg-[#E8EFE9] text-[#1B281F] border border-[#CCD8CE]'
                       }`}
                     >
-                      {tier.ctaText}
+                      <span>{tier.ctaText}</span>
+                      <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
                     </Button>
                   </Link>
                 </div>
@@ -261,60 +430,53 @@ export default function PricingPage() {
           })}
         </section>
 
-        {/* Feature Comparison Table */}
+        {/* Detailed Comparison Table: Practice Management vs. Enterprise CLM vs. Academic */}
         <section className="bg-white rounded-2xl border border-[#CCD8CE] overflow-hidden shadow-xs">
-          <div className="p-5 border-b border-[#CCD8CE] bg-[#F5F7F5]">
-            <h2 className="text-lg font-bold text-[#1B281F] font-heading">مقارنة تفصيلية بين الباقات</h2>
-            <p className="text-xs text-[#566A5C]">مواصفات دقيقة تساعدك على اختيار الباقة الملائمة لحجم أعمالك</p>
+          <div className="p-6 border-b border-[#CCD8CE] bg-[#F5F7F5] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg sm:text-xl font-bold text-[#1B281F] font-heading">
+                مقارنة تفصيلية: إدارة الممارسة والتقاضي مقابل حوكمة العقود المؤسسية (CLM)
+              </h2>
+              <p className="text-xs text-[#566A5C] mt-0.5">
+                تفصيل دقيق للمزايا بين باقات الأكاديمية، المحامي المستقل، مكاتب المحاماة، والشركات
+              </p>
+            </div>
+            <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1F7A46]">
+              <ShieldCheck className="w-4 h-4" />
+              <span>تشفير سيادي متوافق مع PDPL في جميع الباقات</span>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-right border-collapse">
               <thead>
-                <tr className="bg-[#E8EFE9]/50 border-b border-[#CCD8CE] text-[#34543F]">
-                  <th className="p-3.5 font-bold">الميزة / الخدمة</th>
-                  <th className="p-3.5 font-bold text-center">طالب ومتدرب</th>
-                  <th className="p-3.5 font-bold text-center text-[#1F7A46]">ممارس فردي (موصى بها)</th>
-                  <th className="p-3.5 font-bold text-center">مكتب محاماة</th>
+                <tr className="bg-[#E8EFE9]/60 border-b border-[#CCD8CE] text-[#34543F]">
+                  <th className="p-3.5 font-bold min-w-[240px]">الميزة / القدرة النظامية</th>
+                  <th className="p-3.5 font-bold text-center">الأكاديمية والطلاب (Free)</th>
+                  <th className="p-3.5 font-bold text-center">المحامي المستقل (Solo)</th>
+                  <th className="p-3.5 font-bold text-center text-[#1F7A46]">مكاتب المحاماة (Firm Pro)</th>
+                  <th className="p-3.5 font-bold text-center">المنشآت والشركات (Enterprise CLM)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#CCD8CE] text-[#1B281F]">
-                <tr>
-                  <td className="p-3.5 font-medium">فحص وتدقيق مواد نظام العمل والمعاملات المدنية</td>
-                  <td className="p-3.5 text-center text-[#566A5C]">20 عقداً شهرياً</td>
-                  <td className="p-3.5 text-center text-[#1F7A46] font-bold">غير محدود</td>
-                  <td className="p-3.5 text-center text-[#1F7A46] font-bold">غير محدود</td>
-                </tr>
-                <tr>
-                  <td className="p-3.5 font-medium">الذكاء الاصطناعي المحلي السيادي (معزول تماماً)</td>
-                  <td className="p-3.5 text-center text-[#566A5C]">محدد</td>
-                  <td className="p-3.5 text-center text-[#1F7A46] font-bold">✓ مشمول</td>
-                  <td className="p-3.5 text-center text-[#1F7A46] font-bold">✓ مشمول</td>
-                </tr>
-                <tr>
-                  <td className="p-3.5 font-medium">عدد الموكلين والقضايا النشطة</td>
-                  <td className="p-3.5 text-center text-[#566A5C]">نماذج تدريبية</td>
-                  <td className="p-3.5 text-center">حتى 50 ملفاً</td>
-                  <td className="p-3.5 text-center text-[#1F7A46] font-bold">غير محدود</td>
-                </tr>
-                <tr>
-                  <td className="p-3.5 font-medium">بوابة الموكل السيادية بروابط WhatsApp</td>
-                  <td className="p-3.5 text-center text-[#CCD8CE]">—</td>
-                  <td className="p-3.5 text-center text-[#1F7A46] font-bold">✓ مشمول</td>
-                  <td className="p-3.5 text-center text-[#1F7A46] font-bold">✓ بهوية المكتب</td>
-                </tr>
-                <tr>
-                  <td className="p-3.5 font-medium">مقاعد فريق العمل وتوزيع الأدوار (RBAC)</td>
-                  <td className="p-3.5 text-center text-[#CCD8CE]">—</td>
-                  <td className="p-3.5 text-center text-[#566A5C]">مستخدم واحد</td>
-                  <td className="p-3.5 text-center text-[#1F7A46] font-bold">5 مستخدمين (+إضافي)</td>
-                </tr>
-                <tr>
-                  <td className="p-3.5 font-medium">العمل بدون إنترنت في قاعات المحاكم (PWA)</td>
-                  <td className="p-3.5 text-center text-[#1F7A46]">✓</td>
-                  <td className="p-3.5 text-center text-[#1F7A46] font-bold">✓</td>
-                  <td className="p-3.5 text-center text-[#1F7A46] font-bold">✓</td>
-                </tr>
+                {comparisonGroups.map((group) => (
+                  <React.Fragment key={group.category}>
+                    <tr className="bg-[#F5F7F5]">
+                      <td colSpan={5} className="p-3 font-extrabold text-[#1F7A46] text-xs">
+                        {group.category}
+                      </td>
+                    </tr>
+                    {group.rows.map((row) => (
+                      <tr key={row.feature} className="hover:bg-[#F5F7F5]/40">
+                        <td className="p-3.5 font-medium">{row.feature}</td>
+                        <td className="p-3.5 text-center text-[#566A5C]">{row.student}</td>
+                        <td className="p-3.5 text-center">{row.solo}</td>
+                        <td className="p-3.5 text-center text-[#1F7A46] font-bold">{row.firm}</td>
+                        <td className="p-3.5 text-center font-bold text-[#1B281F]">{row.enterprise}</td>
+                      </tr>
+                    ))}
+                  </React.Fragment>
+                ))}
               </tbody>
             </table>
           </div>
@@ -323,8 +485,8 @@ export default function PricingPage() {
         {/* FAQ Section */}
         <section className="space-y-4">
           <div className="text-center space-y-1 mb-6">
-            <h2 className="text-xl font-bold font-heading text-[#1B281F]">الأسئلة الشائعة حول الاشتراكات</h2>
-            <p className="text-xs text-[#566A5C]">إجابات واضحة ومباشرة عن الأمان والضمانات والتفعيل</p>
+            <h2 className="text-xl font-bold font-heading text-[#1B281F]">الأسئلة الشائعة حول باقات «مقر»</h2>
+            <p className="text-xs text-[#566A5C]">إجابات واضحة ومباشرة عن الفروق بين الباقات والأمان والتفعيل</p>
           </div>
 
           <div className="space-y-3 max-w-3xl mx-auto">

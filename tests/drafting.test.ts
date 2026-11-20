@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { TEMPLATES } from '../src/lib/sanad/drafting/templates'
-import { evaluateSafeguards, GLOBAL_SAFEGUARDS } from '../src/lib/sanad/drafting/regulatorySafeguards'
+import { TEMPLATES } from '../src/lib/core/drafting/templates'
+import { evaluateSafeguards, GLOBAL_SAFEGUARDS } from '../src/lib/core/drafting/regulatorySafeguards'
 
 describe('Legal Drafting Engine & Template Library', () => {
   it('registers all standard Saudi contracts and court pleadings', () => {

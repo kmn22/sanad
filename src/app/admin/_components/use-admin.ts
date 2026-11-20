@@ -129,7 +129,7 @@ export function useAdmin() {
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `sanad-data-export-${new Date().toISOString().slice(0, 10)}.json`
+      a.download = `maqar-data-export-${new Date().toISOString().slice(0, 10)}.json`
       document.body.appendChild(a)
       a.click()
       a.remove()

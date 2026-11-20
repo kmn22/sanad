@@ -1,36 +1,28 @@
+import { timingSafeEqual } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { runAutomatedReminders } from '@/lib/reminders'
 import { processDueJobs } from '@/lib/jobs'
-import { getAuthContext } from '@/lib/auth/workspace'
+import { getAuthContext, isPlatformSuperAdmin } from '@/lib/auth/workspace'
 import { logError } from '@/lib/observability'
+
+function safeEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a)
+  const bufB = Buffer.from(b)
+  return bufA.length === bufB.length && timingSafeEqual(bufA, bufB)
+}
 
 function isAuthorized(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET
-  const authHeader = req.headers.get('authorization')
-  const cronSecretHeader = req.headers.get('x-cron-secret')
-  const querySecret = req.nextUrl.searchParams.get('secret')
-
-  if (secret) {
-    if (authHeader === `Bearer ${secret}`) return true
-    if (cronSecretHeader === secret) return true
-    if (querySecret === secret) return true
-    return false
-  }
-
-  // If CRON_SECRET is not configured in production, refuse access
-  if (process.env.NODE_ENV === 'production') {
-    return false
-  }
-
-  // In non-production or dev, allow if user is authenticated or dev environment
-  return true
+  if (!secret) return false
+  const authHeader = req.headers.get('authorization') || ''
+  const cronSecretHeader = req.headers.get('x-cron-secret') || ''
+  return safeEqual(authHeader, `Bearer ${secret}`) || safeEqual(cronSecretHeader, secret)
 }
 
 export async function GET(req: NextRequest) {
   if (!isAuthorized(req)) {
-    // Check if triggered by an authenticated admin/user
     const auth = await getAuthContext().catch(() => null)
-    if (!auth) {
+    if (!auth || !isPlatformSuperAdmin(auth)) {
       return NextResponse.json({ error: 'Unauthorized cron request' }, { status: 401 })
     }
   }

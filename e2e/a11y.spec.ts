@@ -30,10 +30,11 @@ test.describe('accessibility (WCAG 2.1 A/AA)', () => {
 
   test('firm portal has no serious violations', async ({ page }) => {
     test.skip(!OWNER_EMAIL || !OWNER_PASSWORD, 'E2E credentials not set')
+    await page.context().setExtraHTTPHeaders({ 'x-forwarded-for': '10.240.1.10' })
     await page.goto('/login')
     await page.locator('#login-email').fill(OWNER_EMAIL!)
     await page.locator('#login-password').fill(OWNER_PASSWORD!)
-    await page.getByRole('button', { name: /تسجيل الدخول|دخول/ }).click()
+    await page.getByRole('button', { name: 'تسجيل الدخول', exact: true }).click()
     await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 })
     await page.goto('/firm')
     await page.waitForLoadState('networkidle')

@@ -1,12 +1,24 @@
 'use server'
 
-import { db } from '@/lib/db'
+import { db, getTenantDb } from '@/lib/db'
 import { communicationWorkspaceWhere, getAuthContext } from '@/lib/auth/workspace'
 import { caseAccessWhere, caseLinkedAccessWhere } from '@/lib/auth/capabilities'
-import { filterTaskStats } from '@/lib/sanad/task-stats'
+import { filterTaskStats } from '@/lib/core/task-stats'
+import type { Workspace } from '@/lib/core/types'
+
+function legalWorkspace(workspaceId = 'unauthenticated'): Workspace {
+  return {
+    id: workspaceId,
+    name: 'المقر القانوني',
+    vertical: 'LEGAL',
+    activeModules: ['cases', 'documents', 'calendar', 'communications', 'invoices', 'compliance'],
+  }
+}
 
 function emptyDashboard() {
   return {
+    workspaceCategory: 'LEGAL' as const,
+    workspace: legalWorkspace(),
     stats: {
       expiringCompliance: 0,
       expiredCompliance: 0,
@@ -47,23 +59,25 @@ export async function getLawyerDashboard() {
   const auth = await getAuthContext()
   if (!auth) return emptyDashboard()
   const workspaceId = auth.workspaceId
+  const tdb = getTenantDb(auth)
 
-  const wsWhere = { workspaceId, deletedAt: null }
+  const wsWhere = { workspaceId, orgId: auth.orgId, deletedAt: null }
+  const wsWhereSimple = { workspaceId, deletedAt: null }
   const communicationWhere = communicationWorkspaceWhere(workspaceId)
 
   const now = new Date()
   const in30 = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
 
   const [complianceItems, cases, documents, tasks, briefs, timeEntries, clients, invoices, communications] = await Promise.all([
-    db.complianceItem.findMany({ where: wsWhere, orderBy: { expiryDate: 'asc' } }),
-    db.legalCase.findMany({ where: { ...wsWhere, ...caseAccessWhere(auth) }, orderBy: { updatedAt: 'desc' }, include: { client: { select: { id: true, name: true } } } }),
-    db.legalDocument.findMany({ where: { ...wsWhere, ...caseLinkedAccessWhere(auth) }, orderBy: { updatedAt: 'desc' } }),
-    db.task.findMany({ where: { ...wsWhere, ...caseLinkedAccessWhere(auth) }, orderBy: { dueDate: 'asc' } }),
+    tdb.complianceItem.findMany({ where: wsWhereSimple, orderBy: { expiryDate: 'asc' } }),
+    tdb.legalCase.findMany({ where: { ...wsWhere, ...caseAccessWhere(auth) }, orderBy: { updatedAt: 'desc' }, include: { client: { select: { id: true, name: true } } } }),
+    tdb.legalDocument.findMany({ where: { ...wsWhereSimple, ...caseLinkedAccessWhere(auth) }, orderBy: { updatedAt: 'desc' } }),
+    tdb.task.findMany({ where: { ...wsWhereSimple, ...caseLinkedAccessWhere(auth) }, orderBy: { dueDate: 'asc' } }),
     db.dailyBrief.findMany({ orderBy: { publishedAt: 'desc' }, take: 6 }),
-    db.timeEntry.findMany({ where: { ...wsWhere, ...caseLinkedAccessWhere(auth) }, orderBy: { date: 'desc' }, take: 30, include: { case: true } }),
-    db.client.findMany({ where: wsWhere, include: { _count: { select: { cases: true, invoices: true, communications: true } } }, orderBy: { createdAt: 'desc' } }),
-    db.invoice.findMany({ where: { ...wsWhere, ...caseLinkedAccessWhere(auth) }, include: { client: { select: { name: true, company: true } }, case: { select: { title: true } } }, orderBy: { createdAt: 'desc' } }),
-    db.communication.findMany({ where: { AND: [communicationWhere, caseLinkedAccessWhere(auth)] }, include: { client: { select: { name: true } }, case: { select: { title: true } } }, orderBy: { date: 'desc' }, take: 20 }),
+    tdb.timeEntry.findMany({ where: { ...wsWhereSimple, ...caseLinkedAccessWhere(auth) }, orderBy: { date: 'desc' }, take: 30, include: { case: true } }),
+    tdb.client.findMany({ where: wsWhereSimple, include: { _count: { select: { cases: true, invoices: true, communications: true } } }, orderBy: { createdAt: 'desc' } }),
+    tdb.invoice.findMany({ where: { ...wsWhereSimple, ...caseLinkedAccessWhere(auth) }, include: { client: { select: { name: true, company: true } }, case: { select: { title: true } } }, orderBy: { createdAt: 'desc' } }),
+    tdb.communication.findMany({ where: { AND: [communicationWhere, caseLinkedAccessWhere(auth)] }, include: { client: { select: { name: true } }, case: { select: { title: true } } }, orderBy: { date: 'desc' }, take: 20 }),
   ])
 
   const expiringSoon = complianceItems.filter(
@@ -106,6 +120,8 @@ export async function getLawyerDashboard() {
   const commToday = communications.filter((c) => new Date(c.date).toDateString() === today)
 
   return {
+    workspaceCategory: 'LEGAL' as const,
+    workspace: legalWorkspace(workspaceId),
     stats: {
       expiringCompliance: expiringSoon.length,
       expiredCompliance: expired.length,

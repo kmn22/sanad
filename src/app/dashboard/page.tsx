@@ -5,18 +5,22 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Toaster as SonnerToaster } from '@/components/ui/sonner'
-import { useLang } from '@/lib/sanad/i18n'
+import { useLang } from '@/lib/core/i18n'
 import { useQuery } from '@tanstack/react-query'
 import { getLawyerDashboard } from '@/app/actions/dashboard'
 import { getStudentDashboard } from '@/app/actions/studentDashboard'
 import dynamic from 'next/dynamic'
-import { TodayFocusView } from '@/components/sanad/TodayFocusView'
-import { DashboardView } from '@/components/sanad/DashboardView'
-import { TopNav } from '@/components/sanad/TopNav'
-import { MobileNav } from '@/components/sanad/MobileNav'
-import { Sidebar } from '@/components/sanad/Sidebar'
-import { EcosystemMap } from '@/components/sanad/EcosystemMap'
-import type { DashboardData, StudentDashboardData } from '@/lib/sanad/types'
+import { TodayFocusView } from '@/components/core/TodayFocusView'
+import { DashboardView } from '@/components/core/DashboardView'
+import { EcosystemMap } from '@/components/core/EcosystemMap'
+import {
+  MaqarAppShell,
+  ExecutiveContractDashboard,
+  LitigationPleadingWorkbench,
+  AcademicResearchLabHub,
+  VerticalModulePanel,
+} from '@/components/maqar'
+import type { DashboardData, StudentDashboardData } from '@/lib/core/types'
 
 const ViewLoadingSkeleton = () => (
   <div className="space-y-4 p-6 animate-pulse" dir="rtl">
@@ -31,25 +35,25 @@ const ViewLoadingSkeleton = () => (
   </div>
 )
 
-const CasesView = dynamic(() => import('@/components/sanad/CasesView').then((m) => m.CasesView), { loading: ViewLoadingSkeleton })
-const InvoicesView = dynamic(() => import('@/components/sanad/InvoicesView').then((m) => m.InvoicesView), { loading: ViewLoadingSkeleton })
-const ScannerView = dynamic(() => import('@/components/sanad/ScannerView').then((m) => m.ScannerView), { loading: ViewLoadingSkeleton })
-const ResearchHubView = dynamic(() => import('@/components/sanad/ResearchHubView').then((m) => m.ResearchHubView), { loading: ViewLoadingSkeleton })
-const DailyBriefView = dynamic(() => import('@/components/sanad/DailyBriefView').then((m) => m.DailyBriefView), { loading: ViewLoadingSkeleton })
-const DocumentsView = dynamic(() => import('@/components/sanad/DocumentsView').then((m) => m.DocumentsView), { loading: ViewLoadingSkeleton })
-const DeepWorkView = dynamic(() => import('@/components/sanad/DeepWorkView').then((m) => m.DeepWorkView), { loading: ViewLoadingSkeleton })
-const TasksView = dynamic(() => import('@/components/sanad/TasksView').then((m) => m.TasksView), { loading: ViewLoadingSkeleton })
-const ClientsView = dynamic(() => import('@/components/sanad/ClientsView').then((m) => m.ClientsView), { loading: ViewLoadingSkeleton })
-const ComplianceView = dynamic(() => import('@/components/sanad/ComplianceView').then((m) => m.ComplianceView), { loading: ViewLoadingSkeleton })
-const CalendarView = dynamic(() => import('@/components/sanad/CalendarView').then((m) => m.CalendarView), { loading: ViewLoadingSkeleton })
-const CommunicationsView = dynamic(() => import('@/components/sanad/CommunicationsView').then((m) => m.CommunicationsView), { loading: ViewLoadingSkeleton })
-const StudentView = dynamic(() => import('@/components/sanad/StudentView').then((m) => m.StudentView), { loading: ViewLoadingSkeleton })
-const CommandPalette = dynamic(() => import('@/components/sanad/CommandPalette').then((m) => m.CommandPalette))
+const CasesView = dynamic(() => import('@/components/core/CasesView').then((m) => m.CasesView), { loading: ViewLoadingSkeleton })
+const InvoicesView = dynamic(() => import('@/components/core/InvoicesView').then((m) => m.InvoicesView), { loading: ViewLoadingSkeleton })
+const ScannerView = dynamic(() => import('@/components/core/ScannerView').then((m) => m.ScannerView), { loading: ViewLoadingSkeleton })
+const ResearchHubView = dynamic(() => import('@/components/core/ResearchHubView').then((m) => m.ResearchHubView), { loading: ViewLoadingSkeleton })
+const DailyBriefView = dynamic(() => import('@/components/core/DailyBriefView').then((m) => m.DailyBriefView), { loading: ViewLoadingSkeleton })
+const DocumentsView = dynamic(() => import('@/components/core/DocumentsView').then((m) => m.DocumentsView), { loading: ViewLoadingSkeleton })
+const DeepWorkView = dynamic(() => import('@/components/core/DeepWorkView').then((m) => m.DeepWorkView), { loading: ViewLoadingSkeleton })
+const TasksView = dynamic(() => import('@/components/core/TasksView').then((m) => m.TasksView), { loading: ViewLoadingSkeleton })
+const ClientsView = dynamic(() => import('@/components/core/ClientsView').then((m) => m.ClientsView), { loading: ViewLoadingSkeleton })
+const ComplianceView = dynamic(() => import('@/components/core/ComplianceView').then((m) => m.ComplianceView), { loading: ViewLoadingSkeleton })
+const CalendarView = dynamic(() => import('@/components/core/CalendarView').then((m) => m.CalendarView), { loading: ViewLoadingSkeleton })
+const CommunicationsView = dynamic(() => import('@/components/core/CommunicationsView').then((m) => m.CommunicationsView), { loading: ViewLoadingSkeleton })
+const StudentView = dynamic(() => import('@/components/core/StudentView').then((m) => m.StudentView), { loading: ViewLoadingSkeleton })
 
 type View = 'today' | 'dashboard' | 'compliance' | 'cases' | 'deepwork' | 'tasks' | 'documents' | 'clients' | 'invoices' | 'scanner' | 'calendar' | 'communications' | 'briefs' | 'research' | 'ecosystem'
 type Persona = 'lawyer' | 'student'
 
-const PERSONA_STORAGE_KEY = 'sanad.persona'
+const PERSONA_STORAGE_KEY = 'maqar.persona'
+const LEGACY_PERSONA_STORAGE_KEY = 'sanad.persona'
 
 export default function Home() {
   const router = useRouter()
@@ -58,8 +62,6 @@ export default function Home() {
   const [persona, setPersona] = useState<Persona>('lawyer')
   const [view, setView] = useState<string>('today')
   const [studentTab, setStudentTab] = useState<string>('overview')
-  const [mounted, setMounted] = useState(false)
-  const [paletteOpen, setPaletteOpen] = useState(false)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -96,20 +98,6 @@ export default function Home() {
 
   const onChange = onRefresh
 
-  useEffect(() => { setMounted(true) }, [])
-
-  const educationEnabled = (session?.user as { workspaceType?: string } | undefined)?.workspaceType === 'academic'
-
-  useEffect(() => {
-    if (!educationEnabled) {
-      // Non-academic workspaces have no student mode; never restore it.
-      setPersona('lawyer')
-      return
-    }
-    const saved = typeof window !== 'undefined' ? localStorage.getItem(PERSONA_STORAGE_KEY) : null
-    if (saved === 'student' || saved === 'lawyer') setPersona(saved)
-  }, [educationEnabled])
-
   useEffect(() => {
     if (process.env.NODE_ENV === 'production') {
       if ('serviceWorker' in navigator) {
@@ -131,21 +119,25 @@ export default function Home() {
     }
   }, [])
 
+  const educationEnabled = (session?.user as { workspaceType?: string } | undefined)?.workspaceType === 'academic'
+
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault()
-        setPaletteOpen((o) => !o)
-      }
+    if (!educationEnabled) {
+      // Non-academic workspaces have no student mode; never restore it.
+      setPersona('lawyer')
+      return
     }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [])
+    const saved =
+      typeof window !== 'undefined'
+        ? localStorage.getItem(PERSONA_STORAGE_KEY) || localStorage.getItem(LEGACY_PERSONA_STORAGE_KEY)
+        : null
+    if (saved === 'student' || saved === 'lawyer') setPersona(saved)
+  }, [educationEnabled])
 
   useEffect(() => {
     if (!data) return
     const overdue = (data.stats?.overdueTasks || 0) + (data.stats?.outstandingInvoices || 0)
-    const baseTitle = 'سند — لوحة العمليات اليومية'
+    const baseTitle = 'مقر — لوحة القيادة القانونية'
     document.title = overdue > 0 ? `(${overdue}) ${baseTitle}` : baseTitle
   }, [data])
 
@@ -163,107 +155,119 @@ export default function Home() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background" dir="rtl">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 rounded-2xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center animate-pulse">
-            <span className="text-2xl font-bold text-emerald-400">س</span>
+          <div className="h-12 w-12 rounded-2xl bg-accent border border-border flex items-center justify-center animate-pulse">
+            <span className="text-2xl font-bold text-primary">م</span>
           </div>
-          <p className="text-sm text-muted-foreground animate-pulse">جاري التحقق من مساحة العمل...</p>
+          <p className="text-sm text-muted-foreground animate-pulse">جاري التحقق من المقر الرقمي...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background relative overflow-hidden" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-600/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:32px] pointer-events-none" />
-      
-      <div className="relative z-10 flex flex-col min-h-screen w-full">
+    <>
       <SonnerToaster position="top-right" richColors closeButton />
-
-      <TopNav
-        persona={persona}
-        switchPersona={switchPersona}
+      <MaqarAppShell
+        initialRole={persona === 'student' ? 'LAW_STUDENT' : 'LAW_FIRM'}
         loading={loading}
         onRefresh={onRefresh}
-        setPaletteOpen={setPaletteOpen}
-        mounted={mounted}
-      />
-
-      <MobileNav
-        persona={persona}
-        view={persona === 'student' ? studentTab : view}
-        setView={persona === 'student' ? setStudentTab : setView}
-      />
-
-      <div className="flex flex-1 mx-auto max-w-7xl w-full px-4 sm:px-6 lg:px-8 py-6 gap-6">
-        <Sidebar
-          persona={persona}
-          view={persona === 'student' ? studentTab : view}
-          setView={persona === 'student' ? setStudentTab : setView}
-          data={data}
-          studentData={studentData}
-        />
-
-        <main className="flex-1 min-w-0">
-          {view === 'ecosystem' ? (
-            <EcosystemMap onClose={() => setView('today')} />
-          ) : (
-            <>
-              {loading && (!data || (persona === 'student' && !studentData)) ? (
-                <div className="space-y-4 animate-pulse">
-                  <div className="h-8 w-48 bg-muted rounded" />
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">{[1, 2, 3, 4].map((i) => <div key={i} className="h-20 bg-muted rounded-lg" />)}</div>
-                  <div className="h-64 bg-muted rounded-lg" />
+        onModuleChange={(item, nextRole) => {
+          if (nextRole === 'LAW_STUDENT' && educationEnabled) {
+            setPersona('student')
+            if (item.legacyViewKey) setStudentTab(item.legacyViewKey)
+          } else {
+            setPersona('lawyer')
+            if (item.legacyViewKey) setView(item.legacyViewKey)
+          }
+        }}
+      >
+        {({ activeModule, activeOrg, role }) => (
+          <div className="space-y-5">
+            {/* Active Module Context Banner */}
+            <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-accent text-accent-foreground border border-border">
+                    {activeOrg.name[lang]}
+                  </span>
+                  <span className="text-xs text-muted-foreground">•</span>
+                  <span className="text-xs font-semibold text-primary">
+                    {activeModule.label[lang]}
+                  </span>
                 </div>
-              ) : persona === 'student' && studentData ? (
-                <StudentView
-                  data={studentData}
-                  onChange={onChange}
-                  activeTab={studentTab}
-                  onTabChange={setStudentTab}
-                />
-              ) : data ? (
-                <>
-                  <div className="mb-4 flex justify-end">
-                    <Button variant="outline" size="sm" onClick={() => setView('ecosystem')}>
-                      🌐 {t('dash.ecosystem') || 'خريطة الربط البيئي'}
-                    </Button>
+                <h1 className="text-lg sm:text-xl font-extrabold text-foreground mt-1">
+                  {activeModule.label[lang]}
+                </h1>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {activeModule.subtitle[lang]}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => setView('ecosystem')} className="rounded-xl text-xs">
+                  🌐 {t('dash.ecosystem') || 'خريطة الربط البيئي'}
+                </Button>
+              </div>
+            </div>
+
+            {view === 'ecosystem' ? (
+              <EcosystemMap onClose={() => setView('today')} />
+            ) : activeModule.id === 'contract-vault' ? (
+              <ExecutiveContractDashboard />
+            ) : activeModule.id === 'submissions-briefs' ? (
+              <LitigationPleadingWorkbench />
+            ) : activeModule.id === 'research-lab' || activeModule.id === 'precedent-bank' ? (
+              <AcademicResearchLabHub key={activeModule.id} initialSection="RAG_LAB" />
+            ) : activeModule.id === 'drafting-simulator' ? (
+              <AcademicResearchLabHub key="drafting-sim" initialSection="DRAFTING_SIMULATOR" />
+            ) : activeModule.id === 'mentorship-internships' ? (
+              <AcademicResearchLabHub key="talent-dir" initialSection="TALENT_DIRECTORY" />
+            ) : ['project-boards', 'client-portals', 'service-packages'].includes(activeModule.id) ? (
+              <VerticalModulePanel vertical="GENERAL" />
+            ) : activeModule.id === 'poa-compliance' ? (
+              <VerticalModulePanel vertical="LEGAL" />
+            ) : ['ai-case-briefs', 'study-rooms', 'academic-tracker'].includes(activeModule.id) ? (
+              <VerticalModulePanel vertical="STUDENT" />
+            ) : (
+              <>
+                {loading && (!data || (persona === 'student' && !studentData)) ? (
+                  <div className="space-y-4 animate-pulse">
+                    <div className="h-8 w-48 bg-muted rounded" />
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">{[1, 2, 3, 4].map((i) => <div key={i} className="h-20 bg-muted rounded-lg" />)}</div>
+                    <div className="h-64 bg-muted rounded-lg" />
                   </div>
-                  {view === 'today' && <TodayFocusView data={data} onNavigate={(v) => setView(v)} onStartFocus={() => setView('deepwork')} onRefresh={onRefresh} />}
-                  {view === 'dashboard' && <DashboardView data={data} onNavigate={(v) => setView(v)} />}
-                  {view === 'compliance' && <ComplianceView items={data.compliance.all} onChange={onChange} />}
-                  {view === 'cases' && <CasesView cases={data.cases.all} clients={data.clients} onChange={onChange} />}
-                  {view === 'deepwork' && <DeepWorkView cases={data.cases.all} timeEntries={data.timeEntries} onChange={onChange} />}
-                  {view === 'tasks' && <TasksView tasks={data.tasks.all} cases={data.cases.all} onChange={onChange} />}
-                  {view === 'documents' && <DocumentsView documents={data.documents.all} cases={data.cases.all} onChange={onChange} />}
-                  {view === 'clients' && <ClientsView clients={data.clients} onChange={onChange} />}
-                  {view === 'invoices' && <InvoicesView invoices={data.invoices} clients={data.clients} cases={data.cases.all} timeEntries={data.timeEntries.filter((te: any) => te.billable && !te.invoiced)} stats={data.stats} onChange={onChange} />}
-                  {view === 'scanner' && <ScannerView />}
-                  {view === 'calendar' && <CalendarView onNavigate={(v) => setView(v)} />}
-                  {view === 'communications' && <CommunicationsView cases={data.cases.all} clients={data.clients} onChange={onChange} />}
-                  {view === 'briefs' && <DailyBriefView onNavigateToResearch={() => setView('research')} />}
-                  {view === 'research' && <ResearchHubView onNavigateToDrafting={() => setView('documents')} />}
-                </>
-              ) : (
-                <div className="text-center py-12 text-sm text-muted-foreground">{t('dash.failed_load')} <Button variant="link" onClick={() => onChange()}>{t('dash.retry')}</Button></div>
-              )}
-            </>
-          )}
-        </main>
-      </div>
-
-      <footer className="mt-auto border-t border-border bg-background">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-3">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
-            <p>{t('common.footer_left')}</p>
-            <p className="flex items-center gap-2"><span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />{t('common.footer_right')}</p>
+                ) : (persona === 'student' || role === 'LAW_STUDENT') && studentData ? (
+                  <StudentView
+                    data={studentData}
+                    onChange={onChange}
+                    activeTab={studentTab}
+                    onTabChange={setStudentTab}
+                  />
+                ) : data ? (
+                  <>
+                    {view === 'today' && <TodayFocusView data={data} onNavigate={(v) => setView(v)} onStartFocus={() => setView('deepwork')} onRefresh={onRefresh} />}
+                    {view === 'dashboard' && <DashboardView data={data} onNavigate={(v) => setView(v)} />}
+                    {view === 'compliance' && <ComplianceView items={data.compliance.all} onChange={onChange} />}
+                    {view === 'cases' && <CasesView cases={data.cases.all} clients={data.clients} onChange={onChange} />}
+                    {view === 'deepwork' && <DeepWorkView cases={data.cases.all} timeEntries={data.timeEntries} onChange={onChange} />}
+                    {view === 'tasks' && <TasksView tasks={data.tasks.all} cases={data.cases.all} onChange={onChange} />}
+                    {view === 'documents' && <DocumentsView documents={data.documents.all} cases={data.cases.all} onChange={onChange} />}
+                    {view === 'clients' && <ClientsView clients={data.clients} onChange={onChange} />}
+                    {view === 'invoices' && <InvoicesView invoices={data.invoices} clients={data.clients} cases={data.cases.all} timeEntries={data.timeEntries.filter((te: any) => te.billable && !te.invoiced)} stats={data.stats} onChange={onChange} />}
+                    {view === 'scanner' && <ScannerView />}
+                    {view === 'calendar' && <CalendarView onNavigate={(v) => setView(v)} />}
+                    {view === 'communications' && <CommunicationsView cases={data.cases.all} clients={data.clients} onChange={onChange} />}
+                    {view === 'briefs' && <DailyBriefView onNavigateToResearch={() => setView('research')} />}
+                    {view === 'research' && <ResearchHubView onNavigateToDrafting={() => setView('documents')} />}
+                  </>
+                ) : (
+                  <div className="text-center py-12 text-sm text-muted-foreground">{t('dash.failed_load')} <Button variant="link" onClick={() => onChange()}>{t('dash.retry')}</Button></div>
+                )}
+              </>
+            )}
           </div>
-        </div>
-      </footer>
-
-      {mounted && <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} onNavigate={(v) => setView(v)} onCreate={() => {}} />}
-      </div>
-    </div>
+        )}
+      </MaqarAppShell>
+    </>
   )
 }

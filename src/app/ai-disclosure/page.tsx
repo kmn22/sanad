@@ -5,8 +5,8 @@ import { LandingFooter } from '../_landing/LandingFooter'
 import { Cpu, ShieldCheck, UserCheck, EyeOff, AlertTriangle, ArrowLeft, Mail, Scale } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'إفصاح استخدام الذكاء الاصطناعي — سَنَد للتقنية القانونية',
-  description: 'معايير الشفافية، العزل المحلي، ومحددات الذكاء الاصطناعي التوليدي في منصة سَنَد.',
+  title: 'إفصاح استخدام الذكاء الاصطناعي — مقر للتقنية القانونية',
+  description: 'معايير الشفافية، العزل المحلي، ومحددات الذكاء الاصطناعي التوليدي في منصة مقر.',
 }
 
 export default function AiDisclosurePage() {
@@ -32,7 +32,7 @@ export default function AiDisclosurePage() {
             إفصاح استخدام الذكاء الاصطناعي
           </h1>
           <p className="text-sm text-[#4A5D50] leading-relaxed">
-            بيان بالنماذج الخوارزمية، آليات المعالجة، والضوابط الأخلاقية والنظامية الحاكمة لتوليد ومراجعة النصوص القانونية في سَنَد.
+            بيان بالنماذج الخوارزمية، آليات المعالجة، والضوابط الأخلاقية والنظامية الحاكمة لتوليد ومراجعة النصوص القانونية في مقر.
           </p>
         </div>
 
@@ -43,7 +43,7 @@ export default function AiDisclosurePage() {
             <span>المبدأ الذهبي: الإشراف البشري الإلزامي (Human-in-the-Loop)</span>
           </div>
           <p className="text-xs sm:text-sm text-[#4A5D50] leading-relaxed">
-            تعتمد بعض خصائص منصة سَنَد على نماذج لغوية متخصصة ومستضافة محلياً للمساعدة في التدقيق النظامي وتوليد البدائل التعاقدية المتوافقة. المخرجات آلية بطبيعتها ومعدة لمساعدة الممارس، ولا تعد بديلاً عن الرأي القانوني المستقل للمحامي المرخص. يجب مراجعة أي مخرج ومطابقته مع وقائع كل دعوى أو عقد قبل اعتماده.
+            تعتمد بعض خصائص منصة مقر على نماذج لغوية متخصصة ومستضافة محلياً للمساعدة في التدقيق النظامي وتوليد البدائل التعاقدية المتوافقة. المخرجات آلية بطبيعتها ومعدة لمساعدة الممارس، ولا تعد بديلاً عن الرأي القانوني المستقل للمحامي المرخص. يجب مراجعة أي مخرج ومطابقته مع وقائع كل دعوى أو عقد قبل اعتماده.
           </p>
         </div>
 
@@ -100,7 +100,7 @@ export default function AiDisclosurePage() {
           </p>
           <div className="flex items-center gap-2 pt-1 text-sm font-mono text-[#1F7A46]">
             <Mail className="w-4 h-4" />
-            <a href="mailto:ahmed@sanad.sa" className="hover:underline">ahmed@sanad.sa</a>
+            <a href="mailto:privacy@maqar.sa" className="hover:underline">privacy@maqar.sa</a>
           </div>
         </div>
 

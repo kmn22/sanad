@@ -4,9 +4,9 @@ import { PRIVACY_NOTICE_VERSION } from '@/lib/privacy-version'
 // Re-exported so existing server imports from '@/lib/compliance' keep working.
 export { PRIVACY_NOTICE_VERSION }
 
-export const CONTROLLER_NAME_AR = 'سند'
-export const CONTROLLER_NAME_EN = 'Sanad'
-export const PRIVACY_CONTACT_EMAIL = 'ahmed@sanad.sa'
+export const CONTROLLER_NAME_AR = 'مقر'
+export const CONTROLLER_NAME_EN = 'Maqar'
+export const PRIVACY_CONTACT_EMAIL = 'privacy@maqar.sa'
 
 export function privacyNoticeHash(locale: 'ar' | 'en') {
   return createHash('sha256')

@@ -3,10 +3,10 @@
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { useLang } from '@/lib/sanad/i18n'
+import { useLang } from '@/lib/core/i18n'
 import { useLawyerDashboard } from '@/components/portal/usePortalData'
-import { TodayFocusView } from '@/components/sanad/TodayFocusView'
-import { DashboardView } from '@/components/sanad/DashboardView'
+import { TodayFocusView } from '@/components/core/TodayFocusView'
+import { DashboardView } from '@/components/core/DashboardView'
 import { lawyerHref, type LawyerSection } from './sections'
 
 export const ViewLoadingSkeleton = () => (
@@ -22,19 +22,19 @@ export const ViewLoadingSkeleton = () => (
   </div>
 )
 
-const CasesView = dynamic(() => import('@/components/sanad/CasesView').then((m) => m.CasesView), { loading: ViewLoadingSkeleton })
-const InvoicesView = dynamic(() => import('@/components/sanad/InvoicesView').then((m) => m.InvoicesView), { loading: ViewLoadingSkeleton })
-const ScannerView = dynamic(() => import('@/components/sanad/ScannerView').then((m) => m.ScannerView), { loading: ViewLoadingSkeleton })
-const ResearchHubView = dynamic(() => import('@/components/sanad/ResearchHubView').then((m) => m.ResearchHubView), { loading: ViewLoadingSkeleton })
-const DailyBriefView = dynamic(() => import('@/components/sanad/DailyBriefView').then((m) => m.DailyBriefView), { loading: ViewLoadingSkeleton })
-const DocumentsView = dynamic(() => import('@/components/sanad/DocumentsView').then((m) => m.DocumentsView), { loading: ViewLoadingSkeleton })
-const DeepWorkView = dynamic(() => import('@/components/sanad/DeepWorkView').then((m) => m.DeepWorkView), { loading: ViewLoadingSkeleton })
-const TasksView = dynamic(() => import('@/components/sanad/TasksView').then((m) => m.TasksView), { loading: ViewLoadingSkeleton })
-const ClientsView = dynamic(() => import('@/components/sanad/ClientsView').then((m) => m.ClientsView), { loading: ViewLoadingSkeleton })
-const ComplianceView = dynamic(() => import('@/components/sanad/ComplianceView').then((m) => m.ComplianceView), { loading: ViewLoadingSkeleton })
-const CalendarView = dynamic(() => import('@/components/sanad/CalendarView').then((m) => m.CalendarView), { loading: ViewLoadingSkeleton })
-const CommunicationsView = dynamic(() => import('@/components/sanad/CommunicationsView').then((m) => m.CommunicationsView), { loading: ViewLoadingSkeleton })
-const EcosystemMap = dynamic(() => import('@/components/sanad/EcosystemMap').then((m) => m.EcosystemMap), { loading: ViewLoadingSkeleton })
+const CasesView = dynamic(() => import('@/components/core/CasesView').then((m) => m.CasesView), { loading: ViewLoadingSkeleton })
+const InvoicesView = dynamic(() => import('@/components/core/InvoicesView').then((m) => m.InvoicesView), { loading: ViewLoadingSkeleton })
+const ScannerView = dynamic(() => import('@/components/core/ScannerView').then((m) => m.ScannerView), { loading: ViewLoadingSkeleton })
+const ResearchHubView = dynamic(() => import('@/components/core/ResearchHubView').then((m) => m.ResearchHubView), { loading: ViewLoadingSkeleton })
+const DailyBriefView = dynamic(() => import('@/components/core/DailyBriefView').then((m) => m.DailyBriefView), { loading: ViewLoadingSkeleton })
+const DocumentsView = dynamic(() => import('@/components/core/DocumentsView').then((m) => m.DocumentsView), { loading: ViewLoadingSkeleton })
+const DeepWorkView = dynamic(() => import('@/components/core/DeepWorkView').then((m) => m.DeepWorkView), { loading: ViewLoadingSkeleton })
+const TasksView = dynamic(() => import('@/components/core/TasksView').then((m) => m.TasksView), { loading: ViewLoadingSkeleton })
+const ClientsView = dynamic(() => import('@/components/core/ClientsView').then((m) => m.ClientsView), { loading: ViewLoadingSkeleton })
+const ComplianceView = dynamic(() => import('@/components/core/ComplianceView').then((m) => m.ComplianceView), { loading: ViewLoadingSkeleton })
+const CalendarView = dynamic(() => import('@/components/core/CalendarView').then((m) => m.CalendarView), { loading: ViewLoadingSkeleton })
+const CommunicationsView = dynamic(() => import('@/components/core/CommunicationsView').then((m) => m.CommunicationsView), { loading: ViewLoadingSkeleton })
+const EcosystemMap = dynamic(() => import('@/components/core/EcosystemMap').then((m) => m.EcosystemMap), { loading: ViewLoadingSkeleton })
 
 /** Renders one practice section. Shared by the Lawyer and Firm portals. */
 export function LawyerSectionView({ section, hrefFor = lawyerHref }: { section: LawyerSection | 'today'; hrefFor?: (view: string) => string }) {

@@ -1,6 +1,6 @@
 import { db } from '@/lib/db'
 import { emailConfigured, sendTransactionalEmail } from '@/lib/email'
-import { evaluateComplianceStatus } from '@/lib/sanad/compliance-calc'
+import { evaluateComplianceStatus } from '@/lib/core/compliance-calc'
 import { notifyUsers } from '@/lib/workflow'
 import { logError } from '@/lib/observability'
 
@@ -189,7 +189,7 @@ export async function runAutomatedReminders(now: Date = new Date()): Promise<Rem
               try {
                 await sendTransactionalEmail({
                   to: user.email,
-                  subject: `[سند] ${title}`,
+                  subject: `[مقر] ${title}`,
                   heading: title,
                   text: message,
                   actionUrl: `${process.env.NEXTAUTH_URL || 'http://localhost:3001'}/?tab=compliance`,
@@ -272,7 +272,7 @@ export async function runAutomatedReminders(now: Date = new Date()): Promise<Rem
             try {
               await sendTransactionalEmail({
                 to: user.email,
-                subject: `[سند] ${title}`,
+                subject: `[مقر] ${title}`,
                 heading: title,
                 text: message,
                 actionUrl: `${process.env.NEXTAUTH_URL || 'http://localhost:3001'}/?tab=cases&caseId=${legalCase.id}`,

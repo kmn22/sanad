@@ -41,8 +41,8 @@ describe('document signatures', () => {
 
     expect(verifyDocumentSignature(tampered)).toBeNull()
     expect(documentSignatureHeaders(signature)).toEqual({
-      'X-Sanad-Document-Signature': signature,
-      'X-Sanad-Document-Signature-Version': 'v1',
+      'X-Maqar-Document-Signature': signature,
+      'X-Maqar-Document-Signature-Version': 'v1',
     })
   })
 })

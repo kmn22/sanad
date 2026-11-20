@@ -337,7 +337,7 @@ export function calculateInvoiceHash(ublXml: string): { hex: string; base64: str
 /**
  * Creates simulated ECDSA signature for testing and non-production signing.
  */
-export function signInvoiceHash(hashBase64: string, privateKeySecret: string = 'sanad_legal_secp256k1_key'): string {
+export function signInvoiceHash(hashBase64: string, privateKeySecret: string = 'maqar_legal_secp256k1_key'): string {
   const hmac = crypto.createHmac('sha256', privateKeySecret)
   hmac.update(hashBase64)
   return hmac.digest('base64')

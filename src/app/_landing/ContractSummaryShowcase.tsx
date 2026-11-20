@@ -111,7 +111,7 @@ export function ContractSummaryShowcase() {
           تلخيص العقود: من 60 صفحة إلى ملخّص ببنودها والتزاماتها ومخاطرها
         </h2>
         <p className="text-sm sm:text-base text-[#4A5D50] max-w-2xl mx-auto leading-relaxed">
-          يقرأ محرك سَنَد السيادي عقودك الطويلة بالكامل، ويستخرج بنودها الجوهرية والتزامات كل طرف ومددها ومخاطرها، بإجابات مستندة إلى مراجع من الأنظمة السعودية.
+          يقرأ محرك «مقر» السيادي عقودك الطويلة بالكامل، ويستخرج بنودها الجوهرية والتزامات كل طرف ومددها ومخاطرها، بإجابات مستندة إلى مراجع من الأنظمة السعودية.
         </p>
       </div>
 
@@ -147,7 +147,7 @@ export function ContractSummaryShowcase() {
         <div className="p-4 sm:px-6 border-b border-[#CCD8CE] bg-[#F5F7F5] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 flex-wrap">
             <span className="px-2.5 py-1 rounded-md bg-[#1F7A46] text-white text-xs font-bold">
-              هكذا يلخّص سَنَد
+              هكذا يلخّص مقر
             </span>
             <span className="text-xs sm:text-sm font-bold text-[#1B281F]">
               {summary.contractTitle} · {summary.estimatedPages} صفحة
@@ -216,7 +216,7 @@ export function ContractSummaryShowcase() {
             <div className="flex items-center justify-between gap-3">
               <span className="text-[11px] text-[#566A5C] flex items-center gap-1.5">
                 <ShieldCheck className="w-4 h-4 text-[#1F7A46]" />
-                يُعالج النص محلياً داخل خوادم سَنَد دون مشاركته مع أي طرف خارجي
+                يُعالج النص محلياً داخل خوادم «مقر» دون مشاركته مع أي طرف خارجي
               </span>
               <Button
                 type="button"

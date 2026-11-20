@@ -5,8 +5,8 @@ import { LandingFooter } from '../_landing/LandingFooter'
 import { FileText, Scale, AlertCircle, ArrowLeft, Mail, CheckCircle2 } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'شروط الاستخدام — سَنَد للتقنية القانونية',
-  description: 'شروط وأحكام استخدام منصة سَنَد للتقنية القانونية في المملكة العربية السعودية.',
+  title: 'شروط الاستخدام — مقر للتقنية القانونية',
+  description: 'شروط وأحكام استخدام منصة مقر للتقنية القانونية في المملكة العربية السعودية.',
 }
 
 export default function TermsPage() {
@@ -32,7 +32,7 @@ export default function TermsPage() {
             شروط وأحكام الاستخدام
           </h1>
           <p className="text-xs text-[#566A5C] font-mono">
-            تاريخ السريان: 28 سبتمبر 2026 — مقدم الخدمة: منصة سَنَد (Sanad)
+            تاريخ السريان: 28 سبتمبر 2026 — مقدم الخدمة: منصة مقر (Maqar)
           </p>
         </div>
 
@@ -40,10 +40,10 @@ export default function TermsPage() {
         <div className="bg-[#FEF6EE] rounded-2xl border border-[#F9DBAF] p-6 space-y-3">
           <div className="flex items-center gap-2 text-[#B54708] font-bold text-sm">
             <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>طبيعة منصة سَنَد ومسؤولية المستشار القانوني</span>
+            <span>طبيعة منصة مقر ومسؤولية المستشار القانوني</span>
           </div>
           <p className="text-xs sm:text-sm text-[#7A2E0E] leading-relaxed">
-            «سَنَد» منصة برمجية رقمية مساعدة لإدارة العمل والتدقيق القانوني، وليست مكتب محاماة ولا تقدم بذاتها استشارات قانونية أو تمثيلاً قضائياً. جميع المخرجات الآلية، بما فيها تدقيق البنود وصياغة المسودات، تتطلب وجوباً مراجعة واعتماد محامٍ ممارس ومؤهل قبل التوقيع أو الإيداع.
+            «مقر» منصة برمجية رقمية مساعدة لإدارة العمل والتدقيق القانوني، وليست مكتب محاماة ولا تقدم بذاتها استشارات قانونية أو تمثيلاً قضائياً. جميع المخرجات الآلية، بما فيها تدقيق البنود وصياغة المسودات، تتطلب وجوباً مراجعة واعتماد محامٍ ممارس ومؤهل قبل التوقيع أو الإيداع.
           </p>
         </div>
 
@@ -95,7 +95,7 @@ export default function TermsPage() {
               5. إيقاف الخدمة وحدود المسؤولية
             </h2>
             <p className="text-xs sm:text-sm text-[#4A5D50] leading-relaxed">
-              تحتفظ سَنَد بحق تعليق الوصول إلى الحساب مؤقتاً في حال رصد سلوك يهدد أمان المنصة أو يشكل انتهاكاً جسيماً لشروط الاستخدام أو للأنظمة السارية. تُقدَّم الخدمات البرمجية على أساس الإمكانات المتاحة، دون تقديم أي ضمان مالي أو قضائي لنتيجة حكم أو نزاع أمام المحاكم.
+              تحتفظ مقر بحق تعليق الوصول إلى الحساب مؤقتاً في حال رصد سلوك يهدد أمان المنصة أو يشكل انتهاكاً جسيماً لشروط الاستخدام أو للأنظمة السارية. تُقدَّم الخدمات البرمجية على أساس الإمكانات المتاحة، دون تقديم أي ضمان مالي أو قضائي لنتيجة حكم أو نزاع أمام المحاكم.
             </p>
           </section>
 
@@ -110,7 +110,7 @@ export default function TermsPage() {
             <div className="pt-2 flex items-center gap-2 text-xs text-[#566A5C]">
               <Mail className="w-3.5 h-3.5 text-[#1F7A46]" />
               <span>للتواصل بشأن الشروط والعقود المؤسسية:</span>
-              <a href="mailto:ahmed@sanad.sa" className="font-mono text-[#1F7A46] font-bold hover:underline">ahmed@sanad.sa</a>
+              <a href="mailto:privacy@maqar.sa" className="font-mono text-[#1F7A46] font-bold hover:underline">privacy@maqar.sa</a>
             </div>
           </section>
         </div>

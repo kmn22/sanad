@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getTenantDb } from '@/lib/db'
 import { getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
-import { canWrite, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
+import { canAccessCase, canWrite, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
 import { processZatcaPhase2, ZatcaInvoiceData, ZATCA_PIH_GENESIS } from '@/lib/zatca'
 import { safeErrorResponse } from '@/lib/http'
 import crypto from 'crypto'
@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
     if (denied) return denied
     const budgeted = await enforceMutationBudget(auth)
     if (budgeted) return budgeted
+    const tdb = getTenantDb(auth)
     const workspaceId = auth.workspaceId
 
     const body = await req.json().catch(() => null)
@@ -29,8 +30,8 @@ export async function POST(req: NextRequest) {
       }, { status: 503 })
     }
 
-    // Retrieve invoice scoped to workspace
-    const invoice = await db.invoice.findFirst({
+    // Retrieve invoice scoped to workspace & verify confidential-case access
+    const invoice = await tdb.invoice.findFirst({
       where: { id: invoiceId, workspaceId, deletedAt: null },
       include: {
         client: true,
@@ -40,10 +41,10 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    if (!invoice) return notFoundJson()
+    if (!invoice || (invoice.caseId && !(await canAccessCase(auth, invoice.caseId)))) return notFoundJson()
 
     // Retrieve previous invoice in this workspace for cryptographic hash chaining
-    const previousInvoice = await db.invoice.findFirst({
+    const previousInvoice = await tdb.invoice.findFirst({
       where: {
         workspaceId,
         id: { not: invoice.id },
@@ -119,8 +120,8 @@ export async function POST(req: NextRequest) {
 
     const result = processZatcaPhase2(zatcaPayload)
 
-    // Update invoice with cryptographic audit data
-    const updatedInvoice = await db.invoice.update({
+    // Update invoice with cryptographic audit data via tenant-isolated Prisma extension
+    const updatedInvoice = await tdb.invoice.update({
       where: { id: invoice.id },
       data: {
         zatcaStatus: 'preview',

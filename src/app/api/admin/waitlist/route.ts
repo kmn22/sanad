@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { canManageUsers, forbiddenJson, getAuthContext, unauthorizedJson } from '@/lib/auth/workspace'
+import { forbiddenJson, getAuthContext, isPlatformSuperAdmin, unauthorizedJson } from '@/lib/auth/workspace'
 
 export async function GET() {
   const auth = await getAuthContext()
   if (!auth) return unauthorizedJson()
-  if (!canManageUsers(auth)) return forbiddenJson()
+  if (!isPlatformSuperAdmin(auth)) return forbiddenJson()
 
   const entries = await db.waitlistEntry.findMany({
     orderBy: { createdAt: 'desc' },

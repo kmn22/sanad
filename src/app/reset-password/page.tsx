@@ -58,7 +58,10 @@ export default function ResetPasswordPage() {
             <div className="bg-[#1F7A46] p-2 rounded-xl text-white">
               <Scale className="w-5 h-5 stroke-[2.2]" />
             </div>
-            <span className="text-xl font-black text-[#1B281F] font-heading">سَنَد</span>
+            <div>
+              <span className="text-xl font-black text-[#1B281F] font-heading block">مقر</span>
+              <span className="text-[10px] text-[#566A5C]">المقر الرقمي للعمليات القانونية والحوكمة</span>
+            </div>
           </Link>
           <Link href="/login" className="text-xs font-bold text-[#1F7A46] hover:underline inline-flex items-center gap-1">
             تسجيل الدخول <ArrowLeft className="w-3.5 h-3.5" />
@@ -68,7 +71,7 @@ export default function ResetPasswordPage() {
         <div className="space-y-1.5">
           <h1 className="text-2xl font-bold text-[#1B281F] font-heading">إعادة تعيين كلمة المرور</h1>
           <p className="text-xs text-[#566A5C] leading-relaxed">
-            أدخل كلمة مرور جديدة قوية لا تقل عن 12 خانة وتحتوي على حروف وأرقام.
+            أدخل كلمة مرور جديدة قوية لا تقل عن 12 خانة وتحتوي على حروف وأرقام لحسابك في «مقر».
           </p>
         </div>
 

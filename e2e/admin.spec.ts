@@ -4,14 +4,19 @@ import { generateSync } from 'otplib'
 const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL
 const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD
 const ADMIN_MFA_SECRET = process.env.E2E_ADMIN_MFA_SECRET
+const OWNER_EMAIL = process.env.E2E_OWNER_EMAIL || 'e2e.owner@maqar.test'
+const LAWYER_EMAIL = process.env.E2E_LAWYER_EMAIL || 'e2e.lawyer@maqar.test'
 const authed = ADMIN_EMAIL && ADMIN_PASSWORD && ADMIN_MFA_SECRET
 
+let ipSeq = 0
+
 async function loginWithMfa(page: Page, email: string, password: string, secret: string) {
+  await page.context().setExtraHTTPHeaders({ 'x-forwarded-for': `10.240.2.${(++ipSeq % 250) + 1}` })
   await page.goto('/login')
   await page.locator('#login-email').fill(email)
   await page.locator('#login-password').fill(password)
   await page.locator('#login-otp').fill(generateSync({ secret }))
-  await page.getByRole('button', { name: /تسجيل الدخول|دخول/ }).click()
+  await page.getByRole('button', { name: 'تسجيل الدخول', exact: true }).click()
   await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 })
 }
 
@@ -60,8 +65,8 @@ test.describe('admin console (MFA-enrolled owner)', () => {
     const users = await api(page, '/api/admin/users')
     expect(users.status).toBe(200)
     const emails = JSON.stringify(users.body)
-    expect(emails).toContain('e2e.owner@sanad.test')
-    expect(emails).toContain('e2e.lawyer@sanad.test')
+    expect(emails).toContain(OWNER_EMAIL)
+    expect(emails).toContain(LAWYER_EMAIL)
 
     const auditLogs = await api(page, '/api/admin/audit-logs')
     expect(auditLogs.status).toBe(200)
@@ -99,7 +104,7 @@ test.describe('admin console (MFA-enrolled owner)', () => {
   test('admin cannot assign the platform admin role', async () => {
     const users = await api(page, '/api/admin/users')
     const lawyer = (users.body as Array<{ id: string; email: string }>).find(
-      (u) => u.email === 'e2e.lawyer@sanad.test',
+      (u) => u.email === LAWYER_EMAIL,
     )
     expect(lawyer).toBeTruthy()
     const res = await api(page, `/api/admin/users/${lawyer!.id}`, {

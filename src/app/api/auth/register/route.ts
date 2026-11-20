@@ -62,6 +62,13 @@ export async function POST(req: Request) {
       if (!invitation || invitation.email.toLowerCase() !== cleanEmail || invitation.acceptedAt || invitation.expiresAt <= new Date()) {
         return NextResponse.json({ error: 'Invitation is invalid or expired' }, { status: 403 })
       }
+      const invitationWorkspace = await db.workspace.findUnique({
+        where: { id: invitation.workspaceId },
+        select: { orgId: true, status: true },
+      })
+      if (!invitationWorkspace || invitationWorkspace.status !== 'active') {
+        return NextResponse.json({ error: 'Invitation is invalid or expired' }, { status: 403 })
+      }
       // A client invitation must point at a client of the same workspace.
       let clientId: string | null = null
       if (invitation.role === 'client') {
@@ -73,17 +80,48 @@ export async function POST(req: Request) {
       }
 
       const newUser = await db.$transaction(async (tx) => {
+        const invitedUserType =
+          invitation.role === 'client'
+            ? 'CLIENT'
+            : invitation.role === 'student'
+              ? 'LAW_STUDENT'
+              : invitation.role === 'staff'
+                ? 'PARALEGAL'
+                : 'ATTORNEY'
+        const invitedOrgRole =
+          invitation.role === 'client'
+            ? 'VIEWER_CLIENT'
+            : invitation.role === 'student'
+              ? 'TRAINEE_STUDENT'
+              : invitation.role === 'auditor'
+                ? 'COMPLIANCE_LEAD'
+                : 'ASSOCIATE'
         const user = await tx.user.create({
           data: {
             email: cleanEmail,
             name: displayName,
             password: hashPassword(password),
             role: invitation.role,
+            userType: invitedUserType,
+            orgId: invitationWorkspace.orgId,
             workspaceId: invitation.workspaceId,
             clientId,
             emailVerified: new Date(), // the invite link already proved mailbox ownership
             privacyNoticeVersion: PRIVACY_NOTICE_VERSION,
             betaTermsAcceptedAt: new Date(),
+          },
+        })
+        await tx.membership.upsert({
+          where: { userId_orgId: { userId: user.id, orgId: invitationWorkspace.orgId } },
+          create: {
+            userId: user.id,
+            orgId: invitationWorkspace.orgId,
+            role: invitedOrgRole,
+            isActive: true,
+          },
+          update: {
+            role: invitedOrgRole,
+            isActive: true,
           },
         })
         await tx.workspaceMembership.create({
@@ -99,7 +137,7 @@ export async function POST(req: Request) {
             workspaceId: invitation.workspaceId,
             userId: user.id,
             type: 'system',
-            title: 'مرحباً بك في سند',
+            title: 'مرحباً بك في مقر',
             message: invitation.role === 'client' ? 'اكتمل إعداد حسابك في بوابة الموكّل.' : 'اكتمل إعداد حسابك وتم ربطه بمساحة العمل.',
             link: homePathFor(invitation.role),
           },
@@ -138,17 +176,38 @@ export async function POST(req: Request) {
 
     const verifyToken = generateToken()
     await db.$transaction(async (tx) => {
-      const workspace = await tx.workspace.create({ data: { name: workspaceName, type: workspaceType } })
+      const orgSlug = `org-${Date.now().toString(36)}-${generateToken().slice(0, 8)}`
+      const organization = await tx.organization.create({
+        data: {
+          name: workspaceName,
+          slug: orgSlug,
+          type: type === 'student' ? 'ACADEMIC_INSTITUTION' : 'LAW_FIRM',
+          tier: 'FREE_TRIAL',
+        },
+      })
+      const workspace = await tx.workspace.create({
+        data: { name: workspaceName, type: workspaceType, orgId: organization.id },
+      })
       const user = await tx.user.create({
         data: {
           email: cleanEmail,
           name: displayName,
           password: hashPassword(password),
           role,
+          userType: type === 'student' ? 'LAW_STUDENT' : 'ATTORNEY',
           accountType: type,
+          orgId: organization.id,
           workspaceId: workspace.id,
           privacyNoticeVersion: PRIVACY_NOTICE_VERSION,
-            betaTermsAcceptedAt: new Date(),
+          betaTermsAcceptedAt: new Date(),
+        },
+      })
+      await tx.membership.create({
+        data: {
+          userId: user.id,
+          orgId: organization.id,
+          role: type === 'student' ? 'TRAINEE_STUDENT' : 'MANAGING_PARTNER',
+          isActive: true,
         },
       })
       const isAcademic = type === 'student' && isAcademicEmail(cleanEmail)
@@ -214,7 +273,7 @@ export async function POST(req: Request) {
         ? `تم توثيق حسابك الأكاديمي مجاناً بنجاح${institution ? ` التابع لـ (${institution})` : ''}. يمكنك الاستفادة من بنك المصطلحات ومصحح العقود والتدريب العملي.`
         : 'تم إنشاء مساحة العمل الخاصة بك.'
       await tx.notification.create({
-        data: { workspaceId: workspace.id, userId: user.id, type: 'system', title: 'مرحباً بك في سند', message: welcomeMsg, link: homePathFor(role) },
+        data: { workspaceId: workspace.id, userId: user.id, type: 'system', title: 'مرحباً بك في مقر', message: welcomeMsg, link: homePathFor(role) },
       })
     })
 
@@ -223,9 +282,9 @@ export async function POST(req: Request) {
     if (emailConfigured()) {
       await sendTransactionalEmail({
         to: cleanEmail,
-        subject: 'تأكيد البريد الإلكتروني — سند',
+        subject: 'تأكيد البريد الإلكتروني — مقر',
         heading: 'أكّد بريدك الإلكتروني',
-        text: 'شكراً لتسجيلك في سند. أكّد بريدك الإلكتروني لتفعيل حسابك. ينتهي الرابط خلال 24 ساعة.',
+        text: 'شكراً لتسجيلك في مقر. أكّد بريدك الإلكتروني لتفعيل حسابك. ينتهي الرابط خلال 24 ساعة.',
         actionUrl: verifyUrl,
         actionLabel: 'تأكيد البريد',
       })

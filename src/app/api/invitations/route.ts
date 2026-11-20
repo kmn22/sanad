@@ -68,8 +68,8 @@ export async function POST(req: Request) {
   if (sendEmail && emailConfigured()) {
     await sendTransactionalEmail({
       to: cleanEmail,
-      subject: 'دعوة للانضمام إلى سند',
-      heading: 'دعوة إلى مساحة عمل سند',
+      subject: 'دعوة للانضمام إلى مقر',
+      heading: 'دعوة إلى مساحة عمل مقر',
       text: 'تلقيت دعوة لإنشاء حساب وإعداد عضويتك. تنتهي صلاحية الرابط خلال سبعة أيام ويمكن استخدامه مرة واحدة فقط.',
       actionUrl: url,
       actionLabel: 'إعداد الحساب',

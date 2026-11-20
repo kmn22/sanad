@@ -25,8 +25,18 @@ export async function POST(req: NextRequest) {
   switch (body.resource) {
     case 'processor':
       return NextResponse.json(await db.processorRegister.create({ data: { workspaceId: auth.workspaceId, name: String(body.name).slice(0, 200), purpose: String(body.purpose).slice(0, 2000), dataCategories: String(body.dataCategories).slice(0, 2000), processingLocation: String(body.processingLocation).slice(0, 200), contractReference: body.contractReference ? String(body.contractReference).slice(0, 500) : null } }), { status: 201 })
-    case 'transfer':
-      return NextResponse.json(await db.transferAssessment.create({ data: { workspaceId: auth.workspaceId, processorId: body.processorId || null, destinationCountry: String(body.destinationCountry).slice(0, 100), purpose: String(body.purpose).slice(0, 2000), dataCategories: String(body.dataCategories).slice(0, 2000), safeguard: String(body.safeguard).slice(0, 2000), riskAssessment: String(body.riskAssessment).slice(0, 8000) } }), { status: 201 })
+    case 'transfer': {
+      let processorId: string | null = null
+      if (typeof body.processorId === 'string' && body.processorId.trim()) {
+        const proc = await db.processorRegister.findFirst({
+          where: { id: body.processorId.trim(), workspaceId: auth.workspaceId },
+          select: { id: true },
+        })
+        if (!proc) return NextResponse.json({ error: 'Processor not found in workspace' }, { status: 404 })
+        processorId = proc.id
+      }
+      return NextResponse.json(await db.transferAssessment.create({ data: { workspaceId: auth.workspaceId, processorId, destinationCountry: String(body.destinationCountry).slice(0, 100), purpose: String(body.purpose).slice(0, 2000), dataCategories: String(body.dataCategories).slice(0, 2000), safeguard: String(body.safeguard).slice(0, 2000), riskAssessment: String(body.riskAssessment).slice(0, 8000) } }), { status: 201 })
+    }
     case 'dpia':
       return NextResponse.json(await db.dataProtectionImpactAssessment.create({ data: { workspaceId: auth.workspaceId, title: String(body.title).slice(0, 200), processing: String(body.processing).slice(0, 8000), necessity: String(body.necessity).slice(0, 8000), risks: String(body.risks).slice(0, 8000), mitigations: String(body.mitigations).slice(0, 8000), residualRisk: String(body.residualRisk).slice(0, 2000) } }), { status: 201 })
     case 'retention':

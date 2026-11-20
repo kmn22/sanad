@@ -70,7 +70,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (body?.sendEmail !== false && emailConfigured()) {
     await sendTransactionalEmail({
       to: cleanEmail,
-      subject: 'دعوة إلى بوابة الموكّل — سند',
+      subject: 'دعوة إلى بوابة الموكّل — مقر',
       heading: 'بوابة الموكّل الآمنة',
       text: `مرحباً ${client.name}، دعاك مكتب المحاماة لإنشاء حساب في بوابة الموكّل لمتابعة قضاياك وفواتيرك ورفع المستندات. تنتهي صلاحية الرابط خلال سبعة أيام.`,
       actionUrl: url,

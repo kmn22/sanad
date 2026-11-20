@@ -18,11 +18,14 @@ async function api(page: Page, path: string, init?: RequestInit) {
   }, [path, init] as const)
 }
 
+let ipSeq = 0
+
 async function login(page: Page, email: string, password: string) {
+  await page.context().setExtraHTTPHeaders({ 'x-forwarded-for': `10.240.5.${(++ipSeq % 250) + 1}` })
   await page.goto('/login')
   await page.locator('#login-email').fill(email)
   await page.locator('#login-password').fill(password)
-  await page.getByRole('button', { name: /تسجيل الدخول|دخول/ }).click()
+  await page.getByRole('button', { name: 'تسجيل الدخول', exact: true }).click()
   await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 })
 }
 
@@ -41,10 +44,12 @@ test.describe('deep workspace flows', () => {
 
     // The invitee uses a fresh, unauthenticated context.
     const invited = await (await browser.newContext()).newPage()
+    await invited.context().setExtraHTTPHeaders({ 'x-forwarded-for': `10.240.5.${(++ipSeq % 250) + 1}` })
     await invited.goto(new URL(res.body.url).pathname + new URL(res.body.url).search)
     await invited.locator('#reg-name').fill('عضو مدعو للاختبار')
     await invited.locator('#reg-password').fill('Sanad-E2E-Passw0rd!')
     await invited.locator('#reg-privacy').check()
+    await invited.locator('#reg-beta').check()
     await invited.locator('#register-submit').click()
     await expect(invited.locator('body')).toContainText(/تم إنشاء الحساب|تسجيل الدخول/, { timeout: 15000 })
 
@@ -84,6 +89,7 @@ test.describe('deep workspace flows', () => {
     }
 
     const client = await (await browser.newContext()).newPage()
+    await client.context().setExtraHTTPHeaders({ 'x-forwarded-for': `10.240.5.${(++ipSeq % 250) + 1}` })
     await client.goto(portalPath)
     await client.waitForLoadState('networkidle')
     await expect(client.locator('body')).toContainText('مكتب الاختبار الآلي')
@@ -134,7 +140,7 @@ test.describe('deep workspace flows', () => {
   test('rejected case saves keep the form and entered data visible', async ({ page }) => {
     await login(page, OWNER_EMAIL!, OWNER_PASSWORD!)
     await page.goto('/firm/cases')
-    await page.getByRole('button', { name: /قضية جديدة|New case/ }).click()
+    await page.getByRole('button', { name: /ملف \/ استشارة جديدة|قضية جديدة|New matter \/ consultation|New case/ }).click()
     await page.locator('#case-title').fill('Unsaved case regression')
     await page.locator('#case-client').click()
     await page.getByRole('option', { name: 'عميل اختبار آلي', exact: true }).click()
@@ -142,7 +148,7 @@ test.describe('deep workspace flows', () => {
       if (route.request().method() !== 'POST') return route.continue()
       await route.fulfill({ status: 403, json: { error: 'Case creation is unavailable for this plan' } })
     })
-    await page.getByRole('button', { name: /إنشاء قضية|Create case/ }).click()
+    await page.getByRole('button', { name: /إنشاء ملف \/ استشارة|إنشاء قضية|Create matter \/ consultation|Create case/ }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
     await expect(page.locator('#case-title')).toHaveValue('Unsaved case regression')
     await expect(page.locator('p[role="alert"]')).toContainText('Case creation is unavailable for this plan')
@@ -191,15 +197,15 @@ test.describe('deep workspace flows', () => {
       await expect(page.getByText(clientName, { exact: true })).toBeVisible()
 
       await page.goto('/firm/cases')
-      await page.getByRole('button', { name: /قضية جديدة|New case/ }).click()
+      await page.getByRole('button', { name: /ملف \/ استشارة جديدة|قضية جديدة|New matter \/ consultation|New case/ }).click()
       await page.locator('#case-title').fill(caseTitle)
       await page.locator('#case-client').click()
       await page.getByRole('option', { name: clientName, exact: true }).click()
       await page.locator('#case-stage').click()
       await page.getByRole('option', { name: /جلسات|Hearings/, exact: true }).click()
-      await page.getByRole('checkbox', { name: /قضية سرية|Confidential matter/ }).check()
+      await page.getByRole('checkbox', { name: /ملف سري|قضية سرية|Confidential matter/ }).check()
       const caseResponse = page.waitForResponse((response) => new URL(response.url()).pathname === '/api/cases' && response.request().method() === 'POST')
-      await page.getByRole('button', { name: /إنشاء قضية|Create case/ }).click()
+      await page.getByRole('button', { name: /إنشاء ملف \/ استشارة|إنشاء قضية|Create matter \/ consultation|Create case/ }).click()
       const caseResult = await caseResponse
       expect(caseResult.ok()).toBe(true)
       const created = await caseResult.json()
@@ -258,18 +264,25 @@ test.describe('deep workspace flows', () => {
     const draftInvoice = invoices.body.items.find((inv: { number: string }) => inv.number === 'E2E-DRAFT-0001')
     expect(draftInvoice).toBeTruthy()
 
-    const sentAttempt = await api(page, `/api/invoices/${draftInvoice.id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status: 'sent' }),
-    })
-    expect(sentAttempt.status).toBe(200)
+    try {
+      const sentAttempt = await api(page, `/api/invoices/${draftInvoice.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'sent' }),
+      })
+      expect(sentAttempt.status).toBe(200)
 
-    // Unconfigured ZATCA Phase 2 integration must fail explicitly (503, not a silent no-op)
-    const zatcaAttempt = await api(page, '/api/zatca', {
-      method: 'POST',
-      body: JSON.stringify({ invoiceId: draftInvoice.id }),
-    })
-    expect(zatcaAttempt.status).toBe(503)
+      // Unconfigured ZATCA Phase 2 integration must fail explicitly (503, not a silent no-op)
+      const zatcaAttempt = await api(page, '/api/zatca', {
+        method: 'POST',
+        body: JSON.stringify({ invoiceId: draftInvoice.id }),
+      })
+      expect(zatcaAttempt.status).toBe(503)
+    } finally {
+      await api(page, `/api/invoices/${draftInvoice.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'draft' }),
+      })
+    }
   })
 
   test('administration: PDPPL privacy requests, data export, and audit log', async ({ page }) => {
@@ -307,7 +320,7 @@ test.describe('deep workspace flows', () => {
     // workspace-wide sections are only included for MFA-enrolled managers.
     const exportResponse = await api(page, '/api/privacy/export', { method: 'POST' })
     expect(exportResponse.status).toBe(200)
-    expect(exportResponse.body.controller).toBe('Sanad')
+    expect(exportResponse.body.controller).toBe('Maqar')
     expect(exportResponse.body.user).toBeTruthy()
     expect(exportResponse.body.workspace).toBeUndefined()
 

@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   })
   const exportData: Record<string, unknown> = {
     exportedAt: new Date().toISOString(),
-    controller: 'Sanad',
+    controller: 'Maqar',
     user,
     privacyAcceptances: await db.privacyAcceptance.findMany({ where: { userId: auth.userId } }),
     consents: await db.consentRecord.findMany({ where: { userId: auth.userId } }),
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   return new NextResponse(exportBody, {
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
-      'Content-Disposition': `attachment; filename="sanad-data-export-${new Date().toISOString().slice(0, 10)}.json"`,
+      'Content-Disposition': `attachment; filename="maqar-data-export-${new Date().toISOString().slice(0, 10)}.json"`,
       'Cache-Control': 'no-store',
       ...documentSignatureHeaders(signature),
     },

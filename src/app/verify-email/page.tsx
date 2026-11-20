@@ -39,7 +39,10 @@ export default function VerifyEmailPage() {
           <div className="bg-[#1F7A46] p-2 rounded-xl text-white">
             <Scale className="w-5 h-5 stroke-[2.2]" />
           </div>
-          <span className="text-xl font-black text-[#1B281F] font-heading">سَنَد</span>
+          <div className="text-right">
+            <span className="text-xl font-black text-[#1B281F] font-heading block">مقر</span>
+            <span className="text-[10px] text-[#566A5C]">المقر الرقمي للعمليات القانونية والحوكمة</span>
+          </div>
         </Link>
 
         <div className="mx-auto h-14 w-14 rounded-2xl bg-[#E8EFE9] border border-[#CCD8CE] grid place-items-center">

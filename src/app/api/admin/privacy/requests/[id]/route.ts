@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, getTenantDb } from '@/lib/db'
 import { requestIp, writeAudit } from '@/lib/audit'
-import { canManageUsers, forbiddenJson, getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
+import { canManageUsers, forbiddenJson, getAuthContext, isPlatformSuperAdmin, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 
 const STATUSES = new Set(['received', 'identity_verification', 'in_progress', 'extended', 'completed', 'rejected'])
 
@@ -10,7 +10,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (!auth) return unauthorizedJson()
   if (!canManageUsers(auth)) return forbiddenJson()
   const { id } = await params
-  const existing = await db.dataSubjectRequest.findFirst({ where: { id, ...(auth.role === 'admin' ? {} : { workspaceId: auth.workspaceId }) } })
+  const superAdmin = isPlatformSuperAdmin(auth)
+  const existing = await db.dataSubjectRequest.findFirst({
+    where: { id, ...(superAdmin ? {} : { workspaceId: auth.workspaceId }) },
+  })
   if (!existing) return notFoundJson()
 
   let body: {
@@ -37,6 +40,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if (existing.requestType !== 'destruction' || !existing.identityVerified || !existing.userId) {
       return NextResponse.json({ error: 'Verified destruction request is required' }, { status: 400 })
     }
+    if (!superAdmin) {
+      const targetUser = await db.user.findFirst({
+        where: { id: existing.userId, workspaceId: auth.workspaceId, orgId: auth.orgId },
+        select: { id: true },
+      })
+      if (!targetUser) return notFoundJson()
+    }
     // Legal holds are workspace-scoped. Only consult them when the request can be
     // attributed to a workspace — an unfiltered lookup would let a hold from one
     // workspace block destruction for an unrelated, workspace-less request.
@@ -48,13 +58,20 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
     await db.$transaction([
       db.privacyAcceptance.deleteMany({ where: { userId: existing.userId } }),
-      db.consentRecord.deleteMany({ where: { userId: existing.userId } }),
-      db.notification.deleteMany({ where: { userId: existing.userId } }),
-      db.user.update({ where: { id: existing.userId }, data: { email: `deleted-${existing.userId}@invalid.local`, name: 'Deleted User', password: null, disabledAt: new Date(), sessionVersion: { increment: 1 }, mfaSecret: null, mfaRecoveryCodes: null } }),
+      db.consentRecord.deleteMany({
+        where: { userId: existing.userId, ...(superAdmin ? {} : { workspaceId: auth.workspaceId }) },
+      }),
+      db.notification.deleteMany({
+        where: { userId: existing.userId, ...(superAdmin ? {} : { workspaceId: auth.workspaceId }) },
+      }),
+      db.user.updateMany({
+        where: { id: existing.userId, ...(superAdmin ? {} : { workspaceId: auth.workspaceId, orgId: auth.orgId }) },
+        data: { email: `deleted-${existing.userId}@invalid.local`, name: 'Deleted User', password: null, disabledAt: new Date(), sessionVersion: { increment: 1 }, mfaSecret: null, mfaRecoveryCodes: null },
+      }),
     ])
   }
 
-  const updated = await db.dataSubjectRequest.update({
+  const updateArgs = {
     where: { id },
     data: {
       status: typeof status === 'string' ? status : undefined,
@@ -65,7 +82,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       extendedDueAt: extend === true ? new Date(existing.dueAt.getTime() + 30 * 24 * 60 * 60 * 1000) : undefined,
       completedAt: status === 'completed' || status === 'rejected' ? new Date() : undefined,
     },
-  })
+  }
+  const updated = superAdmin
+    ? await db.dataSubjectRequest.update(updateArgs)
+    : await getTenantDb(auth).dataSubjectRequest.update(updateArgs)
   await writeAudit({ workspaceId: existing.workspaceId, userId: auth.userId, action: 'privacy.request.update', entityType: 'DataSubjectRequest', entityId: id, ipAddress: requestIp(req), metadata: { status, identityVerified, extend } })
   return NextResponse.json(updated)
 }

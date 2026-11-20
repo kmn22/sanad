@@ -5,11 +5,14 @@ const OWNER_PASSWORD = process.env.E2E_OWNER_PASSWORD
 const LAWYER_EMAIL = process.env.E2E_LAWYER_EMAIL
 const authed = OWNER_EMAIL && OWNER_PASSWORD
 
+let ipSeq = 0
+
 async function login(page: import('@playwright/test').Page, email: string, password: string) {
+  await page.context().setExtraHTTPHeaders({ 'x-forwarded-for': `10.240.3.${(++ipSeq % 250) + 1}` })
   await page.goto('/login')
   await page.locator('#login-email').fill(email)
   await page.locator('#login-password').fill(password)
-  await page.getByRole('button', { name: /تسجيل الدخول|دخول/ }).click()
+  await page.getByRole('button', { name: 'تسجيل الدخول', exact: true }).click()
   // Credentials sign-in is client-side; wait until the router pushes us off /login
   // so the session cookie is guaranteed to be set before further navigation.
   await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 })
@@ -110,10 +113,11 @@ test.describe('authenticated workspace experience', () => {
   })
 
   test('wrong password is rejected with an inline error', async ({ page }) => {
+    await page.context().setExtraHTTPHeaders({ 'x-forwarded-for': `10.240.3.${(++ipSeq % 250) + 1}` })
     await page.goto('/login')
     await page.locator('#login-email').fill(OWNER_EMAIL!)
     await page.locator('#login-password').fill('definitely-wrong-password')
-    await page.getByRole('button', { name: /تسجيل الدخول|دخول/ }).click()
+    await page.getByRole('button', { name: 'تسجيل الدخول', exact: true }).click()
     await expect(page.locator('body')).toContainText('بيانات الدخول غير صحيحة', { timeout: 10000 })
   })
 })

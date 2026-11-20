@@ -8,7 +8,7 @@ import { useTheme } from 'next-themes'
 import { Briefcase, Building2, LogOut, Languages, Moon, RefreshCw, Search, ShieldCheck, Sun, CreditCard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Toaster as SonnerToaster } from '@/components/ui/sonner'
-import { NotificationCenter } from '@/components/sanad/NotificationCenter'
+import { NotificationCenter } from '@/components/core/NotificationCenter'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useLang } from '@/lib/sanad/i18n'
+import { useLang } from '@/lib/core/i18n'
 import { canAccessPortal, PORTAL_PATHS } from '@/lib/auth/portals'
 import { PORTAL_THEMES, type Bilingual, type PortalTheme } from './theme'
 import type { PortalId } from '@/lib/auth/portals'
@@ -92,7 +92,7 @@ export function PortalShell({ portal, sections, children, onRefresh, refreshing,
   const role = (session?.user as { role?: string } | undefined)?.role
   const userName = session?.user?.name || L(ROLE_LABELS[role || ''] || theme.name)
   const userEmail = session?.user?.email || ''
-  const initial = userName.trim().charAt(0) || 'س'
+  const initial = userName.trim().charAt(0) || 'م'
 
   useEffect(() => {
     setMounted(true)
@@ -151,7 +151,7 @@ export function PortalShell({ portal, sections, children, onRefresh, refreshing,
             <div className="flex items-center justify-between h-14 gap-3">
               <Link href={PORTAL_PATHS[portal]} className="flex items-center gap-3 min-w-0" id="portal-home-link">
                 <div className={`relative flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br ${theme.logo} text-white font-bold text-base shadow-sm ring-1`}>
-                  <span className="translate-y-[-1px]">س</span>
+                  <span className="translate-y-[-1px]">م</span>
                   <span className="absolute -bottom-0.5 -end-0.5 h-2 w-2 rounded-full bg-white/90 ring-2 ring-background" />
                 </div>
                 <div className="leading-tight text-start min-w-0">
@@ -354,7 +354,7 @@ export function PortalShell({ portal, sections, children, onRefresh, refreshing,
 
         <footer className="mt-auto border-t border-border bg-background/60">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
-            <p>{lang === 'ar' ? `سند — ${theme.name.ar}` : `Sanad — ${theme.name.en}`}</p>
+            <p>{lang === 'ar' ? `مقر — ${theme.name.ar}` : `Maqar — ${theme.name.en}`}</p>
             <p className="flex items-center gap-2">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
               {lang === 'ar' ? 'اتصال آمن ومشفّر' : 'Secure, encrypted session'}

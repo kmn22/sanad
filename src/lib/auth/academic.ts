@@ -1,6 +1,6 @@
 /**
  * Academic Verification & Domain Helpers
- * Implements F-13: Verified Student Tier from Sanad-Product-Roadmap.pdf
+ * Implements F-13: Verified Student Tier from Maqar-Product-Roadmap.pdf
  */
 
 export const SAUDI_ACADEMIC_DOMAINS = [

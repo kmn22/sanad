@@ -5,8 +5,8 @@ import { LandingFooter } from '../_landing/LandingFooter'
 import { ShieldCheck, Lock, HardDrive, Cpu, FileText, CheckCircle2, AlertTriangle, ArrowLeft } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'الأمان وسيادة البيانات — سَنَد للتقنية القانونية',
-  description: 'معمارية الأمان، سيادة البيانات المكانية، التشفير، والامتثال لنظام حماية البيانات الشخصية السعودي (PDPL) في منصة سَنَد.',
+  title: 'الأمان وسيادة البيانات — مقر للتقنية القانونية',
+  description: 'معمارية الأمان، سيادة البيانات المكانية، التشفير، والامتثال لنظام حماية البيانات الشخصية السعودي (PDPL) في منصة مقر.',
 }
 
 export default function SecurityPage() {
@@ -28,7 +28,7 @@ export default function SecurityPage() {
     },
     {
       title: 'الامتثال لنظام حماية البيانات (PDPL)',
-      desc: 'سَنَد مصمم ليمكن مسؤولي مساحات العمل من الاستجابة لحقوق أصحاب البيانات (العلم، الوصول، التصحيح، الإتلاف) مع سجل تدقيق إداري مفصل لكل حركة حساسة.',
+      desc: 'مقر مصمم ليمكن مسؤولي مساحات العمل من الاستجابة لحقوق أصحاب البيانات (العلم، الوصول، التصحيح، الإتلاف) مع سجل تدقيق إداري مفصل لكل حركة حساسة.',
       icon: ShieldCheck,
     },
   ]
@@ -55,7 +55,7 @@ export default function SecurityPage() {
             أين تُحفظ بياناتك وكيف نحمي خصوصية موكليك؟
           </h1>
           <p className="text-base text-[#4A5D50] leading-relaxed">
-            سرية أعمال المحاماة ليست ميزة إضافية، بل هي الأساس الذي قامت عليه هندسة منصة سَنَد منذ السطر الأول من الكود.
+            سرية أعمال المحاماة ليست ميزة إضافية، بل هي الأساس الذي قامت عليه هندسة منصة مقر منذ السطر الأول من الكود.
           </p>
         </div>
 
@@ -86,7 +86,7 @@ export default function SecurityPage() {
             <span>حدود نسخة Alpha بصراحة تامة (أمانة الإفصاح)</span>
           </div>
           <p className="text-xs sm:text-sm text-[#4A5D50] leading-relaxed">
-            في سَنَد، نفضل أن نخبرك بما لا تستطيع المنظومة فعله اليوم قبل أن نعدك بما تفعله:
+            في مقر، نفضل أن نخبرك بما لا تستطيع المنظومة فعله اليوم قبل أن نعدك بما تفعله:
           </p>
 
           <div className="space-y-2.5 text-xs text-[#1B281F]">

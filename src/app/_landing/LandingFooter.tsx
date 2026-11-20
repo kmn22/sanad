@@ -13,31 +13,31 @@ export function LandingFooter() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-[#1B281F] font-heading">مَقَرّ</span>
+                <span className="text-lg font-bold text-[#1B281F] font-heading">مقر</span>
                 <span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-[#E8EFE9] text-[#1F7A46] border border-[#CCD8CE]">
-                  Maqar Workspace
+                  MAQAR
                 </span>
               </div>
               <p className="text-[11px] text-[#566A5C]">
-                المساحة الافتراضية السيادية للاستشارات والعمليات
+                المقر الرقمي للعمليات القانونية والحوكمة
               </p>
             </div>
           </div>
 
           {/* Quick Links */}
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-medium text-[#1B281F]">
-            <Link href="/#checker" className="hover:text-[#1F7A46] transition-colors">المصحح</Link>
-            <Link href="/sandbox" className="hover:text-[#1F7A46] transition-colors">المعمل التجريبي</Link>
-            <Link href="/pricing" className="hover:text-[#1F7A46] transition-colors">الأسعار</Link>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-medium text-[#1B281F]">
+            <Link href="/solutions/enterprise" className="hover:text-[#1F7A46] transition-colors">حلول الشركات (CLM)</Link>
+            <Link href="/solutions/firms" className="hover:text-[#1F7A46] transition-colors">حلول مكاتب المحاماة</Link>
+            <Link href="/solutions/academy" className="hover:text-[#1F7A46] transition-colors">حلول الأكاديمية والطلاب</Link>
+            <Link href="/pricing" className="hover:text-[#1F7A46] transition-colors">الأسعار والباقات</Link>
             <Link href="/about" className="hover:text-[#1F7A46] transition-colors">من نحن</Link>
             <Link href="/security" className="hover:text-[#1F7A46] transition-colors">الأمان والسيادة</Link>
-            <Link href="/build" className="hover:text-[#1F7A46] transition-colors">قيد البناء</Link>
             <Link href="/login" className="hover:text-[#1F7A46] transition-colors">تسجيل الدخول</Link>
-            <Link href="/register" className="hover:text-[#1F7A46] text-[#1F7A46] font-bold transition-colors">ابدأ مجاناً</Link>
+            <Link href="/onboarding" className="hover:text-[#1F7A46] text-[#1F7A46] font-bold transition-colors">ابدأ الآن</Link>
           </div>
         </div>
 
-        {/* Support & Contact Channel (Mandatory for Institutional Trust) */}
+        {/* Support & Contact Channel */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-[#F5F7F5] border border-[#CCD8CE] text-xs">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-white border border-[#CCD8CE] text-[#1F7A46] flex items-center justify-center shrink-0">
@@ -67,12 +67,12 @@ export function LandingFooter() {
         {/* SBA Regulatory Notice */}
         <div className="p-4 rounded-xl bg-[#F5F7F5] border border-[#CCD8CE] text-[11px] text-[#4A5D50] leading-relaxed">
           <strong className="text-[#1B281F] block mb-1">إشعار تنظيمي ومهني:</strong>
-          منظومة <strong>مَقَرّ (MAQAR Workspace)</strong> هي مساحة عمل رقمية وبرمجية تقنية مساندة لإدارة الاستشارات والعمليات المهنية ومساعدة الممارسين والمستشارين والشركات في المملكة العربية السعودية. لا تُعد المنظومة مكتب محاماة ولا تقدم استشارات قانونية موجهة للأفراد أو خدمات الترافع المباشر دون محامٍ مرخص من الهيئة السعودية للمحامين.
+          منظومة <strong>مقر (MAQAR)</strong> هي المقر الرقمي للعمليات القانونية والحوكمة لإدارة العقود والقضايا والأبحاث النظامية ومساعدة الإدارات القانونية والممارسين والباحثين في المملكة العربية السعودية. لا تُعد المنظومة مكتب محاماة ولا تقدم استشارات قانونية موجهة للأفراد أو خدمات الترافع المباشر دون محامٍ مرخص من الهيئة السعودية للمحامين.
         </div>
 
         {/* Bottom Legal Copyright */}
         <div className="pt-4 border-t border-[#CCD8CE] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#566A5C]">
-          <p>© {new Date().getFullYear()} مَقَرّ للتقنيات المهنية. الرياض، المملكة العربية السعودية.</p>
+          <p>© {new Date().getFullYear()} مقر للتقنيات القانونية والحوكمة. الرياض، المملكة العربية السعودية.</p>
 
           <div className="flex items-center gap-4 text-[11px] font-medium text-[#1B281F]">
             <Link href="/privacy" className="hover:text-[#1F7A46] underline">سياسة الخصوصية</Link>

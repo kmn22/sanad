@@ -111,11 +111,11 @@ async function handleJob(job: { id: string; type: string; payload: string; works
       }
       await sendTransactionalEmail({
         to: user.email,
-        subject: String(payload.title || 'Sanad notification'),
-        heading: String(payload.title || 'Sanad notification'),
+        subject: String(payload.title || 'Maqar notification'),
+        heading: String(payload.title || 'Maqar notification'),
         text: String(payload.body || ''),
         actionUrl: typeof payload.link === 'string' ? payload.link : undefined,
-        actionLabel: 'فتح في سند',
+        actionLabel: 'فتح في مقر',
       })
       if (job.workspaceId) await incrementUsage(job.workspaceId, 'emails')
     }

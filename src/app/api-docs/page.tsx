@@ -23,7 +23,7 @@ export default function ApiDocs() {
               <span>REST API v1.0</span>
             </div>
             <h1 className="text-3xl font-bold font-heading">توثيق الواجهة البرمجية (API Documentation)</h1>
-            <p className="text-xs sm:text-sm text-[#566A5C]">الإصدار 1.0.0 — واجهات «سَنَد» الخاصة بالتحليل والصياغة القانونية</p>
+            <p className="text-xs sm:text-sm text-[#566A5C]">الإصدار 1.0.0 — واجهات «مقر» الخاصة بالتحليل والصياغة القانونية</p>
           </div>
 
           <section className="space-y-3">

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
-import { INITIAL_RESEARCH_ITEMS } from '@/lib/sanad/research/seedData'
+import { INITIAL_RESEARCH_ITEMS } from '@/lib/core/research/seedData'
 import { getAuthContext, getSessionWorkspaceId, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
-import { canWriteAcademic, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
+import { canAccessCase, canWriteAcademic, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
 import { logError } from '@/lib/observability'
 import { createResearchItemSchema } from '@/lib/validations'
 
@@ -89,8 +89,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'العنوان والمحتوى مطلوبان', details: parsed.error.issues }, { status: 400 })
     }
     if (parsed.data.caseId) {
-      const legalCase = await db.legalCase.findFirst({ where: { id: parsed.data.caseId, workspaceId }, select: { id: true } })
-      if (!legalCase) return notFoundJson()
+      const legalCase = await db.legalCase.findFirst({
+        where: { id: parsed.data.caseId, workspaceId, orgId: auth.orgId, deletedAt: null },
+        select: { id: true },
+      })
+      if (!legalCase || !(await canAccessCase(auth, legalCase.id))) return notFoundJson()
     }
 
     const item = await db.researchItem.create({

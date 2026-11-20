@@ -1,5 +1,5 @@
 {
-  "name": "sanad",
+  "name": "maqar",
   "version": "1.0.0-alpha.1",
   "description": "مقر — المساحة الافتراضية السيادية للاستشارات والعمليات (Maqar Workspace)",
   "private": true,
@@ -12,19 +12,27 @@
     "debug": "NODE_OPTIONS='--inspect' next dev -p 3001 2>&1 | tee debug.log",
     "build": "next build --webpack && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/ && mkdir -p .next/standalone/prisma && cp -r prisma/. .next/standalone/prisma/",
     "start": "NODE_ENV=production node .next/standalone/server.js 2>&1 | tee server.log",
-    "start:pm2": "NODE_ENV=production pm2 start .next/standalone/server.js --name sanad --update-env",
+    "start:pm2": "NODE_ENV=production pm2 start .next/standalone/server.js --name maqar --update-env",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:smoke": "playwright test e2e/maqar-complete-smoke.spec.ts",
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset",
-    "seed": "npx tsx scripts/seed.ts && npx tsx scripts/seed_student.ts",
+    "db:seed": "prisma db seed",
+    "seed": "npx tsx prisma/seed.ts && npx tsx scripts/seed.ts && npx tsx scripts/seed_student.ts",
+    "seed:maqar": "npx tsx prisma/seed.ts",
     "seed:lawyer": "npx tsx scripts/seed.ts",
     "seed:student": "npx tsx scripts/seed_student.ts",
+    "seed:demo": "npx tsx scripts/seed-demo-accounts.ts",
+    "rag:index": "npx tsx scripts/index-statutes.ts",
     "postinstall": "prisma generate"
+  },
+  "prisma": {
+    "seed": "npx tsx prisma/seed.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

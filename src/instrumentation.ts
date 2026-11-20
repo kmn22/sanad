@@ -11,8 +11,8 @@ import { logError } from '@/lib/observability'
 export async function register() {
   if (process.env.NEXT_RUNTIME !== 'nodejs') return
 
-  const globalState = globalThis as { __sanadJobRunner?: ReturnType<typeof setInterval> }
-  if (globalState.__sanadJobRunner) return
+  const globalState = globalThis as { __maqarJobRunner?: ReturnType<typeof setInterval> }
+  if (globalState.__maqarJobRunner) return
 
   const { processDueJobs } = await import('@/lib/jobs')
   const tick = () => {
@@ -21,8 +21,8 @@ export async function register() {
     })
   }
 
-  globalState.__sanadJobRunner = setInterval(tick, 60_000)
-  globalState.__sanadJobRunner.unref?.()
+  globalState.__maqarJobRunner = setInterval(tick, 60_000)
+  globalState.__maqarJobRunner.unref?.()
   const firstRun = setTimeout(tick, 15_000)
   firstRun.unref?.()
 }

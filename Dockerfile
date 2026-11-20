@@ -5,10 +5,9 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json ./
 COPY prisma ./prisma
-RUN npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+RUN npm ci --legacy-peer-deps
 COPY . .
-RUN npx prisma generate && npm run build
-RUN cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/
+RUN rm -rf .next dist tsconfig.tsbuildinfo && npx prisma generate && npm run typecheck && (npm run build || npm run build)
 
 FROM node:22-slim
 WORKDIR /app

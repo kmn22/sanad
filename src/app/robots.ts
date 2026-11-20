@@ -3,7 +3,7 @@ import { MetadataRoute } from 'next'
 export const dynamic = 'force-dynamic'
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = (process.env.NEXTAUTH_URL || 'https://sanad.sa').replace(/\/$/, '')
+  const baseUrl = (process.env.NEXTAUTH_URL || 'https://maqar.sa').replace(/\/$/, '')
 
   return {
     rules: [

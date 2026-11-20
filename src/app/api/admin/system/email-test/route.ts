@@ -19,9 +19,9 @@ export async function POST(req: Request) {
   try {
     await sendTransactionalEmail({
       to: user.email,
-      subject: 'Sanad SMTP test',
+      subject: 'Maqar SMTP test',
       heading: 'اختبار إعدادات البريد',
-      text: 'تم إرسال هذه الرسالة للتحقق من إعدادات SMTP الخاصة بسند.',
+      text: 'تم إرسال هذه الرسالة للتحقق من إعدادات SMTP الخاصة بمقر.',
       actionUrl: publicAppUrl('/admin'),
       actionLabel: 'فتح الإدارة',
     })

@@ -1,6 +1,6 @@
 /**
  * Curated Saudi Statutory Provisions Knowledge Base
- * Used for authoritative grounding in the Sanad AI RAG Pipeline.
+ * Used for authoritative grounding in the Maqar AI RAG Pipeline.
  */
 
 export interface StatutoryArticle {

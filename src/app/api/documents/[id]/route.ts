@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getTenantDb } from '@/lib/db'
 import { updateDocumentSchema } from '@/lib/validations'
 import { getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 import { canAccessCase, canWrite, denyUnless, enforceMutationBudget, legalHoldBlock } from '@/lib/auth/capabilities'
@@ -12,20 +12,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (denied) return denied
     const budgeted = await enforceMutationBudget(auth)
     if (budgeted) return budgeted
+    const tdb = getTenantDb(auth)
     const workspaceId = auth.workspaceId
     const { id } = await params
     const parsed = updateDocumentSchema.parse(await req.json())
-    const existing = await db.legalDocument.findFirst({ where: { id, workspaceId, deletedAt: null }, select: { id: true, caseId: true } })
+    const existing = await tdb.legalDocument.findFirst({ where: { id, workspaceId, deletedAt: null }, select: { id: true, caseId: true } })
     if (!existing || (existing.caseId && !(await canAccessCase(auth, existing.caseId)))) return notFoundJson()
     if (parsed.clientId) {
-      const client = await db.client.findFirst({ where: { id: parsed.clientId, workspaceId }, select: { id: true } })
+      const client = await tdb.client.findFirst({ where: { id: parsed.clientId, workspaceId }, select: { id: true } })
       if (!client) return notFoundJson()
     }
     if (parsed.caseId) {
-      const legalCase = await db.legalCase.findFirst({ where: { id: parsed.caseId, workspaceId, deletedAt: null }, select: { id: true } })
+      const legalCase = await tdb.legalCase.findFirst({ where: { id: parsed.caseId, workspaceId, orgId: auth.orgId, deletedAt: null }, select: { id: true } })
       if (!legalCase || !(await canAccessCase(auth, legalCase.id))) return notFoundJson()
     }
-    const updated = await db.legalDocument.update({ where: { id }, data: parsed })
+    const updated = await tdb.legalDocument.update({ where: { id }, data: parsed })
     return NextResponse.json(updated)
   } catch (err: any) {
     if (err?.name === 'ZodError') {
@@ -42,12 +43,13 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   if (denied) return denied
   const budgeted = await enforceMutationBudget(auth)
   if (budgeted) return budgeted
+  const tdb = getTenantDb(auth)
   const workspaceId = auth.workspaceId
   const { id } = await params
   const hold = await legalHoldBlock(auth.workspaceId, 'LegalDocument', id)
   if (hold) return hold
-  const doc = await db.legalDocument.findFirst({ where: { id, workspaceId, deletedAt: null }, select: { id: true, caseId: true } })
+  const doc = await tdb.legalDocument.findFirst({ where: { id, workspaceId, deletedAt: null }, select: { id: true, caseId: true } })
   if (!doc || (doc.caseId && !(await canAccessCase(auth, doc.caseId)))) return notFoundJson()
-  await db.legalDocument.update({ where: { id }, data: { deletedAt: new Date() } })
+  await tdb.legalDocument.update({ where: { id }, data: { deletedAt: new Date() } })
   return NextResponse.json({ ok: true })
 }

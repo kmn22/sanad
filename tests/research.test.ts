@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { INITIAL_RESEARCH_ITEMS } from '../src/lib/sanad/research/seedData'
+import { INITIAL_RESEARCH_ITEMS } from '../src/lib/core/research/seedData'
 
 describe('Legal Research Hub Seed Data & Statutes', () => {
   it('contains foundational Saudi statutes and Supreme Court precedents', () => {

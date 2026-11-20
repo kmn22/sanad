@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { forbiddenJson, getAuthContext, hasRole, unauthorizedJson } from '@/lib/auth/workspace'
+import { forbiddenJson, getAuthContext, isPlatformSuperAdmin, unauthorizedJson } from '@/lib/auth/workspace'
 import { getWorkspaceUsageSummary } from '@/lib/saas/entitlements'
 
 export async function GET() {
   const auth = await getAuthContext()
   if (!auth) return unauthorizedJson()
-  if (!hasRole(auth, ['admin'])) return forbiddenJson()
+  if (!isPlatformSuperAdmin(auth)) return forbiddenJson()
 
   const workspaces = await db.workspace.findMany({
     orderBy: { createdAt: 'desc' },

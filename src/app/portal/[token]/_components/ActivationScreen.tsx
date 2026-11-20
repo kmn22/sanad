@@ -37,7 +37,7 @@ return (
         <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-800 text-white font-bold text-2xl shadow-lg ring-1 ring-emerald-400/30 mx-auto">
           س
         </div>
-        <h1 className="text-2xl font-black text-white tracking-tight">سند • بوابة الموكل</h1>
+        <h1 className="text-2xl font-black text-white tracking-tight">مقر • بوابة الموكل</h1>
         <p className="text-sm text-emerald-300 font-medium">
           مرحباً، {client.name.split(' ')[0]}
         </p>
@@ -131,7 +131,7 @@ return (
 
     {/* Footer */}
     <div className="w-full max-w-sm mx-auto text-center text-[10px] text-slate-600 py-3">
-      سند للأمان القانوني • مشفر ومحمي بموجب نظام حماية البيانات الشخصية السعودي
+      مقر للأمان القانوني • مشفر ومحمي بموجب نظام حماية البيانات الشخصية السعودي
     </div>
   </div>
 )

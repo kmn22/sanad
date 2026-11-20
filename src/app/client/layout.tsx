@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { ClientPortalFrame } from './ClientPortalFrame'
 
 export const metadata: Metadata = {
-  title: 'بوابة الموكل — سند',
+  title: 'بوابة الموكل — مقر',
   description: 'متابعة القضايا والطلبات والملفات والفواتير لدى مكتب المحاماة.',
   robots: { index: false, follow: false },
 }

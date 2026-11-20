@@ -5,8 +5,8 @@ import { LandingFooter } from '../_landing/LandingFooter'
 import { Scale, Mail, MapPin, ShieldCheck, CheckCircle2, MessageCircle, ArrowLeft } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'من نحن — سَنَد للتقنية القانونية',
-  description: 'تعرّف على هوية منصة سَنَد، الفريق المؤسس، رسالتنا في تمكين المحامي السعودي، ووسائل التواصل المباشرة.',
+  title: 'من نحن — مقر للتقنية القانونية',
+  description: 'تعرّف على هوية منصة مقر، الفريق المؤسس، رسالتنا في تمكين المحامي السعودي، ووسائل التواصل المباشرة.',
 }
 
 export default function AboutPage() {
@@ -29,10 +29,10 @@ export default function AboutPage() {
             <span>هوية الكيان والشفافية المؤسسية</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-black text-[#1B281F] font-heading">
-            من نحن وما الذي نسعى لتحقيقه في سَنَد
+            من نحن وما الذي نسعى لتحقيقه في مقر
           </h1>
           <p className="text-base text-[#4A5D50] leading-relaxed">
-            «سَنَد» منصة تقنية برمجية سعودية ناشئة، صُممت لمساعدة المحامين الممارسين والمستشارين القانونيين في المملكة على إنجاز صياغة العقود واللوائح بدقة متوافقة مع أحدث الأنظمة القضائية السعودية.
+            «مقر» منصة تقنية برمجية سعودية ناشئة، صُممت لمساعدة المحامين الممارسين والمستشارين القانونيين في المملكة على إنجاز صياغة العقود واللوائح بدقة متوافقة مع أحدث الأنظمة القضائية السعودية.
           </p>
         </div>
 
@@ -76,7 +76,7 @@ export default function AboutPage() {
                 <span>أمانة الحدود التقنية</span>
               </div>
               <p className="text-xs text-[#4A5D50] leading-relaxed">
-                سَنَد أداة مساعدة للمحامي في التدقيق والصياغة، ولا يقدم نفسه بديلاً عن المحامي المرخص أو الحكم القضائي.
+                مقر أداة مساعدة للمحامي في التدقيق والصياغة، ولا يقدم نفسه بديلاً عن المحامي المرخص أو الحكم القضائي.
               </p>
             </div>
 
@@ -115,8 +115,8 @@ export default function AboutPage() {
             <div className="p-4 rounded-xl bg-[#F5F7F5] border border-[#CCD8CE] text-xs space-y-1">
               <Mail className="w-4 h-4 text-[#1F7A46]" />
               <div className="font-bold text-[#1B281F]">البريد الرسمي</div>
-              <a href="mailto:ahmed@sanad.sa" className="text-[#1F7A46] hover:underline font-mono block">
-                ahmed@sanad.sa
+              <a href="mailto:privacy@maqar.sa" className="text-[#1F7A46] hover:underline font-mono block">
+                privacy@maqar.sa
               </a>
             </div>
 

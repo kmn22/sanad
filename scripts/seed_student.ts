@@ -1,4 +1,4 @@
-// Seed Sanad with Arabic student demo data — law student context
+// Seed Maqar with Arabic student demo data — law student context
 import { PrismaClient } from '@prisma/client'
 
 const db = new PrismaClient()
@@ -25,9 +25,9 @@ if (!isTestDatabase(process.env.DATABASE_URL)) {
 
 async function main() {
   const workspace = await db.workspace.upsert({
-    where: { domain: 'sanad-student-demo' },
+    where: { domain: 'maqar-student-demo' },
     update: { type: 'academic' },
-    create: { name: 'حساب طالب تجريبي', domain: 'sanad-student-demo', type: 'academic' },
+    create: { name: 'حساب طالب تجريبي', domain: 'maqar-student-demo', type: 'academic' },
   })
   const ws = { workspaceId: workspace.id }
 

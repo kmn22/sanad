@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { evaluateComplianceStatus } from '../src/lib/sanad/compliance-calc'
+import { evaluateComplianceStatus } from '../src/lib/core/compliance-calc'
 
 describe('Compliance Expiration Evaluation', () => {
   const referenceDate = new Date(2026, 8, 30, 12, 0, 0) // Sep 30, 2026

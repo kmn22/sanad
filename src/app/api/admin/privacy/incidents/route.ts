@@ -2,13 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requestIp, writeAudit } from '@/lib/audit'
 import { breachNotificationDeadline } from '@/lib/compliance'
-import { canManageUsers, forbiddenJson, getAuthContext, unauthorizedJson } from '@/lib/auth/workspace'
+import { canManageUsers, forbiddenJson, getAuthContext, isPlatformSuperAdmin, unauthorizedJson } from '@/lib/auth/workspace'
 
 export async function GET() {
   const auth = await getAuthContext()
   if (!auth) return unauthorizedJson()
   if (!canManageUsers(auth)) return forbiddenJson()
-  return NextResponse.json(await db.privacyIncident.findMany({ where: auth.role === 'admin' ? {} : { workspaceId: auth.workspaceId }, orderBy: { awareAt: 'desc' } }))
+  return NextResponse.json(
+    await db.privacyIncident.findMany({
+      where: isPlatformSuperAdmin(auth) ? {} : { workspaceId: auth.workspaceId },
+      orderBy: { awareAt: 'desc' },
+    })
+  )
 }
 
 export async function POST(req: NextRequest) {

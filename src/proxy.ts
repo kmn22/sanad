@@ -2,7 +2,19 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 import { PRIVACY_NOTICE_VERSION } from '@/lib/compliance'
-import { canAccessPortal, homePathFor, portalForPath } from '@/lib/auth/portals'
+import {
+  canAccessMaqarDashboard,
+  canAccessPortal,
+  homePathFor,
+  portalForPath,
+  resolveMaqarDashboardPath,
+  resolveMaqarPersona,
+} from '@/lib/auth/portals'
+import {
+  evaluateEdgeRateLimit,
+  resolveRateLimitTier,
+  validateTenantJwtClaims,
+} from '@/lib/security/edge-rate-limiter'
 
 const secureCookie = process.env.NODE_ENV === 'production'
 const authSecret = process.env.NEXTAUTH_SECRET
@@ -37,14 +49,43 @@ function requestIdFor(req: NextRequest): string {
   return incoming && incoming.length <= 128 ? incoming : crypto.randomUUID()
 }
 
-function nextWithRequestId(req: NextRequest, requestId: string): NextResponse {
+function clientIpFor(req: NextRequest): string {
+  const forwarded = req.headers.get('x-forwarded-for')
+  if (forwarded) return forwarded.split(',')[0].trim()
+  return req.headers.get('x-real-ip')?.trim() || '127.0.0.1'
+}
+
+function nextWithRequestId(
+  req: NextRequest,
+  requestId: string,
+  tenantScope?: { workspaceId?: string; orgId?: string; userId?: string }
+): NextResponse {
   const requestHeaders = new Headers(req.headers)
   requestHeaders.set('x-request-id', requestId)
+  // Always strip client-supplied tenant headers first to prevent spoofing on
+  // public routes or unauthenticated requests before injecting verified claims.
+  requestHeaders.delete('x-tenant-workspace-id')
+  requestHeaders.delete('x-tenant-org-id')
+  requestHeaders.delete('x-tenant-user-id')
+
+  if (tenantScope?.workspaceId) {
+    requestHeaders.set('x-tenant-workspace-id', tenantScope.workspaceId)
+  }
+  if (tenantScope?.orgId) {
+    requestHeaders.set('x-tenant-org-id', tenantScope.orgId)
+  }
+  if (tenantScope?.userId) {
+    requestHeaders.set('x-tenant-user-id', tenantScope.userId)
+  }
   return NextResponse.next({ request: { headers: requestHeaders } })
 }
 
 function withSecureHeaders(req: NextRequest, requestId: string, res: NextResponse): NextResponse {
   res.headers.set('x-request-id', requestId)
+  res.headers.set('X-Content-Type-Options', 'nosniff')
+  res.headers.set('X-Frame-Options', 'DENY')
+  res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+  res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
   if (requestIsHttps(req)) {
     res.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
     res.headers.append('Content-Security-Policy', 'upgrade-insecure-requests')
@@ -70,10 +111,12 @@ export async function proxy(req: NextRequest) {
     pathname === '/api/analytics/events' ||
     pathname === '/api/ai/check-clause' ||
     pathname === '/api/ai/summarize-contract' ||
+    pathname === '/api/ai/legal-query' ||
     pathname.startsWith('/api/portal/') ||
     pathname.startsWith('/api/cron/')
 
   const isApi = pathname.startsWith('/api/')
+  const isPrivacyAcceptanceApi = pathname === '/api/privacy/accept'
   const portal = portalForPath(pathname)
   const legacySection = ['cases', 'clients', 'tasks', 'documents', 'invoices', 'compliance', 'calendar', 'communications'].find(
     (s) => pathname === `/${s}` || pathname.startsWith(`/${s}/`),
@@ -86,7 +129,7 @@ export async function proxy(req: NextRequest) {
     pathname.startsWith('/admin') ||
     pathname.startsWith('/workflow') ||
     pathname === '/privacy/accept'
-  const isAuthPage = pathname === '/login' || pathname === '/register'
+  const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/signup'
 
   if (!isApi && !isProtectedPage && !isAuthPage) return withSecureHeaders(req, requestId, nextWithRequestId(req, requestId))
 
@@ -95,6 +138,26 @@ export async function proxy(req: NextRequest) {
   const role = (token?.role as string | undefined) || undefined
 
   if (isApi) {
+    // 1. NCA CCC Edge Sliding-Window Rate Limiting
+    const clientIp = clientIpFor(req)
+    const rlTier = resolveRateLimitTier(pathname)
+    const rlDecision = evaluateEdgeRateLimit(clientIp, rlTier)
+    if (!rlDecision.allowed) {
+      const rateLimitedRes = NextResponse.json(
+        {
+          error: 'Too many requests — rate limit exceeded',
+          code: 'RATE_LIMIT_EXCEEDED',
+          retryAfterSeconds: rlDecision.retryAfterSeconds,
+        },
+        { status: 429 }
+      )
+      rateLimitedRes.headers.set('Retry-After', String(rlDecision.retryAfterSeconds))
+      rateLimitedRes.headers.set('X-RateLimit-Limit', String(rlDecision.limit))
+      rateLimitedRes.headers.set('X-RateLimit-Remaining', '0')
+      rateLimitedRes.headers.set('X-RateLimit-Reset', String(rlDecision.resetEpochSeconds))
+      return withSecureHeaders(req, requestId, rateLimitedRes)
+    }
+
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       const isMultipart = (req.headers.get('content-type') || '').includes('multipart/form-data')
       const ceiling = isMultipart ? MAX_MULTIPART_BODY_BYTES : MAX_JSON_BODY_BYTES
@@ -104,10 +167,24 @@ export async function proxy(req: NextRequest) {
       }
     }
     if (isPublicApi) return withSecureHeaders(req, requestId, nextWithRequestId(req, requestId))
-    if (!token) {
-      return withSecureHeaders(req, requestId, NextResponse.json({ error: 'Authentication required' }, { status: 401 }))
+
+    // 2. Strict JWT Token & Tenant Claim Validation (`id`, `orgId`, `workspaceId`, `role`, `exp`)
+    const claimCheck = validateTenantJwtClaims(
+      token as Record<string, unknown> | null,
+      undefined,
+      { requireOrgId: true }
+    )
+    if (!token || !claimCheck.valid) {
+      return withSecureHeaders(
+        req,
+        requestId,
+        NextResponse.json(
+          { error: 'Authentication required', code: claimCheck.reason || 'UNAUTHORIZED' },
+          { status: 401 }
+        )
+      )
     }
-    if (token.privacyNoticeVersion !== PRIVACY_NOTICE_VERSION) {
+    if (!isPrivacyAcceptanceApi && token.privacyNoticeVersion !== PRIVACY_NOTICE_VERSION) {
       return withSecureHeaders(req, requestId, NextResponse.json({ error: 'Current privacy notice acceptance is required', code: 'PRIVACY_NOTICE_REQUIRED' }, { status: 403 }))
     }
     // Client logins may only reach the client-scoped API surface. This is a
@@ -118,11 +195,24 @@ export async function proxy(req: NextRequest) {
     if (pathname.startsWith('/api/client/') && role !== 'client') {
       return withSecureHeaders(req, requestId, NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
     }
-    return withSecureHeaders(req, requestId, nextWithRequestId(req, requestId))
+    const okRes = nextWithRequestId(req, requestId, {
+      workspaceId: token.workspaceId as string | undefined,
+      orgId: token.orgId as string | undefined,
+      userId: token.id as string | undefined,
+    })
+    okRes.headers.set('X-RateLimit-Limit', String(rlDecision.limit))
+    okRes.headers.set('X-RateLimit-Remaining', String(rlDecision.remaining))
+    return withSecureHeaders(req, requestId, okRes)
   }
 
+  const pageClaimCheck = validateTenantJwtClaims(
+    token as Record<string, unknown> | null,
+    undefined,
+    { requireOrgId: true }
+  )
+
   if (isProtectedPage) {
-    if (!token) {
+    if (!token || !pageClaimCheck.valid) {
       const loginUrl = new URL('/login', req.url)
       // Preserve the query string so deep links survive the login round trip.
       loginUrl.searchParams.set('callbackUrl', pathname + req.nextUrl.search)
@@ -131,14 +221,45 @@ export async function proxy(req: NextRequest) {
     if (pathname !== '/privacy/accept' && token.privacyNoticeVersion !== PRIVACY_NOTICE_VERSION) {
       return withSecureHeaders(req, requestId, NextResponse.redirect(new URL('/privacy/accept', req.url)))
     }
+    const verifiedTenantHeaders = {
+      workspaceId: token.workspaceId as string | undefined,
+      orgId: token.orgId as string | undefined,
+      userId: token.id as string | undefined,
+    }
     const home = homePathFor(role)
     // Legacy practice paths → current portal's section.
     if (legacySection) {
       return withSecureHeaders(req, requestId, NextResponse.redirect(new URL(`${home}/${legacySection}`, req.url)))
     }
-    // Legacy single dashboard → the user's own portal.
+    // Maqar Multi-Tenant Dynamic Dashboard Router:
+    // Inspects active organization type & user metadata:
+    //   'ENTERPRISE_CORP' -> /dashboard/corporate
+    //   'LAW_FIRM'        -> /dashboard/practice
+    //   'LAW_STUDENT'     -> /dashboard/academy
     if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
-      return withSecureHeaders(req, requestId, NextResponse.redirect(new URL(home, req.url)))
+      const onboardingCookie = req.cookies.get('maqar_onboarding_status')?.value
+      // Signed JWT claim takes precedence over unsigned client cookies
+      const onboardingStatus =
+        (token.onboardingStatus as string | undefined) || onboardingCookie
+      if (onboardingStatus === 'pending' || onboardingStatus === 'in_progress') {
+        return withSecureHeaders(req, requestId, NextResponse.redirect(new URL('/onboarding', req.url)))
+      }
+
+      const cookieOrgType = req.cookies.get('maqar_persona')?.value
+      const routingCtx = {
+        organizationType:
+          (token.organizationType as string | undefined) || cookieOrgType,
+        userType: token.userType as string | undefined,
+        workspaceType: token.workspaceType as string | undefined,
+        role,
+      }
+      const resolvedPersona = resolveMaqarPersona(routingCtx)
+      const targetDashboard = resolveMaqarDashboardPath(routingCtx)
+
+      if (pathname === '/dashboard' || !canAccessMaqarDashboard(resolvedPersona, pathname, role)) {
+        return withSecureHeaders(req, requestId, NextResponse.redirect(new URL(targetDashboard, req.url)))
+      }
+      return withSecureHeaders(req, requestId, nextWithRequestId(req, requestId, verifiedTenantHeaders))
     }
     // Portal guard: wrong-role users are sent to their own portal.
     if (portal && !canAccessPortal(role, portal)) {
@@ -152,11 +273,11 @@ export async function proxy(req: NextRequest) {
     if (pathname.startsWith('/workflow') && (role === 'client' || role === 'student')) {
       return withSecureHeaders(req, requestId, NextResponse.redirect(new URL(home, req.url)))
     }
-    return withSecureHeaders(req, requestId, nextWithRequestId(req, requestId))
+    return withSecureHeaders(req, requestId, nextWithRequestId(req, requestId, verifiedTenantHeaders))
   }
 
-  // Authenticated users have no business on /login or /register.
-  if (isAuthPage && token) {
+  // Authenticated users with valid tenant claims have no business on /login or /register.
+  if (isAuthPage && token && pageClaimCheck.valid) {
     return withSecureHeaders(req, requestId, NextResponse.redirect(new URL(homePathFor(role), req.url)))
   }
 

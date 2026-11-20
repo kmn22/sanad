@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { LawyerPortalFrame } from './LawyerPortalFrame'
 
 export const metadata: Metadata = {
-  title: 'بوابة المحامي — سند',
+  title: 'بوابة المحامي — مقر',
   description: 'مساحة عمل المحامي اليومية: القضايا، المهام، الصياغة، الفوترة والامتثال.',
   robots: { index: false, follow: false },
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { SAUDI_STANDARD_CLAUSES } from '../src/lib/sanad/drafting/standardClauses'
+import { SAUDI_STANDARD_CLAUSES } from '../src/lib/core/drafting/standardClauses'
 
 describe('Saudi Legal Standard Clauses Library', () => {
   it('contains essential clauses covering arbitration, civil law, labor, and privacy', () => {

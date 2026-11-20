@@ -6,8 +6,8 @@ import { Bookmark, BookOpen, Brain, CalendarClock, GraduationCap, Library, Scale
 import { Button } from '@/components/ui/button'
 import { PortalPageHeader, PortalShell, useBilingual, type NavSection } from '@/components/portal/PortalShell'
 import { useStudentDashboard } from '@/components/portal/usePortalData'
-import { StudentView } from '@/components/sanad/StudentView'
-import { useLang } from '@/lib/sanad/i18n'
+import { StudentView } from '@/components/core/StudentView'
+import { useLang } from '@/lib/core/i18n'
 import type { StudentTab } from './tabs'
 
 const TAB_TITLES: Record<StudentTab, { ar: string; en: string; subAr: string; subEn: string }> = {

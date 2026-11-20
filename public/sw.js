@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sanad-pwa-cache-v4';
+const CACHE_NAME = 'maqar-pwa-cache-v5';
 const urlsToCache = [
   '/manifest.json',
   '/logo.svg',

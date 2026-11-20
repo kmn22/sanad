@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { canManageUsers, forbiddenJson, getAuthContext, hasRole, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
+import { forbiddenJson, getAuthContext, isPlatformSuperAdmin, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 
 const ACTIONS = new Set(['suspend', 'reactivate', 'archive'])
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await getAuthContext()
   if (!auth) return unauthorizedJson()
-  if (!hasRole(auth, ['admin']) || !canManageUsers(auth)) return forbiddenJson()
+  if (!isPlatformSuperAdmin(auth)) return forbiddenJson()
 
   const { id } = await params
   const workspace = await db.workspace.findUnique({ where: { id }, select: { id: true, status: true, name: true } })

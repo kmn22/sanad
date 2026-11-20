@@ -1,18 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getTenantDb } from '@/lib/db'
 import { createClientSchema } from '@/lib/validations'
-import { getAuthContext, getSessionWorkspaceId, unauthorizedJson } from '@/lib/auth/workspace'
+import { getAuthContext, unauthorizedJson } from '@/lib/auth/workspace'
 import { canWrite, denyUnless, enforceMutationBudget } from '@/lib/auth/capabilities'
 import { hasEntitlement } from '@/lib/saas/entitlements'
 import { parsePagination, paginatedResponse } from '@/lib/http'
 import { logError } from '@/lib/observability'
 
 export async function GET(req: NextRequest) {
-  const workspaceId = await getSessionWorkspaceId()
-  if (!workspaceId) return unauthorizedJson()
+  const auth = await getAuthContext()
+  if (!auth) return unauthorizedJson()
+  const tdb = getTenantDb(auth)
+  const workspaceId = auth.workspaceId
   const { limit, cursor } = parsePagination(new URL(req.url))
   const [rows, total] = await Promise.all([
-    db.client.findMany({
+    tdb.client.findMany({
       where: { workspaceId, deletedAt: null },
       include: {
         _count: { select: { cases: true, documents: true, communications: true, invoices: true } },
@@ -21,7 +23,7 @@ export async function GET(req: NextRequest) {
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     }),
-    db.client.count({ where: { workspaceId, deletedAt: null } }),
+    tdb.client.count({ where: { workspaceId, deletedAt: null } }),
   ])
   return NextResponse.json(paginatedResponse(rows, limit, { total }))
 }
@@ -37,6 +39,7 @@ export async function POST(req: NextRequest) {
   if (!(await hasEntitlement(auth.workspaceId, 'clients'))) {
     return NextResponse.json({ error: 'Client management is not included in the current plan', code: 'CLIENTS_NOT_INCLUDED' }, { status: 403 })
   }
+  const tdb = getTenantDb(auth)
   const workspaceId = auth.workspaceId
 
   let body: unknown
@@ -52,7 +55,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const client = await db.client.create({ data: { ...parsed.data, workspaceId } })
+    const client = await tdb.client.create({ data: { ...parsed.data, workspaceId } })
     return NextResponse.json(client)
   } catch (err) {
     // Log server-side; never echo internal/driver messages back to the caller.

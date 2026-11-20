@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getTenantDb } from '@/lib/db'
 import { createDocumentSchema } from '@/lib/validations'
 import { getAuthContext, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 import { canAccessCase, canWrite, denyUnless, enforceMutationBudget, caseLinkedAccessWhere } from '@/lib/auth/capabilities'
@@ -9,16 +9,17 @@ import { logError } from '@/lib/observability'
 export async function GET(req: NextRequest) {
   const auth = await getAuthContext()
   if (!auth) return unauthorizedJson()
+  const tdb = getTenantDb(auth)
   const workspaceId = auth.workspaceId
   const { limit, cursor } = parsePagination(new URL(req.url))
   const [rows, total] = await Promise.all([
-    db.legalDocument.findMany({
+    tdb.legalDocument.findMany({
       where: { workspaceId, deletedAt: null, ...caseLinkedAccessWhere(auth) },
       orderBy: { updatedAt: 'desc' },
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     }),
-    db.legalDocument.count({ where: { workspaceId, deletedAt: null, ...caseLinkedAccessWhere(auth) } }),
+    tdb.legalDocument.count({ where: { workspaceId, deletedAt: null, ...caseLinkedAccessWhere(auth) } }),
   ])
   return NextResponse.json(paginatedResponse(rows, limit, { total }))
 }
@@ -32,23 +33,24 @@ export async function POST(req: NextRequest) {
     if (denied) return denied
     const budgeted = await enforceMutationBudget(auth)
     if (budgeted) return budgeted
+    const tdb = getTenantDb(auth)
     const workspaceId = auth.workspaceId
     const rawBody = await req.json()
     const parsed = createDocumentSchema.parse(rawBody)
     if (parsed.clientId) {
-      const client = await db.client.findFirst({ where: { id: parsed.clientId, workspaceId }, select: { id: true } })
+      const client = await tdb.client.findFirst({ where: { id: parsed.clientId, workspaceId }, select: { id: true } })
       if (!client) return notFoundJson()
     }
     if (parsed.caseId) {
-      const legalCase = await db.legalCase.findFirst({ where: { id: parsed.caseId, workspaceId, deletedAt: null }, select: { id: true } })
+      const legalCase = await tdb.legalCase.findFirst({ where: { id: parsed.caseId, workspaceId, orgId: auth.orgId, deletedAt: null }, select: { id: true } })
       if (!legalCase || !(await canAccessCase(auth, legalCase.id))) return notFoundJson()
     }
-    const doc = await db.legalDocument.create({ data: { ...parsed, workspaceId } })
+    const doc = await tdb.legalDocument.create({ data: { ...parsed, workspaceId } })
     // Auto-generate follow-up task when a doc is created
     if (doc.docType === 'nda' && doc.status === 'sent') {
       const due = new Date()
       due.setDate(due.getDate() + 3)
-      await db.task.create({
+      await tdb.task.create({
         data: {
           title: `Follow up on ${doc.title} signature`,
           description: `${doc.title} sent — chase signature in 3 days`,
@@ -65,7 +67,7 @@ export async function POST(req: NextRequest) {
       const due = new Date(doc.expiryDate)
       due.setDate(due.getDate() - 30)
       if (due > new Date()) {
-        await db.task.create({
+        await tdb.task.create({
           data: {
             title: `Renew ${doc.title}`,
             description: `${doc.title} expires ${doc.expiryDate.toISOString().slice(0, 10)}`,

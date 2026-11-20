@@ -15,11 +15,14 @@ async function api(page: Page, path: string, init?: RequestInit) {
   }, [path, init] as const)
 }
 
+let ipSeq = 0
+
 async function login(page: Page, email: string, password: string) {
+  await page.context().setExtraHTTPHeaders({ 'x-forwarded-for': `10.240.4.${(++ipSeq % 250) + 1}` })
   await page.goto('/login')
   await page.locator('#login-email').fill(email)
   await page.locator('#login-password').fill(password)
-  await page.getByRole('button', { name: /تسجيل الدخول|دخول/ }).click()
+  await page.getByRole('button', { name: 'تسجيل الدخول', exact: true }).click()
   await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 })
 }
 
