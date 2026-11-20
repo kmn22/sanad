@@ -5,9 +5,7 @@ import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Progress } from '@/components/ui/progress'
-import { Separator } from '@/components/ui/separator'
 import {
   AlertTriangle,
   CalendarClock,
@@ -15,7 +13,6 @@ import {
   Clock,
   FileText,
   Gavel,
-  Newspaper,
   Timer,
   Zap,
   Trophy,
@@ -40,13 +37,11 @@ import {
   Area,
 } from 'recharts'
 import { useLang } from '@/lib/core/i18n'
-import { AiSearchChat } from './AiSearchChat'
 import { LawyerOnboardingWizard } from './LawyerOnboardingWizard'
 import {
   COMPLIANCE_COLORS,
   DOC_STATUS_COLORS,
   PRIORITY_COLORS,
-  SOURCE_COLORS,
   daysUntil,
   formatDate,
   formatDuration,
@@ -485,10 +480,8 @@ export function DashboardView({ data, onNavigate }: Props) {
         </>
       )}
 
-      {/* Two-column main grid */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Left col: today's tasks + expiring compliance */}
-        <div className="lg:col-span-2 space-y-6">
+      {/* Priorities & expiring compliance */}
+      <div className="space-y-6">
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -596,48 +589,6 @@ export function DashboardView({ data, onNavigate }: Props) {
               )}
             </CardContent>
           </Card>
-        </div>
-
-        {/* Right col: daily brief + AI Search */}
-        <div className="flex flex-col gap-6">
-          <AiSearchChat />
-          
-          <Card className="flex-1">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <Newspaper className="h-4 w-4 text-primary" />
-                {t('dash.daily_brief')}
-              </CardTitle>
-              <p className="text-xs text-muted-foreground">{t('dash.brief_subtitle')}</p>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <ScrollArea className="h-[420px] px-2 scroll-thin">
-                <div className="space-y-3">
-                  {data.briefs.map((b, i) => (
-                    <div key={b.id}>
-                      {i > 0 && <Separator className="my-3" />}
-                      <article className="space-y-1.5">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${SOURCE_COLORS[b.source] || 'bg-muted'}`}>
-                            {t(`src.${b.source}`)}
-                          </Badge>
-                          <span className="text-[10px] text-muted-foreground">{formatDate(b.publishedAt, lang)}</span>
-                        </div>
-                        <h4 className="text-sm font-semibold leading-tight">{b.title}</h4>
-                        <p className="text-xs text-muted-foreground leading-relaxed">{b.summary}</p>
-                        {b.url && (
-                          <a href={b.url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline inline-flex items-center gap-1">
-                            {t('dash.read_more')}
-                          </a>
-                        )}
-                      </article>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        </div>
       </div>
 
       {/* Bottom: docs needing attention */}

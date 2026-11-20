@@ -2,11 +2,11 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { LandingHeader } from '../_landing/LandingHeader'
 import { LandingFooter } from '../_landing/LandingFooter'
-import { Cpu, ShieldCheck, UserCheck, EyeOff, AlertTriangle, ArrowLeft, Mail, Scale } from 'lucide-react'
+import { Cpu, ShieldCheck, AlertTriangle, UserCheck, ArrowLeft } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'إفصاح استخدام الذكاء الاصطناعي — مقر للتقنية القانونية',
-  description: 'معايير الشفافية، العزل المحلي، ومحددات الذكاء الاصطناعي التوليدي في منصة مقر.',
+  description: 'الشفافية التقنية لآلية عمل أدوات الفحص الحتمية ومساعدة المسودات الاختيارية في منصة مقر.',
 }
 
 export default function AiDisclosurePage() {
@@ -15,102 +15,73 @@ export default function AiDisclosurePage() {
       <LandingHeader />
 
       <main className="flex-1 py-12 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto w-full space-y-10">
-        {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-xs text-[#566A5C]">
           <Link href="/" className="hover:text-[#1F7A46]">الرئيسية</Link>
           <span>/</span>
           <span className="text-[#1B281F] font-bold">إفصاح الذكاء الاصطناعي</span>
         </div>
 
-        {/* Header Block */}
         <div className="space-y-3">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E8EFE9] border border-[#CCD8CE] text-[#1F7A46] text-xs font-bold">
             <Cpu className="w-3.5 h-3.5" />
-            <span>الشفافية والأمان في الذكاء الاصطناعي القانوني</span>
+            <span>الشفافية في أدوات القراءة والمسودات</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-black text-[#1B281F] font-heading">
-            إفصاح استخدام الذكاء الاصطناعي
+            حدود وآلية عمل الأدوات الذكية في «مقر»
           </h1>
-          <p className="text-sm text-[#4A5D50] leading-relaxed">
-            بيان بالنماذج الخوارزمية، آليات المعالجة، والضوابط الأخلاقية والنظامية الحاكمة لتوليد ومراجعة النصوص القانونية في مقر.
+          <p className="text-sm sm:text-base text-[#4A5D50] leading-relaxed">
+            توضح هذه الصفحة الفرق بين أدوات الفحص الأولية المبرمجة ومزايا الصياغة الاختيارية داخل مساحة العمل، مع تأكيد المسؤولية المهنية للمحامي.
           </p>
         </div>
 
-        {/* Golden Rule Banner */}
-        <div className="bg-white rounded-2xl border-2 border-[#1F7A46]/30 p-6 space-y-3 shadow-sm">
-          <div className="flex items-center gap-2 text-[#1F7A46] font-bold text-base font-heading">
-            <UserCheck className="w-5 h-5 shrink-0" />
-            <span>المبدأ الذهبي: الإشراف البشري الإلزامي (Human-in-the-Loop)</span>
-          </div>
-          <p className="text-xs sm:text-sm text-[#4A5D50] leading-relaxed">
-            تعتمد بعض خصائص منصة مقر على نماذج لغوية متخصصة ومستضافة محلياً للمساعدة في التدقيق النظامي وتوليد البدائل التعاقدية المتوافقة. المخرجات آلية بطبيعتها ومعدة لمساعدة الممارس، ولا تعد بديلاً عن الرأي القانوني المستقل للمحامي المرخص. يجب مراجعة أي مخرج ومطابقته مع وقائع كل دعوى أو عقد قبل اعتماده.
-          </p>
-        </div>
-
-        {/* Detailed Sections */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white rounded-xl border border-[#CCD8CE] p-6 space-y-3 shadow-xs">
-            <div className="flex items-center gap-2 text-[#1F7A46] font-bold text-sm font-heading">
-              <EyeOff className="w-4 h-4" />
-              <span>لا تدريب على بيانات المكاتب</span>
-            </div>
-            <p className="text-xs text-[#4A5D50] leading-relaxed">
-              <strong>بياناتك ومسوداتك لا تُستخدم إطلاقاً لتدريب أي نموذج ذكاء اصطناعي.</strong> تخضع النصوص المدخلة للمعالجة الآنية (Inference) لتقديم نتيجة الفحص ثم لا تحفظ في مستودعات تدريب عامة أو مشتركة.
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl border border-[#CCD8CE] p-6 space-y-3 shadow-xs">
-            <div className="flex items-center gap-2 text-[#1F7A46] font-bold text-sm font-heading">
+        <div className="space-y-5">
+          <div className="rounded-2xl border border-[#CCD8CE] bg-white p-6 space-y-2.5">
+            <div className="flex items-center gap-2 font-bold text-sm text-[#1F7A46]">
               <ShieldCheck className="w-4 h-4" />
-              <span>عزل الاستضافة والسيادة</span>
+              <span>١. الأدوات العامة على الصفحة الرئيسية (حتمية وبلا LLM خارجي)</span>
             </div>
             <p className="text-xs text-[#4A5D50] leading-relaxed">
-              لا يُسمح بربط نماذج ذكاء اصطناعي خارجية تجارية غير مقيدة أو نقل بيانات خارج المملكة دون تقييم أثر حماية البيانات (DPIA) وموافقة نظامية مسبقة. جميع عمليات الاستدلال تجري داخل بنية تحتية آمنة.
+              يعمل مساعد قراءة البنود وملخص العقد في الصفحة الرئيسية بقواعد برمجية حتمية محلية داخل الخادم؛ وإذا لم يندرج البند ضمن القواعد الثابتة المبرمجة، يُصنّف مباشرةً كـ «يتطلب مراجعة محامٍ مختص» دون افتراض سلامته النظامية.
             </p>
           </div>
 
-          <div className="bg-white rounded-xl border border-[#CCD8CE] p-6 space-y-3 shadow-xs">
-            <div className="flex items-center gap-2 text-[#1F7A46] font-bold text-sm font-heading">
-              <AlertTriangle className="w-4 h-4 text-[#B54708]" />
-              <span>مخاطر الهلوسة والتحقق المستمر</span>
+          <div className="rounded-2xl border border-[#CCD8CE] bg-white p-6 space-y-2.5">
+            <div className="flex items-center gap-2 font-bold text-sm text-[#1F7A46]">
+              <Cpu className="w-4 h-4" />
+              <span>٢. الصياغة الاختيارية داخل مساحة العمل المحمية</span>
             </div>
             <p className="text-xs text-[#4A5D50] leading-relaxed">
-              رغم تدريب الخوارزميات على مواد الأنظمة السعودية الصادرة، قد تنتج النماذج مراجع غير محدثة في حالات نادرة. يتحمل المحامي مسؤولية التأكد من أحدث التعديلات المنشورة في الجريدة الرسمية (أم القرى).
+              تعتمد أدوات مسودة النصوص داخل الحساب المسجّل على خادم نموذج محلي مُهيأ (Ollama) إن كان متصلاً ببيئة التشغيل، أو تعود لقالب استرشادي أولي قابل للتحرير من المحامي.
             </p>
           </div>
 
-          <div className="bg-white rounded-xl border border-[#CCD8CE] p-6 space-y-3 shadow-xs">
-            <div className="flex items-center gap-2 text-[#1F7A46] font-bold text-sm font-heading">
-              <Scale className="w-4 h-4" />
-              <span>حماية الخصوصية ومبدأ التقليل</span>
+          <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-6 space-y-2.5">
+            <div className="flex items-center gap-2 font-bold text-sm text-amber-900">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <span>٣. ليست استشارة قانونية ولا تغني عن المحامي المرخّص</span>
+            </div>
+            <p className="text-xs text-amber-950 leading-relaxed">
+              تُعد جميع التنبيهات والملخصات والمسودات الآلية أدوات مساعدة أولية فقط. قد تتضمن الأنظمة التعديلات اللاحقة أو الوقائع الخاصة بحالتك ما لم ترصده الأداة؛ لذا تبقى المراجعة والاعتماد النهائي من اختصاص المحامي المرخّص وحده.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-[#CCD8CE] bg-white p-6 space-y-2.5">
+            <div className="flex items-center gap-2 font-bold text-sm text-[#1B281F]">
+              <UserCheck className="w-4 h-4 text-[#1F7A46]" />
+              <span>٤. عدم تدريب نماذج خارجية بملفات موكّليك</span>
             </div>
             <p className="text-xs text-[#4A5D50] leading-relaxed">
-              نوصي الممارسين دوماً بحذف المعرفات غير اللازمة (مثل أرقام الهويات أو الحسابات البنكية) قبل إخضاع البنود للفحص، والالتزام بأدنى قدر لازم من البيانات لتحقيق الغرض القانوني.
+              لا تُرسل نصوص عقودك أو ملفات موكّليك إلى واجهات تدريب عامة، ولا تُستخدم بيانات العملاء لتحسين أي نماذج خارج نطاق المنصة.
             </p>
           </div>
         </div>
 
-        {/* Feedback and Incident Report Card */}
-        <div className="bg-white rounded-2xl border border-[#CCD8CE] p-6 space-y-3 shadow-xs">
-          <h2 className="text-base font-bold text-[#1B281F] font-heading">
-            الإبلاغ عن مخرجات غير دقيقة أو حوادث
-          </h2>
-          <p className="text-xs sm:text-sm text-[#4A5D50] leading-relaxed">
-            إذا لاحظت أي خطأ نظامي في تحليل المواد أو استشهاد غير دقيق، نرجو إبلاغ فريقنا فوراً لدراسته وتحديث قاعدة المعرفة النظامية:
-          </p>
-          <div className="flex items-center gap-2 pt-1 text-sm font-mono text-[#1F7A46]">
-            <Mail className="w-4 h-4" />
-            <a href="mailto:privacy@maqar.sa" className="hover:underline">privacy@maqar.sa</a>
-          </div>
-        </div>
-
-        {/* Back navigation */}
-        <div className="pt-4 flex items-center justify-between">
+        <div className="flex flex-wrap gap-4 pt-2 border-t border-[#CCD8CE]">
           <Link href="/" className="text-xs font-bold text-[#1F7A46] hover:underline inline-flex items-center gap-1">
-            <ArrowLeft className="w-4 h-4 rotate-180" /> العودة للصفحة الرئيسية
+            العودة للرئيسية <ArrowLeft className="w-3.5 h-3.5" />
           </Link>
           <Link href="/security" className="text-xs font-bold text-[#1F7A46] hover:underline inline-flex items-center gap-1">
-            تفاصيل معمارية الأمان والسيادة ←
+            الأمان والخصوصية <ArrowLeft className="w-3.5 h-3.5" />
           </Link>
         </div>
       </main>

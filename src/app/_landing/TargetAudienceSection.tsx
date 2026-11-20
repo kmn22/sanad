@@ -1,71 +1,84 @@
 import Link from 'next/link'
+import { Briefcase, Users, ShieldCheck, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Users, ArrowLeft, Building2, Briefcase, GraduationCap } from 'lucide-react'
 
 export function TargetAudienceSection() {
   return (
-    <section className="py-12 px-4 sm:px-6 lg:px-8 mx-auto max-w-5xl text-center">
-      <div className="bg-[#E8EFE9] rounded-2xl border border-[#CCD8CE] p-8 sm:p-10 space-y-6">
-        <div className="w-12 h-12 rounded-xl bg-white border border-[#CCD8CE] text-[#1F7A46] flex items-center justify-center mx-auto shadow-xs">
-          <Users className="w-6 h-6" />
+    <section className="py-16 md:py-20 px-4 sm:px-6 lg:px-8 border-t border-[#CCD8CE] bg-white">
+      <div className="max-w-7xl mx-auto">
+        <div className="max-w-2xl mb-12">
+          <p className="text-xs font-bold text-[#1F7A46] uppercase tracking-wider mb-2">لمن صُمم مقر؟</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#1B281F] font-heading">
+            مبني لاحتياج المحامي المستقل والمكتب الصغير — لا تعقيدات المؤسسات الضخمة
+          </h2>
+          <p className="text-sm text-[#4A5D50] mt-2">
+            ركزنا كل المزايا على إدارة قضايا المكتب، متابعة التراخيص والوكالات، وتقديم واجهة احترافية لموكّلك.
+          </p>
         </div>
 
-        <h2 className="text-xl sm:text-2xl font-black text-[#1B281F] font-heading">
-          لمن صُممت منظومة «مقر»؟
-        </h2>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="rounded-2xl border border-[#CCD8CE] bg-[#F5F7F5] p-6 flex flex-col justify-between space-y-5">
+            <div className="space-y-3">
+              <div className="w-11 h-11 rounded-xl bg-[#1F7A46] text-white grid place-items-center">
+                <Briefcase className="w-5 h-5" />
+              </div>
+              <span className="inline-block text-[11px] font-bold text-[#1F7A46] bg-[#E8EFE9] px-2.5 py-0.5 rounded-full">
+                مقعد واحد • 199 ر.س / شهرياً
+              </span>
+              <h3 className="text-lg font-bold text-[#1B281F] font-heading">المحامي المستقل والمرخّص</h3>
+              <p className="text-xs text-[#4A5D50] leading-relaxed">
+                نظّم قضاياك ومواعيد جلساتك، تابع ساعات العمل وبيانات الأتعاب، وقدّم لموكليك بوابة متابعة تحفظ وقتك وترفع احترافية مكتبك.
+              </p>
+            </div>
+            <Link href="/register" className="text-xs font-bold text-[#1F7A46] hover:underline inline-flex items-center gap-1">
+              ابدأ تجربة المحامي المستقل <ArrowLeft className="w-3.5 h-3.5" />
+            </Link>
+          </div>
 
-        <p className="text-sm sm:text-base text-[#1B281F] max-w-3xl mx-auto leading-relaxed font-medium">
-          صُمم «مقر» ليكون المقر الرقمي للعمليات القانونية والحوكمة لثلاث ركائز رئيسية: الإدارات القانونية في الشركات والمنشآت، ومكاتب وشركات المحاماة المرخصة، والباحثين وطلاب القانون في الجامعات السعودية.
-        </p>
+          <div className="rounded-2xl border-2 border-[#1F7A46] bg-white p-6 flex flex-col justify-between space-y-5 shadow-xs">
+            <div className="space-y-3">
+              <div className="w-11 h-11 rounded-xl bg-[#165832] text-white grid place-items-center">
+                <Users className="w-5 h-5" />
+              </div>
+              <span className="inline-block text-[11px] font-bold text-white bg-[#1F7A46] px-2.5 py-0.5 rounded-full">
+                ٢–١٠ مقاعد • 449 ر.س / شهرياً
+              </span>
+              <h3 className="text-lg font-bold text-[#1B281F] font-heading">مكاتب المحاماة الصغيرة</h3>
+              <p className="text-xs text-[#4A5D50] leading-relaxed">
+                وزّع القضايا والمهام بين المحامين والفريق الإداري، فعّل الموافقات الداخلية والعزل السري للملفات، وتابع التحصيل من لوحة واحدة.
+              </p>
+            </div>
+            <Link href="/register" className="text-xs font-bold text-[#1F7A46] hover:underline inline-flex items-center gap-1">
+              سجّل مكتبك الصغير الآن <ArrowLeft className="w-3.5 h-3.5" />
+            </Link>
+          </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-right pt-2">
-          <Link
-            href="/solutions/enterprise"
-            className="bg-white rounded-xl border border-[#CCD8CE] p-4 hover:border-[#1F7A46] transition-all flex items-start gap-3"
-          >
-            <Building2 className="w-5 h-5 text-[#1F7A46] shrink-0 mt-0.5" />
-            <div>
-              <p className="text-xs font-bold text-[#1B281F]">للشركات والمنشآت</p>
-              <p className="text-[11px] text-[#4A5D50] mt-0.5">إدارة دورة حياة العقود (CLM) والحوكمة</p>
+          <div className="rounded-2xl border border-[#CCD8CE] bg-[#F5F7F5] p-6 flex flex-col justify-between space-y-5">
+            <div className="space-y-3">
+              <div className="w-11 h-11 rounded-xl bg-[#1B281F] text-white grid place-items-center">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <span className="inline-block text-[11px] font-bold text-[#4A5D50] bg-white border border-[#CCD8CE] px-2.5 py-0.5 rounded-full">
+                مضمّنة مع كل باقة
+              </span>
+              <h3 className="text-lg font-bold text-[#1B281F] font-heading">بوابة الموكّل الذكية عبر الرابط</h3>
+              <p className="text-xs text-[#4A5D50] leading-relaxed">
+                يرى موكّلك مراحل القضية بمصطلحات مبسّطة بعيداً عن التعقيد، ويرفع المستندات المطلوبة بأمان عبر رابط مشفر برمز تحقق OTP.
+              </p>
             </div>
-          </Link>
-          <Link
-            href="/solutions/firms"
-            className="bg-white rounded-xl border border-[#CCD8CE] p-4 hover:border-[#1F7A46] transition-all flex items-start gap-3"
-          >
-            <Briefcase className="w-5 h-5 text-[#1F7A46] shrink-0 mt-0.5" />
-            <div>
-              <p className="text-xs font-bold text-[#1B281F]">لمكاتب المحاماة</p>
-              <p className="text-[11px] text-[#4A5D50] mt-0.5">إدارة القضايا والمحاكم والمرافعات</p>
-            </div>
-          </Link>
-          <Link
-            href="/solutions/academy"
-            className="bg-white rounded-xl border border-[#CCD8CE] p-4 hover:border-[#1F7A46] transition-all flex items-start gap-3"
-          >
-            <GraduationCap className="w-5 h-5 text-[#1F7A46] shrink-0 mt-0.5" />
-            <div>
-              <p className="text-xs font-bold text-[#1B281F]">للأكاديميين والطلاب</p>
-              <p className="text-[11px] text-[#4A5D50] mt-0.5">بنك السوابق القضائية والبحث النظامي</p>
-            </div>
-          </Link>
+            <Link href="/pricing" className="text-xs font-bold text-[#1F7A46] hover:underline inline-flex items-center gap-1">
+              استعرض تفاصيل الباقات <ArrowLeft className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </div>
 
-        <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
-          <Link href="/onboarding">
-            <Button className="bg-[#1F7A46] hover:bg-[#165832] text-white font-bold text-xs sm:text-sm px-6 h-11 shadow-xs cursor-pointer">
-              <span>ابدأ الآن</span>
-              <ArrowLeft className="w-4 h-4 mr-1.5" />
-            </Button>
-          </Link>
-          <Link href="/pricing">
-            <Button
-              variant="outline"
-              className="border-[#CCD8CE] bg-white hover:bg-[#F5F7F5] text-[#1B281F] font-bold text-xs sm:text-sm px-6 h-11 cursor-pointer"
-            >
-              <span>استعرض باقات الاشتراك والأسعار</span>
-            </Button>
-          </Link>
+        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Button asChild size="lg" className="bg-[#1F7A46] hover:bg-[#165832] text-white font-bold px-8">
+            <Link href="/register">ابدأ تجربة ١٤ يوماً مجاناً</Link>
+          </Button>
+          <Button asChild size="lg" variant="outline" className="border-[#1F7A46]/30 text-[#165832] hover:bg-[#E8EFE9]">
+            <Link href="/pricing">مقارنة الباقات بالريال السعودي</Link>
+          </Button>
         </div>
       </div>
     </section>

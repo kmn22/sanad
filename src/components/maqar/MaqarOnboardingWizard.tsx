@@ -476,13 +476,12 @@ export function MaqarOnboardingWizard() {
                 return (
                   <div key={item.num} className="flex items-center gap-1.5">
                     <span
-                      className={`h-6 w-6 rounded-full flex items-center justify-center font-bold text-[11px] transition-colors ${
-                        isActive
-                          ? 'bg-[#1F7A46] text-white'
-                          : isDone
+                      className={`h-6 w-6 rounded-full flex items-center justify-center font-bold text-[11px] transition-colors ${isActive
+                        ? 'bg-[#1F7A46] text-white'
+                        : isDone
                           ? 'bg-[#E8EFE9] text-[#1F7A46] border border-[#1F7A46]/40'
                           : 'bg-muted text-muted-foreground'
-                      }`}
+                        }`}
                     >
                       {isDone ? '✓' : item.num}
                     </span>
@@ -574,20 +573,18 @@ export function MaqarOnboardingWizard() {
                       type="button"
                       data-testid={`persona-card-${card.id}`}
                       onClick={() => setSelectedPersona(card.id)}
-                      className={`text-start rounded-2xl p-6 transition-all duration-200 border flex flex-col justify-between cursor-pointer ${
-                        isSelected
-                          ? 'border-[#1F7A46] ring-2 ring-[#1F7A46]/20 bg-white dark:bg-card shadow-md'
-                          : 'border-[#CCD8CE] dark:border-border bg-white/80 dark:bg-card/70 hover:border-[#1F7A46]/60 hover:bg-white dark:hover:bg-card'
-                      }`}
+                      className={`text-start rounded-2xl p-6 transition-all duration-200 border flex flex-col justify-between cursor-pointer ${isSelected
+                        ? 'border-[#1F7A46] ring-2 ring-[#1F7A46]/20 bg-white dark:bg-card shadow-md'
+                        : 'border-[#CCD8CE] dark:border-border bg-white/80 dark:bg-card/70 hover:border-[#1F7A46]/60 hover:bg-white dark:hover:bg-card'
+                        }`}
                     >
                       <div className="space-y-4">
                         <div className="flex items-center justify-between gap-2">
                           <div
-                            className={`h-12 w-12 rounded-2xl flex items-center justify-center border ${
-                              isSelected
-                                ? 'bg-[#1F7A46] border-[#1F7A46] text-white'
-                                : 'bg-[#E8EFE9] dark:bg-muted border-[#CCD8CE] dark:border-border text-[#1F7A46] dark:text-foreground'
-                            }`}
+                            className={`h-12 w-12 rounded-2xl flex items-center justify-center border ${isSelected
+                              ? 'bg-[#1F7A46] border-[#1F7A46] text-white'
+                              : 'bg-[#E8EFE9] dark:bg-muted border-[#CCD8CE] dark:border-border text-[#1F7A46] dark:text-foreground'
+                              }`}
                           >
                             <Icon className="w-6 h-6" />
                           </div>
@@ -623,17 +620,16 @@ export function MaqarOnboardingWizard() {
                           {isRtl ? card.targetLabelAr : card.targetLabelEn}
                         </span>
                         <span
-                          className={`font-bold ${
-                            isSelected ? 'text-[#1F7A46] dark:text-primary' : 'text-muted-foreground'
-                          }`}
+                          className={`font-bold ${isSelected ? 'text-[#1F7A46] dark:text-primary' : 'text-muted-foreground'
+                            }`}
                         >
                           {isSelected
                             ? isRtl
                               ? '✓ محدد حالياً'
                               : '✓ Selected'
                             : isRtl
-                            ? 'اختر المسار'
-                            : 'Select'}
+                              ? 'اختر المسار'
+                              : 'Select'}
                         </span>
                       </div>
                     </button>
@@ -837,10 +833,10 @@ export function MaqarOnboardingWizard() {
                           onChange={(e) =>
                             setTeamCapacity(
                               e.target.value as
-                                | 'SOLO_1_3'
-                                | 'BOUTIQUE_4_15'
-                                | 'MIDSIZE_16_50'
-                                | 'ENTERPRISE_50_PLUS'
+                              | 'SOLO_1_3'
+                              | 'BOUTIQUE_4_15'
+                              | 'MIDSIZE_16_50'
+                              | 'ENTERPRISE_50_PLUS'
                             )
                           }
                           className="w-full rounded-xl bg-background border border-border ps-10 pe-4 py-2.5 text-sm text-foreground focus:border-primary focus:outline-none"
@@ -880,10 +876,10 @@ export function MaqarOnboardingWizard() {
                           onChange={(e) =>
                             setAcademicLevel(
                               e.target.value as
-                                | 'UNDERGRADUATE_Y1_Y2'
-                                | 'UNDERGRADUATE_Y3_Y4'
-                                | 'LLB_GRADUATE_TRAINEE'
-                                | 'LLM_PHD_RESEARCHER'
+                              | 'UNDERGRADUATE_Y1_Y2'
+                              | 'UNDERGRADUATE_Y3_Y4'
+                              | 'LLB_GRADUATE_TRAINEE'
+                              | 'LLM_PHD_RESEARCHER'
                             )
                           }
                           className="w-full rounded-xl bg-background border border-border px-4 py-2.5 text-sm text-foreground focus:border-primary focus:outline-none"
@@ -930,11 +926,10 @@ export function MaqarOnboardingWizard() {
                               key={tag}
                               type="button"
                               onClick={() => toggleInterestTag(tag)}
-                              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${
-                                active
-                                  ? 'bg-[#E8EFE9] dark:bg-accent border-[#1F7A46] text-[#1F7A46] dark:text-primary'
-                                  : 'bg-background border-border text-muted-foreground hover:border-primary/40'
-                              }`}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${active
+                                ? 'bg-[#E8EFE9] dark:bg-accent border-[#1F7A46] text-[#1F7A46] dark:text-primary'
+                                : 'bg-background border-border text-muted-foreground hover:border-primary/40'
+                                }`}
                             >
                               {active ? `✓ ${tag}` : `+ ${tag}`}
                             </button>

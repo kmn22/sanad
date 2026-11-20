@@ -34,10 +34,16 @@ describe('Repositioning Architecture & Analytics', () => {
     expect(good.score).toBeGreaterThanOrEqual(90)
   })
 
-  it('flags Saudi Labor Law Art. 53 probation and Civil Transactions Art. 179 penalty waivers', () => {
-    const probation = runDeterministicClauseRules('تحدد فترة التجربة بستة أشهر (180 يوماً) من تاريخ المباشرة.')
-    expect(probation.valid).toBe(false)
-    expect(probation.article).toContain('53')
+  it('follows Feb 2025 Art. 53 probation (180d valid, >180d flagged), flags Art. 179/92/61 violations, and marks unmatched clauses for lawyer review', () => {
+    const validProbation = runDeterministicClauseRules('تحدد فترة التجربة بمائة وثمانين (180) يوماً من تاريخ المباشرة.')
+    expect(validProbation.valid).toBe(true)
+    expect(validProbation.status).toBe('valid')
+    expect(validProbation.article).toContain('53')
+
+    const excessiveProbation = runDeterministicClauseRules('تحدد فترة التجربة بتسعة أشهر (270 يوماً) من تاريخ المباشرة.')
+    expect(excessiveProbation.valid).toBe(false)
+    expect(excessiveProbation.status).toBe('flagged')
+    expect(excessiveProbation.article).toContain('53')
 
     const penalty = runDeterministicClauseRules('غرامة قطعية ولا يحق للقضاء التدخل بتعديلها.')
     expect(penalty.valid).toBe(false)
@@ -50,6 +56,11 @@ describe('Repositioning Architecture & Analytics', () => {
     const passport = runDeterministicClauseRules('يلتزم العامل بتسليم جواز السفر لصاحب العمل طوال مدة العقد.')
     expect(passport.valid).toBe(false)
     expect(passport.article).toContain('61')
+
+    const unmatched = runDeterministicClauseRules('يلتزم الطرفان بتقديم تقارير ربع سنوية باللغة العربية حول مؤشرات الأداء.')
+    expect(unmatched.valid).toBe(false)
+    expect(unmatched.status).toBe('needs_lawyer_review')
+    expect(unmatched.score).toBe(0)
   })
 
   it('summarizes contracts into structured clauses, obligations, durations, and risk alerts', () => {

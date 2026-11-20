@@ -191,7 +191,7 @@ export function LawyerOnboardingWizard({ isOpen, onClose, onComplete }: Props) {
                 <Building2 className="h-4 w-4 text-emerald-600" />
                 <span>بيانات مكتب أو شركة المحاماة</span>
               </h4>
-              <p className="text-xs text-muted-foreground">تظهر هذه الهوية في بوابة الموكل وفواتير زاتكا ZATCA الضريبية</p>
+              <p className="text-xs text-muted-foreground">تظهر هذه الهوية في بوابة الموكل وبيانات الأتعاب</p>
             </div>
 
             <div className="space-y-3 text-xs">

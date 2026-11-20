@@ -75,15 +75,6 @@ export const NAV_ICONS: Record<string, React.ComponentType<{ className?: string 
       <path d="M16 18v-3" />
     </svg>
   ),
-  scanner: (props) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M3 7V5a2 2 0 0 1 2-2h2" />
-      <path d="M17 3h2a2 2 0 0 1 2 2v2" />
-      <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
-      <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
-      <rect x="7" y="8" width="10" height="8" rx="1" />
-    </svg>
-  ),
   calendar: (props) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M8 2v4" />
@@ -97,21 +88,6 @@ export const NAV_ICONS: Record<string, React.ComponentType<{ className?: string 
       <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.62 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
     </svg>
   ),
-  briefs: (props) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
-      <path d="M6 6h10" />
-      <path d="M6 10h10" />
-      <path d="M6 14h7" />
-    </svg>
-  ),
-  research: (props) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
-      <path d="m9 10 2 2 4-4" />
-      <path d="M12 18v-3" />
-    </svg>
-  ),
 }
 
 export const NAV_KEYS: string[] = [
@@ -119,11 +95,8 @@ export const NAV_KEYS: string[] = [
   'dashboard',
   'clients',
   'cases',
-  'research',
   'communications',
   'documents',
-  'briefs',
-  'scanner',
   'invoices',
   'compliance',
   'tasks',

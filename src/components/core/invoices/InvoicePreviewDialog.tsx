@@ -43,7 +43,7 @@ export function InvoicePreviewDialog({
           </Button>
         </DialogHeader>
 
-        {/* ZATCA Phase 2 Compliance Status Box */}
+        {/* Fee Statement Notice */}
         <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3.5 print:hidden">
           <div className="rounded-lg bg-amber-500/10 p-2 text-amber-600">
             <ShieldCheck className="h-5 w-5" />
@@ -51,16 +51,16 @@ export function InvoicePreviewDialog({
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-foreground">
-                {lang === 'ar' ? 'ربط الفوترة الإلكترونية مع هيئة الزكاة' : 'ZATCA e-invoicing integration'}
+                {lang === 'ar' ? 'بيان أتعاب ومطالبة داخلية' : 'Internal fee statement'}
               </span>
               <Badge variant="secondary" className="bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[10px]">
-                {lang === 'ar' ? 'غير مفعّل' : 'Not configured'}
+                {lang === 'ar' ? 'غير ضريبية' : 'Non-ZATCA'}
               </Badge>
             </div>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
               {lang === 'ar'
-                ? 'هذه مسودة داخلية فقط. لم تُرسل الفاتورة إلى الهيئة ولم يصدر عنها اعتماد أو رمز إلكتروني رسمي.'
-                : 'This is an internal draft only. The invoice has not been submitted to ZATCA and has no official clearance or QR code.'}
+                ? 'هذا المستند بيان أتعاب داخلي للمتابعة مع الموكّل فقط، ولا يُعد فاتورة ضريبية إلكترونية معتمدة لدى هيئة الزكاة والضريبة والجمارك.'
+                : 'This document is an internal fee statement for client follow-up only and is not a ZATCA-cleared tax invoice.'}
             </p>
           </div>
         </div>
@@ -72,7 +72,7 @@ export function InvoicePreviewDialog({
           <div className="flex flex-col gap-4 sm:flex-row sm:justify-between items-start border-b pb-4">
             <div>
                 <div className="flex items-center gap-2 mb-1">
-                <div className="h-8 w-8 rounded-lg bg-primary text-primary-foreground grid place-items-center font-bold text-lg">س</div>
+                <div className="h-8 w-8 rounded-lg bg-primary text-primary-foreground grid place-items-center font-bold text-lg">م</div>
                 <h3 className="text-lg font-bold text-primary">{lang === 'ar' ? 'بيانات جهة الإصدار' : 'Issuer details'}</h3>
               </div>
               <p className="text-xs text-muted-foreground">{lang === 'ar' ? 'بيانات المنشأة غير مهيأة لهذه الفاتورة' : 'Business details are not configured for this invoice'}</p>
@@ -164,12 +164,12 @@ export function InvoicePreviewDialog({
           {/* Totals & QR Code Section */}
           <div className="flex flex-col-reverse sm:flex-row justify-between gap-6 pt-2">
             
-            {/* ZATCA Compliant QR Code */}
+            {/* Non-ZATCA Notice */}
             <div className="flex max-w-xs items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-center">
               <p className="text-xs leading-relaxed text-muted-foreground">
                 {lang === 'ar'
-                  ? 'لا يتوفر رمز ضريبي رسمي قبل تهيئة الربط واعتماد الفاتورة من الهيئة.'
-                  : 'No official tax QR code is available until the integration is configured and the authority clears the invoice.'}
+                  ? 'بيان أتعاب داخلي غير صادر عبر منصة فاتورة (ZATCA).'
+                  : 'Internal fee statement — not issued through ZATCA Fatoora.'}
               </p>
             </div>
 

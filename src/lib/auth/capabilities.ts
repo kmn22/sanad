@@ -60,28 +60,19 @@ export async function canAccessCase(auth: AuthContext, caseId: string): Promise<
  * getAuthContext() already guarantees a non-client member of an active
  * workspace; this layer decides what each internal role may *write*.
  *
- * Roles: admin | workspace_owner | lawyer | staff | auditor | student
+ * Roles: admin | workspace_owner | lawyer | staff | auditor
  * (client is fenced out entirely by getAuthContext/getClientContext)
  */
 
-// Firm-operational writers: manage cases, clients, documents, billing, tasks.
+// Firm-operational writers: manage cases, clients, documents, fee statements, tasks.
 const FIRM_WRITE_ROLES = new Set(['admin', 'workspace_owner', 'lawyer', 'staff'])
-
-// Academic/study content additionally allows students — these entities back
-// the student portal (courses, lectures, deadlines, terms, casebook, reviews).
-const ACADEMIC_WRITE_ROLES = new Set([...FIRM_WRITE_ROLES, 'student'])
 
 // Workspace administration (settings, invites, membership changes).
 const MANAGE_ROLES = new Set(['admin', 'workspace_owner'])
 
-/** May create/update/delete firm-operational records. Auditors and students may not. */
+/** May create/update/delete firm-operational records. Auditors may not. */
 export function canWrite(auth: AuthContext) {
   return FIRM_WRITE_ROLES.has(auth.role)
-}
-
-/** May write academic/study entities — firm roles plus students. */
-export function canWriteAcademic(auth: AuthContext) {
-  return ACADEMIC_WRITE_ROLES.has(auth.role)
 }
 
 /** May administer the workspace (non-MFA-gated; use canManageUsers for user admin). */

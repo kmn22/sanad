@@ -7,12 +7,9 @@ const hasOwnerCredentials = Boolean(OWNER_EMAIL && OWNER_PASSWORD)
 const publicRoutes = [
   '/',
   '/about',
-  '/api-docs',
   '/ai-disclosure',
-  '/build',
   '/forgot-password',
   '/login',
-  '/onboarding',
   '/pricing',
   '/privacy',
   '/privacy/request',
@@ -27,9 +24,6 @@ const protectedPages = [
   '/admin',
   '/client',
   '/dashboard',
-  '/dashboard/academy',
-  '/dashboard/corporate',
-  '/dashboard/practice',
   '/firm',
   '/firm/assignments',
   '/firm/onboarding',
@@ -39,7 +33,6 @@ const protectedPages = [
   '/lawyer',
   '/lawyer/workflow',
   '/settings/security',
-  '/student',
   '/workflow',
 ]
 
@@ -57,7 +50,6 @@ const protectedApiRoutes = [
   '/api/invoices',
   '/api/memberships',
   '/api/notifications',
-  '/api/research',
   '/api/saas/status',
   '/api/tasks',
   '/api/team',
@@ -69,7 +61,6 @@ const authenticatedReadRoutes = [
   ...protectedApiRoutes,
   '/api/feature-flags',
   '/api/notification-preferences',
-  '/api/student/dashboard',
   '/api/workflow-templates',
 ]
 
@@ -193,7 +184,7 @@ test.describe('Maqar complete post-deployment smoke gate', () => {
       const response = await jsonResponse(page, route)
       expect(response.status, `${route} response`).toBeLessThan(500)
       expect(response.status, `${route} unexpectedly lost authentication`).not.toBe(401)
-      if (route.startsWith('/api/admin/') || route === '/api/student/dashboard') {
+      if (route.startsWith('/api/admin/')) {
         expect([200, 403], `${route} authorization boundary`).toContain(response.status)
       } else {
         expect(response.status, `${route} response`).toBe(200)
@@ -201,47 +192,26 @@ test.describe('Maqar complete post-deployment smoke gate', () => {
     }
   })
 
-  test('core business APIs return valid responses without mutating data', async ({ page }) => {
-    test.skip(!hasOwnerCredentials, 'E2E_OWNER_EMAIL/E2E_OWNER_PASSWORD not set')
-    await login(page)
-
-    const clm = await jsonResponse(page, '/api/clm/analyze', {
+  test('public reading helper APIs return deterministic structured results', async ({ page }) => {
+    const clause = await jsonResponse(page, '/api/ai/check-clause', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contractText: 'يتحمل الطرف الثاني مسؤولية غير محدودة عن الأضرار ويحق للطرف الأول إنهاء العقد دون إشعار.',
-        enableLlmEnrichment: false,
+        clauseText: 'يخضع الطرف الثاني لفترة تجربة مدتها تسعة أشهر (270 يوماً) من تاريخ المباشرة.',
       }),
     })
-    expect(clm.status).toBe(200)
-    expect(clm.body).toHaveProperty('overallRiskScore')
+    expect(clause.status).toBe(200)
+    expect(clause.body.valid).toBe(false)
 
-    const deadline = await jsonResponse(page, '/api/litigation/deadlines', {
+    const summary = await jsonResponse(page, '/api/ai/summarize-contract', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        action: 'CALCULATE_DEADLINE',
-        event: 'FIRST_INSTANCE_JUDGMENT',
-        triggerDate: '2026-10-01',
+        contractText: 'عقد خدمات قانونية واستشارات شهرية بين المكتب والعميل مع تجديد سنوي وإشعار إنهاء 30 يوماً.',
+        focus: 'all',
       }),
     })
-    expect(deadline.status).toBe(200)
-    expect(deadline.body).toMatchObject({ event: 'FIRST_INSTANCE_JUDGMENT', periodDays: 30 })
-
-    const legalQuery = await jsonResponse(page, '/api/ai/legal-query', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: 'ما هي أحكام التعويض عن إنهاء عقد العمل؟', topK: 3 }),
-    })
-    expect(legalQuery.status).toBe(200)
-    expect(legalQuery.body.citations).toBeInstanceOf(Array)
-
-    const semanticSearch = await jsonResponse(page, '/api/academic/semantic-search', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: 'المسؤولية التقصيرية والتعويض عن الضرر', topK: 3 }),
-    })
-    expect(semanticSearch.status).toBe(200)
-    expect(semanticSearch.body.citations).toBeInstanceOf(Array)
+    expect(summary.status).toBe(200)
+    expect(summary.body.clauses).toBeInstanceOf(Array)
   })
 })

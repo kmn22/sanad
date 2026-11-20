@@ -13,7 +13,7 @@ import { ROLE_LABELS } from './shared'
 import { useFirm } from './shared'
 import { Panel } from './shared'
 
-export const INVITE_ROLES = ['lawyer', 'staff', 'student', 'auditor'] as const
+export const INVITE_ROLES = ['lawyer', 'staff', 'auditor'] as const
 
 export function FirmTeamPage() {
   const { lang } = useLang()

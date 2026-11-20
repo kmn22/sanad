@@ -10,14 +10,12 @@ describe('portal access boundaries', () => {
   it('routes each account type to its own portal', () => {
     expect(homePathFor('workspace_owner')).toBe('/firm')
     expect(homePathFor('lawyer')).toBe('/lawyer')
-    expect(homePathFor('student')).toBe('/student')
     expect(homePathFor('client')).toBe('/client')
   })
 
-  it('prevents clients and students from entering practice portals', () => {
+  it('prevents clients from entering practice portals', () => {
     expect(canAccessPortal('client', 'lawyer')).toBe(false)
     expect(canAccessPortal('client', 'firm')).toBe(false)
-    expect(canAccessPortal('student', 'lawyer')).toBe(false)
     expect(canAccessPortal('workspace_owner', 'firm')).toBe(true)
   })
 

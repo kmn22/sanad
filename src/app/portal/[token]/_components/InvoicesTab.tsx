@@ -21,11 +21,11 @@ export function InvoicesTab({ v }: { v: PortalView }) {
         <div className="space-y-4 animate-in fade-in">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-bold">الفواتير الإلكترونية (ZATCA)</h2>
-              <p className="text-xs text-muted-foreground">فواتير ضريبية مبسطة معتمدة ومتوافقة مع هيئة الزكاة والضريبة والجمارك</p>
+              <h2 className="text-lg font-bold">بيانات الأتعاب والمستحقات</h2>
+              <p className="text-xs text-muted-foreground">بيانات مطالبة داخلية صادرة من مكتب المحاماة لمتابعة الدفعات</p>
             </div>
-            <Badge variant="outline" className="text-[10px] text-emerald-600">
-              ضريبة 15%
+            <Badge variant="outline" className="text-[10px] text-amber-700">
+              بيان أتعاب داخلي
             </Badge>
           </div>
 
@@ -54,10 +54,10 @@ export function InvoicesTab({ v }: { v: PortalView }) {
                       <button
                         onClick={() => setSelectedInvoiceForQr(inv)}
                         className="p-1.5 rounded-lg border hover:bg-slate-50 text-slate-600 text-xs flex items-center gap-1 cursor-pointer"
-                        title="حالة الربط الضريبي ZATCA"
+                        title="تفاصيل بيان الأتعاب"
                       >
                         <QrCode className="h-4 w-4" />
-                        <span className="text-[10px] hidden sm:inline">حالة ZATCA</span>
+                        <span className="text-[10px] hidden sm:inline">تفاصيل البيان</span>
                       </button>
                     </div>
 
@@ -122,7 +122,7 @@ export function InvoicesTab({ v }: { v: PortalView }) {
 
           {/* Compliance Footnote */}
           <p className="text-[11px] text-muted-foreground text-center pt-2">
-            جميع الفواتير صادرة إلكترونياً ومتوافقة مع متطلبات هيئة الزكاة والضريبة والجمارك (المرحلة الثانية).
+            هذه البيانات تُصدر للمتابعة الداخلية للأتعاب ولا تغني عن الفاتورة الضريبية الصادرة من النظام المحاسبي للمكتب.
           </p>
         </div>
       )}

@@ -23,12 +23,10 @@
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset",
     "db:seed": "prisma db seed",
-    "seed": "npx tsx prisma/seed.ts && npx tsx scripts/seed.ts && npx tsx scripts/seed_student.ts",
+    "seed": "npx tsx prisma/seed.ts && npx tsx scripts/seed.ts",
     "seed:maqar": "npx tsx prisma/seed.ts",
     "seed:lawyer": "npx tsx scripts/seed.ts",
-    "seed:student": "npx tsx scripts/seed_student.ts",
     "seed:demo": "npx tsx scripts/seed-demo-accounts.ts",
-    "rag:index": "npx tsx scripts/index-statutes.ts",
     "postinstall": "prisma generate"
   },
   "prisma": {

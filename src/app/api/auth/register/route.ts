@@ -6,7 +6,6 @@ import { homePathFor } from '@/lib/auth/portals'
 import { emailConfigured, publicAppUrl, sendTransactionalEmail } from '@/lib/email'
 import { rateLimit } from '@/lib/rate-limit'
 import { PRIVACY_NOTICE_VERSION, privacyNoticeHash } from '@/lib/compliance'
-import { isAcademicEmail, getAcademicInstitutionName } from '@/lib/auth/academic'
 import { logError } from '@/lib/observability'
 
 function getClientIp(req: Request): string {
@@ -15,7 +14,6 @@ function getClientIp(req: Request): string {
 
 // Self-service account types → the workspace + role they get.
 const ACCOUNT_TYPES = {
-  student: { role: 'student', workspaceType: 'academic' },
   lawyer: { role: 'lawyer', workspaceType: 'solo' },
   firm: { role: 'workspace_owner', workspaceType: 'firm' },
 } as const
@@ -83,19 +81,15 @@ export async function POST(req: Request) {
         const invitedUserType =
           invitation.role === 'client'
             ? 'CLIENT'
-            : invitation.role === 'student'
-              ? 'LAW_STUDENT'
-              : invitation.role === 'staff'
-                ? 'PARALEGAL'
-                : 'ATTORNEY'
+            : invitation.role === 'staff'
+              ? 'PARALEGAL'
+              : 'ATTORNEY'
         const invitedOrgRole =
           invitation.role === 'client'
             ? 'VIEWER_CLIENT'
-            : invitation.role === 'student'
-              ? 'TRAINEE_STUDENT'
-              : invitation.role === 'auditor'
-                ? 'COMPLIANCE_LEAD'
-                : 'ASSOCIATE'
+            : invitation.role === 'auditor'
+              ? 'COMPLIANCE_LEAD'
+              : 'ASSOCIATE'
         const user = await tx.user.create({
           data: {
             email: cleanEmail,
@@ -153,7 +147,7 @@ export async function POST(req: Request) {
       }, { status: 201 })
     }
 
-    /* ── Path B: self-service Student / Lawyer / Law Firm ───────────── */
+    /* ── Path B: self-service Solo Lawyer / Law Firm ────────────────── */
     if (typeof accountType !== 'string' || !(accountType in ACCOUNT_TYPES)) {
       return NextResponse.json({ error: 'يرجى اختيار نوع الحساب' }, { status: 400 })
     }
@@ -163,8 +157,7 @@ export async function POST(req: Request) {
     if (type === 'firm' && orgName.length < 2) {
       return NextResponse.json({ error: 'يرجى إدخال اسم المكتب' }, { status: 400 })
     }
-    const workspaceName =
-      orgName || (type === 'student' ? `مساحة ${displayName} الدراسية` : `مكتب ${displayName}`)
+    const workspaceName = orgName || `مكتب ${displayName}`
 
     const workspaceCap = Number(process.env.BETA_MAX_WORKSPACES ?? 0)
     if (workspaceCap > 0 && (await db.workspace.count({ where: { status: 'active' } })) >= workspaceCap) {
@@ -181,7 +174,7 @@ export async function POST(req: Request) {
         data: {
           name: workspaceName,
           slug: orgSlug,
-          type: type === 'student' ? 'ACADEMIC_INSTITUTION' : 'LAW_FIRM',
+          type: 'LAW_FIRM',
           tier: 'FREE_TRIAL',
         },
       })
@@ -194,7 +187,7 @@ export async function POST(req: Request) {
           name: displayName,
           password: hashPassword(password),
           role,
-          userType: type === 'student' ? 'LAW_STUDENT' : 'ATTORNEY',
+          userType: 'ATTORNEY',
           accountType: type,
           orgId: organization.id,
           workspaceId: workspace.id,
@@ -206,42 +199,25 @@ export async function POST(req: Request) {
         data: {
           userId: user.id,
           orgId: organization.id,
-          role: type === 'student' ? 'TRAINEE_STUDENT' : 'MANAGING_PARTNER',
+          role: 'MANAGING_PARTNER',
           isActive: true,
         },
       })
-      const isAcademic = type === 'student' && isAcademicEmail(cleanEmail)
-      const institution = isAcademic ? getAcademicInstitutionName(cleanEmail) : null
 
-      const selectedPlan = isAcademic
-        ? await tx.plan.upsert({
-            where: { code: 'student' },
-            create: {
-              code: 'student',
-              name: 'باقة الطالب الموثقة (مجانية)',
-              price: 0,
-              seatLimit: 1,
-              storageLimitMb: 1024,
-              aiRequestLimit: 250,
-              portalUploadLimit: 50,
-              features: JSON.stringify({ cases: true, clients: false, workflow: false, portal: false, ai: true, student: true }),
-            },
-            update: {},
-          })
-        : await tx.plan.upsert({
-            where: { code: 'trial' },
-            create: { code: 'trial', name: 'Trial', price: 0, seatLimit: 3, storageLimitMb: 1024, aiRequestLimit: 100, portalUploadLimit: 100, features: JSON.stringify({ cases: true, clients: true, workflow: true, portal: true, ai: true }) },
-            update: {},
-          })
+      const selectedPlan = await tx.plan.upsert({
+        where: { code: 'trial' },
+        create: { code: 'trial', name: 'Trial', price: 0, seatLimit: 3, storageLimitMb: 1024, aiRequestLimit: 100, portalUploadLimit: 100, features: JSON.stringify({ cases: true, clients: true, workflow: true, portal: true, ai: true }) },
+        update: {},
+      })
 
       const now = Date.now()
       const subscription = await tx.subscription.create({
         data: {
           planId: selectedPlan.id,
-          status: isAcademic ? 'active' : 'trialing',
+          status: 'trialing',
           quantity: 1,
-          trialEndsAt: isAcademic ? null : new Date(now + 14 * 24 * 60 * 60 * 1000),
-          currentPeriodEnd: isAcademic ? new Date(now + 365 * 24 * 60 * 60 * 1000) : new Date(now + 14 * 24 * 60 * 60 * 1000),
+          trialEndsAt: new Date(now + 14 * 24 * 60 * 60 * 1000),
+          currentPeriodEnd: new Date(now + 14 * 24 * 60 * 60 * 1000),
         },
       })
       await tx.workspace.update({
@@ -251,29 +227,24 @@ export async function POST(req: Request) {
       await tx.workspaceMembership.create({
         data: { workspaceId: workspace.id, userId: user.id, role, status: 'active', isOwner: true },
       })
-      if (type !== 'student') {
-        await tx.workflowTemplate.create({
-          data: {
-            workspaceId: workspace.id,
-            name: 'التقاضي القياسي',
-            description: 'مسار القضايا الافتراضي من الاستقبال حتى الإغلاق',
-            stages: JSON.stringify(['intake', 'drafting', 'client_review', 'pleading', 'filed', 'hearing', 'appeal', 'enforcement', 'closed']),
-            isDefault: true,
-            createdById: user.id,
-          },
-        })
-      }
+      await tx.workflowTemplate.create({
+        data: {
+          workspaceId: workspace.id,
+          name: 'التقاضي القياسي',
+          description: 'مسار القضايا الافتراضي من الاستقبال حتى الإغلاق',
+          stages: JSON.stringify(['intake', 'drafting', 'client_review', 'pleading', 'filed', 'hearing', 'appeal', 'enforcement', 'closed']),
+          isDefault: true,
+          createdById: user.id,
+        },
+      })
       await tx.verificationToken.deleteMany({ where: { email: cleanEmail } })
       await tx.verificationToken.create({ data: { email: cleanEmail, tokenHash: hashToken(verifyToken), expiresAt: expiresIn(TOKEN_TTL.emailVerification) } })
       await recordPrivacyAcceptance(tx, user.id, ip, userAgent)
       await tx.auditLog.create({
-        data: { workspaceId: workspace.id, userId: user.id, action: 'auth.register.self', entityType: 'User', entityId: user.id, ipAddress: ip, metadata: JSON.stringify({ accountType: type, isAcademic, institution }) },
+        data: { workspaceId: workspace.id, userId: user.id, action: 'auth.register.self', entityType: 'User', entityId: user.id, ipAddress: ip, metadata: JSON.stringify({ accountType: type }) },
       })
-      const welcomeMsg = isAcademic
-        ? `تم توثيق حسابك الأكاديمي مجاناً بنجاح${institution ? ` التابع لـ (${institution})` : ''}. يمكنك الاستفادة من بنك المصطلحات ومصحح العقود والتدريب العملي.`
-        : 'تم إنشاء مساحة العمل الخاصة بك.'
       await tx.notification.create({
-        data: { workspaceId: workspace.id, userId: user.id, type: 'system', title: 'مرحباً بك في مقر', message: welcomeMsg, link: homePathFor(role) },
+        data: { workspaceId: workspace.id, userId: user.id, type: 'system', title: 'مرحباً بك في مقر', message: 'تم إنشاء مساحة العمل الخاصة بك.', link: homePathFor(role) },
       })
     })
 

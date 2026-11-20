@@ -37,7 +37,7 @@ export async function GET() {
   ])
   return NextResponse.json({
     emailConfigured: emailConfigured(),
-    billingConfigured: Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET),
+    billingConfigured: false,
     backupEncryptionConfigured: Boolean(process.env.BACKUP_ENCRYPTION_KEY),
     mfaEnabled: auth.mfaEnabled,
     overduePrivacyRequests,

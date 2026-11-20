@@ -3,7 +3,7 @@ import { db } from '@/lib/db'
 import { requestIp, writeAudit } from '@/lib/audit'
 import { canManageUsers, forbiddenJson, getAuthContext, isPlatformSuperAdmin, notFoundJson, unauthorizedJson } from '@/lib/auth/workspace'
 
-const ASSIGNABLE_ROLES = new Set(['lawyer', 'staff', 'student', 'auditor'])
+const ASSIGNABLE_ROLES = new Set(['lawyer', 'staff', 'auditor'])
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await getAuthContext()

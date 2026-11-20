@@ -5,22 +5,7 @@ test.describe('public surface', () => {
     const response = await page.goto('/')
     expect(response?.ok()).toBeTruthy()
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
-    await expect(page.locator('body')).toContainText(/مقر|مَقَرّ/)
-  })
-
-  test('onboarding route loads with all three persona cards (Corporate, Law Firm, Student)', async ({ page }) => {
-    const response = await page.goto('/onboarding')
-    expect(response?.ok()).toBeTruthy()
-    await expect(page.locator('body')).toContainText('منشأة تجارية / إدارة قانونية')
-    await expect(page.locator('body')).toContainText('مكتب أو شركة محاماة')
-    await expect(page.locator('body')).toContainText('باحث / طالب قانون')
-  })
-
-  test('corporate, practice, and academy persona dashboards render without 500 errors', async ({ page }) => {
-    for (const route of ['/dashboard/corporate', '/dashboard/practice', '/dashboard/academy']) {
-      const response = await page.goto(route)
-      expect(response?.ok()).toBeTruthy()
-    }
+    await expect(page.locator('body')).toContainText(/مقر/)
   })
 
   test('login page renders the sign-in form', async ({ page }) => {
@@ -29,10 +14,10 @@ test.describe('public surface', () => {
     await expect(page.locator('input[type="password"]')).toBeVisible()
   })
 
-  test('register page renders account options and the email step', async ({ page }) => {
+  test('register page renders solo lawyer and firm account options and the email step', async ({ page }) => {
     await page.goto('/register')
     await expect(page.locator('body')).toContainText('اختر نوع حسابك')
-    await page.getByText('طالب قانون').first().click()
+    await page.getByText('محامٍ مستقل').first().click()
     await page.getByRole('button', { name: /متابعة|التالي|إنشاء/ }).first().click()
     await expect(page.locator('input[type="email"]')).toBeVisible()
   })
@@ -42,7 +27,7 @@ test.describe('public surface', () => {
     expect(response?.ok()).toBeTruthy()
   })
 
-  for (const route of ['/sandbox', '/about', '/security', '/build', '/privacy', '/terms', '/ai-disclosure']) {
+  for (const route of ['/about', '/security', '/privacy', '/terms', '/ai-disclosure']) {
     test(`${route} renders without error`, async ({ page }) => {
       const response = await page.goto(route)
       expect(response?.ok()).toBeTruthy()
@@ -88,14 +73,12 @@ test.describe('access control', () => {
 })
 
 test.describe('API surface', () => {
-  test('health endpoint reports database, vector store, and queue connectivity', async ({ request }) => {
+  test('health endpoint reports database and queue connectivity', async ({ request }) => {
     const response = await request.get('/api/health')
     expect(response.ok()).toBeTruthy()
     const body = await response.json()
     expect(body.status).toBe('ok')
     expect(body.database).toBe('ok')
-    expect(body.vectorStore?.status).toBe('ok')
-    expect(body.vectorStore?.indexedStatutoryChunks).toBeGreaterThan(0)
     expect(body.queue?.status).toBe('ok')
   })
 

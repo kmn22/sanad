@@ -43,7 +43,7 @@ export async function getWorkspacePlan(workspaceId: string) {
   const subscriptionActive =
     !subscription ||
     isSubscriptionActive(subscription) ||
-    (!process.env.STRIPE_SECRET_KEY && subscription.status === 'trialing')
+    subscription.status === 'trialing'
   let entitlements = defaultEntitlements
   if (plan?.features) {
     try {

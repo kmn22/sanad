@@ -26,7 +26,6 @@ import {
   KnowledgeCategory,
 } from '@prisma/client'
 import { hashPassword } from '../src/lib/auth/password'
-import { calculateProceduralDeadline } from '../src/lib/litigation/deadline-engine'
 
 const prisma = new PrismaClient()
 
@@ -567,8 +566,7 @@ async function seedMaqarMultiTenantPlatform() {
 
   // Case 2: Labor dispute before the Labor Court (المحكمة العمالية)
   // Status: 'PENDING_APPEAL' with an auto-calculated 30-day appeal countdown
-  const appealWindow = calculateProceduralDeadline('FIRST_INSTANCE_JUDGMENT', now, now)
-  const appealDeadlineDate = new Date(appealWindow.dueDateIso)
+  const appealDeadlineDate = addDays(now, 30)
 
   const laborCase = await prisma.litigationCase.upsert({
     where: {
@@ -607,7 +605,7 @@ async function seedMaqarMultiTenantPlatform() {
       orgId: orgLawFirm.id,
       sessionDate: now,
       proceduralDeadline: appealDeadlineDate,
-      summary: `استلام نسخة صك الحكم الابتدائي بشأن المطالبة بالتعويض عن الفصل غير المشروع وفق المادة (77) ومكافأة نهاية الخدمة وفق المادة (84) من نظام العمل. تم حساب مهلة الاعتراض آلياً (${appealWindow.periodDays} يوماً).`,
+      summary: `استلام نسخة صك الحكم الابتدائي بشأن المطالبة بالتعويض عن الفصل غير المشروع وفق المادة (77) ومكافأة نهاية الخدمة وفق المادة (84) من نظام العمل. تم حساب مهلة الاعتراض (30 يوماً).`,
       courtDecision: `الحكم قابل للاعتراض بطلب الاستئناف خلال (30) يوماً تنتهي في ${appealDeadlineDate
         .toISOString()
         .slice(0, 10)} وفق المادة (187) من نظام المرافعات الشرعية.`,
@@ -618,7 +616,7 @@ async function seedMaqarMultiTenantPlatform() {
       orgId: orgLawFirm.id,
       sessionDate: now,
       proceduralDeadline: appealDeadlineDate,
-      summary: `استلام نسخة صك الحكم الابتدائي بشأن المطالبة بالتعويض عن الفصل غير المشروع وفق المادة (77) ومكافأة نهاية الخدمة وفق المادة (84) من نظام العمل. تم حساب مهلة الاعتراض آلياً (${appealWindow.periodDays} يوماً).`,
+      summary: `استلام نسخة صك الحكم الابتدائي بشأن المطالبة بالتعويض عن الفصل غير المشروع وفق المادة (77) ومكافأة نهاية الخدمة وفق المادة (84) من نظام العمل. تم حساب مهلة الاعتراض (30 يوماً).`,
       courtDecision: `الحكم قابل للاعتراض بطلب الاستئناف خلال (30) يوماً تنتهي في ${appealDeadlineDate
         .toISOString()
         .slice(0, 10)} وفق المادة (187) من نظام المرافعات الشرعية.`,

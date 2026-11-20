@@ -54,7 +54,6 @@ export function AdminStatusSection({ v }: { v: AdminState }) {
             <select value={role} onChange={(e) => setRole(e.target.value)} className="rounded-lg border p-2.5 text-sm">
               <option value="staff">موظف</option>
               <option value="lawyer">محامٍ</option>
-              <option value="student">متدرب</option>
               <option value="auditor">مدقق</option>
             </select>
             <button className="rounded-lg bg-emerald-700 hover:bg-emerald-800 px-5 text-sm text-white font-medium">إنشاء الدعوة</button>

@@ -106,12 +106,9 @@ export function CommandPalette({ open, onOpenChange, onNavigate, onCreate }: Pro
   // Navigation actions
   const navActions: CommandAction[] = [
     { id: 'nav-today', label: 'التركيز اليومي (Today Focus)', icon: Clock, action: () => onNavigate('today'), group: 'navigate' },
-    { id: 'nav-drafting', label: 'أتمتة العقود والمذكرات (Drafting Hub)', icon: Scale, action: () => onNavigate('documents'), group: 'navigate' },
     { id: 'nav-dashboard', label: t('nav.dashboard'), icon: LayoutDashboard, action: () => onNavigate('dashboard'), group: 'navigate' },
     { id: 'nav-clients', label: t('nav.clients'), icon: Users, action: () => onNavigate('clients'), group: 'navigate' },
     { id: 'nav-cases', label: t('nav.cases'), icon: Gavel, action: () => onNavigate('cases'), group: 'navigate' },
-    { id: 'nav-research', label: 'مركز الأبحاث والمصادر القانونية (Legal Research Hub)', icon: BookOpen, action: () => onNavigate('research'), group: 'navigate' },
-    { id: 'nav-briefs', label: 'النشرة القانونية وموجز الأنظمة (Law Newsletter)', icon: FileText, action: () => onNavigate('briefs'), group: 'navigate' },
     { id: 'nav-communications', label: t('nav.communications'), icon: MessageSquare, action: () => onNavigate('communications'), group: 'navigate' },
     { id: 'nav-documents', label: t('nav.documents'), icon: FileText, action: () => onNavigate('documents'), group: 'navigate' },
     { id: 'nav-invoices', label: t('nav.invoices'), icon: Receipt, action: () => onNavigate('invoices'), group: 'navigate' },
@@ -122,7 +119,7 @@ export function CommandPalette({ open, onOpenChange, onNavigate, onCreate }: Pro
   ]
 
   const createActions: CommandAction[] = [
-    { id: 'create-draft', label: 'صياغة عقد أو مذكرة جديدة (AI Drafting)', icon: Scale, action: () => { onNavigate('documents') }, group: 'create' },
+    { id: 'create-draft', label: t('docs.add'), icon: Scale, action: () => { onNavigate('documents') }, group: 'create' },
     { id: 'create-client', label: t('clients.add'), icon: Plus, action: () => { onNavigate('clients'); onCreate('client') }, group: 'create' },
     { id: 'create-case', label: t('cases.new'), icon: Plus, action: () => { onNavigate('cases'); onCreate('case') }, group: 'create' },
     { id: 'create-task', label: t('tasks.new'), icon: Plus, action: () => { onNavigate('tasks'); onCreate('task') }, group: 'create' },

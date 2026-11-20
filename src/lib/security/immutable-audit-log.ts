@@ -55,12 +55,13 @@ export const GENESIS_AUDIT_CHAIN_HASH =
   '0000000000000000000000000000000000000000000000000000000000000000'
 
 function getAuditHmacKey(): string {
-  return (
+  const secret =
     process.env.AUDIT_LOG_HMAC_SECRET ||
     process.env.DOCUMENT_SIGNATURE_KEY ||
-    process.env.BACKUP_ENCRYPTION_KEY ||
-    'maqar-immutable-audit-worm-hmac-key'
-  )
+    process.env.BACKUP_ENCRYPTION_KEY
+  if (secret) return secret
+  if (process.env.NODE_ENV === 'test') return 'maqar-test-audit-hmac-key'
+  throw new Error('AUDIT_LOG_HMAC_SECRET (or DOCUMENT_SIGNATURE_KEY / BACKUP_ENCRYPTION_KEY) must be set')
 }
 
 /**

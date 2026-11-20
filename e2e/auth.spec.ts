@@ -52,20 +52,6 @@ test.describe('authenticated workspace experience', () => {
     expect(body).toHaveProperty('usage')
   })
 
-  test('ZATCA submission never reports clearance without a provider', async ({ page }) => {
-    await login(page, OWNER_EMAIL!, OWNER_PASSWORD!)
-    const result = await page.evaluate(async () => {
-      const response = await fetch('/api/zatca', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ invoiceId: 'e2e-not-a-real-invoice' }),
-      })
-      return { status: response.status, body: await response.json() }
-    })
-    expect(result.status).toBe(503)
-    expect(result.body.code).toBe('ZATCA_PROVIDER_NOT_CONFIGURED')
-  })
-
   test('invoice settlement requires finance roles and paid invoices cannot be deleted', async ({ page, browser }) => {
     test.skip(!LAWYER_EMAIL, 'E2E_LAWYER_EMAIL not set')
     const lawyer = await (await browser.newContext()).newPage()

@@ -62,8 +62,13 @@ function getMasterKmsSecret(): Buffer {
   const raw =
     process.env.VAULT_MASTER_KMS_KEY ||
     process.env.FILE_ENCRYPTION_KEY ||
-    process.env.BACKUP_ENCRYPTION_KEY ||
-    'maqar-dev-sovereign-kms-root-secret-2026'
+    process.env.BACKUP_ENCRYPTION_KEY
+  if (!raw) {
+    if (process.env.NODE_ENV === 'test') {
+      return createHash('sha256').update('maqar-kms-root:test-only').digest()
+    }
+    throw new Error('VAULT_MASTER_KMS_KEY (or FILE_ENCRYPTION_KEY / BACKUP_ENCRYPTION_KEY) must be set')
+  }
   return createHash('sha256').update(`maqar-kms-root:${raw}`).digest()
 }
 

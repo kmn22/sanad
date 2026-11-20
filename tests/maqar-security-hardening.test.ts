@@ -295,6 +295,42 @@ describe('Maqar Security Hardening — PDPL & NCA CCC Compliance Suite', () => {
         valid: true,
       })
     })
+
+    it('fails closed in production when vault KMS or audit HMAC secrets are missing', () => {
+      const savedEnv = { ...process.env }
+      try {
+        ;(process.env as Record<string, string | undefined>).NODE_ENV = 'production'
+        delete process.env.VAULT_MASTER_KMS_KEY
+        delete process.env.FILE_ENCRYPTION_KEY
+        delete process.env.BACKUP_ENCRYPTION_KEY
+        delete process.env.AUDIT_LOG_HMAC_SECRET
+        delete process.env.DOCUMENT_SIGNATURE_KEY
+
+        expect(() =>
+          encryptLegalVaultPayload(Buffer.from('secret'), {
+            orgId: 'org-1',
+            workspaceId: 'ws-1',
+            documentId: 'doc-1',
+            classification: 'CONFIDENTIAL_CASE_FILE',
+          })
+        ).toThrow(/VAULT_MASTER_KMS_KEY/)
+
+        expect(() =>
+          buildChainedAuditRecord(
+            {
+              workspaceId: 'ws-1',
+              userId: 'u-1',
+              action: 'DOCUMENT_VIEW',
+              entityType: 'Document',
+              entityId: 'doc-1',
+            },
+            GENESIS_AUDIT_CHAIN_HASH
+          )
+        ).toThrow(/AUDIT_LOG_HMAC_SECRET/)
+      } finally {
+        process.env = savedEnv
+      }
+    })
   })
 })
 

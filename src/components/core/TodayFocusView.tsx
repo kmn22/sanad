@@ -12,12 +12,10 @@ import {
   Sparkles,
   ArrowRight,
   Plus,
-  Camera,
   Scale,
   Zap,
   Clock,
   Check,
-  BookOpen,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -345,14 +343,14 @@ export function TodayFocusView({ data, onNavigate, onStartFocus, onRefresh }: Pr
           </button>
 
           <button
-            onClick={() => onNavigate('scanner')}
+            onClick={() => onNavigate('documents')}
             className="flex flex-col items-center justify-center p-3 rounded-xl bg-background/50 hover:bg-primary/10 border border-border/70 hover:border-primary/40 transition-all text-center gap-1.5 group cursor-pointer"
           >
             <div className="h-8 w-8 rounded-lg bg-purple-500/15 text-purple-600 dark:text-purple-400 grid place-items-center group-hover:scale-110 transition-transform">
-              <Camera className="h-4 w-4" />
+              <FileText className="h-4 w-4" />
             </div>
-            <span className="text-xs font-semibold">{lang === 'ar' ? 'ماسح ضوئي ذكي' : 'Smart Scanner'}</span>
-            <span className="text-[10px] text-muted-foreground">{lang === 'ar' ? 'OCR واستخراج نص' : 'OCR & Extract'}</span>
+            <span className="text-xs font-semibold">{lang === 'ar' ? 'خزنة المستندات' : 'Documents Vault'}</span>
+            <span className="text-[10px] text-muted-foreground">{lang === 'ar' ? 'صياغة وإصدارات' : 'Drafts & versions'}</span>
           </button>
 
           <button
@@ -362,75 +360,9 @@ export function TodayFocusView({ data, onNavigate, onStartFocus, onRefresh }: Pr
             <div className="h-8 w-8 rounded-lg bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 grid place-items-center group-hover:scale-110 transition-transform">
               <FileText className="h-4 w-4" />
             </div>
-            <span className="text-xs font-semibold">{lang === 'ar' ? 'الفواتير والتحصيل' : 'Invoices'}</span>
-            <span className="text-[10px] text-muted-foreground">{lang === 'ar' ? 'متوافق مع ZATCA' : 'ZATCA QR'}</span>
+            <span className="text-xs font-semibold">{lang === 'ar' ? 'بيانات الأتعاب' : 'Fee Statements'}</span>
+            <span className="text-[10px] text-muted-foreground">{lang === 'ar' ? 'مطالبات الموكلين' : 'Client billing'}</span>
           </button>
-        </div>
-      </div>
-
-      {/* 6. Live Regulatory Updates & Briefs Ticker */}
-      <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/20 via-card/70 to-card/40 p-5 space-y-3.5 shadow-xs relative overflow-hidden">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-              <BookOpen className="h-4 w-4" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold tracking-tight">
-                {lang === 'ar' ? 'موجز الأنظمة والقرارات الحكومية الحية' : 'Live Saudi Regulatory Updates'}
-              </h3>
-              <p className="text-[11px] text-muted-foreground">
-                {lang === 'ar' ? 'رصد آلي وتلخيص فوري للوائح وقرارات مجلس الوزراء والوزارات' : 'AI-summarized decrees, ministerial rules, and ZATCA updates'}
-              </p>
-            </div>
-          </div>
-
-          <Button
-            size="sm"
-            onClick={() => onNavigate('briefs')}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold gap-1.5 shadow-xs cursor-pointer"
-          >
-            <span>{lang === 'ar' ? 'استعراض كافة القرارات' : 'View All'}</span>
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-          <div
-            onClick={() => onNavigate('briefs')}
-            className="p-3.5 rounded-xl border border-border/70 bg-background/60 hover:bg-background hover:border-emerald-500/40 transition-all cursor-pointer group"
-          >
-            <div className="flex items-center justify-between gap-2 mb-1.5">
-              <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
-                أم القرى • نظام المعاملات
-              </Badge>
-              <span className="text-[10px] text-muted-foreground font-mono">جديد</span>
-            </div>
-            <p className="text-xs font-bold text-foreground group-hover:text-emerald-500 transition-colors line-clamp-1">
-              صدور اللائحة التنفيذية لنظام المعاملات المدنية المحدثة
-            </p>
-            <p className="text-[11px] text-muted-foreground line-clamp-2 mt-1">
-              معايير قضائية دقيقة لتقدير التعويض وسقف الشروط الجزائية التقديرية وفق المادة (179).
-            </p>
-          </div>
-
-          <div
-            onClick={() => onNavigate('briefs')}
-            className="p-3.5 rounded-xl border border-border/70 bg-background/60 hover:bg-background hover:border-emerald-500/40 transition-all cursor-pointer group"
-          >
-            <div className="flex items-center justify-between gap-2 mb-1.5">
-              <Badge variant="outline" className="text-[10px] bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30">
-                الموارد البشرية • نظام العمل
-              </Badge>
-              <span className="text-[10px] text-muted-foreground font-mono">جديد</span>
-            </div>
-            <p className="text-xs font-bold text-foreground group-hover:text-emerald-500 transition-colors line-clamp-1">
-              تعديل ضوابط مهلة تصحيح أوضاع مخالفي نظام العمل
-            </p>
-            <p className="text-[11px] text-muted-foreground line-clamp-2 mt-1">
-              تمديد مهلة الاعتراض إلى 60 يوماً وإلزامية تسجيل العقود عبر منصة قوى.
-            </p>
-          </div>
         </div>
       </div>
     </div>

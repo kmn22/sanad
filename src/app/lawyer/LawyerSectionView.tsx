@@ -24,9 +24,6 @@ export const ViewLoadingSkeleton = () => (
 
 const CasesView = dynamic(() => import('@/components/core/CasesView').then((m) => m.CasesView), { loading: ViewLoadingSkeleton })
 const InvoicesView = dynamic(() => import('@/components/core/InvoicesView').then((m) => m.InvoicesView), { loading: ViewLoadingSkeleton })
-const ScannerView = dynamic(() => import('@/components/core/ScannerView').then((m) => m.ScannerView), { loading: ViewLoadingSkeleton })
-const ResearchHubView = dynamic(() => import('@/components/core/ResearchHubView').then((m) => m.ResearchHubView), { loading: ViewLoadingSkeleton })
-const DailyBriefView = dynamic(() => import('@/components/core/DailyBriefView').then((m) => m.DailyBriefView), { loading: ViewLoadingSkeleton })
 const DocumentsView = dynamic(() => import('@/components/core/DocumentsView').then((m) => m.DocumentsView), { loading: ViewLoadingSkeleton })
 const DeepWorkView = dynamic(() => import('@/components/core/DeepWorkView').then((m) => m.DeepWorkView), { loading: ViewLoadingSkeleton })
 const TasksView = dynamic(() => import('@/components/core/TasksView').then((m) => m.TasksView), { loading: ViewLoadingSkeleton })
@@ -34,7 +31,6 @@ const ClientsView = dynamic(() => import('@/components/core/ClientsView').then((
 const ComplianceView = dynamic(() => import('@/components/core/ComplianceView').then((m) => m.ComplianceView), { loading: ViewLoadingSkeleton })
 const CalendarView = dynamic(() => import('@/components/core/CalendarView').then((m) => m.CalendarView), { loading: ViewLoadingSkeleton })
 const CommunicationsView = dynamic(() => import('@/components/core/CommunicationsView').then((m) => m.CommunicationsView), { loading: ViewLoadingSkeleton })
-const EcosystemMap = dynamic(() => import('@/components/core/EcosystemMap').then((m) => m.EcosystemMap), { loading: ViewLoadingSkeleton })
 
 /** Renders one practice section. Shared by the Lawyer and Firm portals. */
 export function LawyerSectionView({ section, hrefFor = lawyerHref }: { section: LawyerSection | 'today'; hrefFor?: (view: string) => string }) {
@@ -47,11 +43,7 @@ export function LawyerSectionView({ section, hrefFor = lawyerHref }: { section: 
   }
 
   // Sections that don't depend on the dashboard payload render immediately.
-  if (section === 'scanner') return <ScannerView />
   if (section === 'calendar') return <CalendarView onNavigate={go} />
-  if (section === 'briefs') return <DailyBriefView onNavigateToResearch={() => go('research')} />
-  if (section === 'research') return <ResearchHubView onNavigateToDrafting={() => go('documents')} />
-  if (section === 'ecosystem') return <EcosystemMap onClose={() => go('today')} />
 
   if (isLoading && !data) return <ViewLoadingSkeleton />
   if (!data) {

@@ -8,14 +8,10 @@ export const LAWYER_SECTIONS = [
   'cases',
   'tasks',
   'documents',
-  'research',
-  'briefs',
   'clients',
   'communications',
   'invoices',
   'compliance',
-  'scanner',
-  'ecosystem',
 ] as const
 
 export type LawyerSection = (typeof LAWYER_SECTIONS)[number]

@@ -20,7 +20,6 @@ export const ROLE_LABELS: Record<string, { ar: string; en: string }> = {
   lawyer: { ar: 'محامٍ', en: 'Lawyer' },
   staff: { ar: 'فريق', en: 'Staff' },
   auditor: { ar: 'مدقق', en: 'Auditor' },
-  student: { ar: 'متدرب', en: 'Trainee' },
   lead: { ar: 'رئيسي', en: 'Lead' },
   assignee: { ar: 'مكلّف', en: 'Assignee' },
   reviewer: { ar: 'مراجع', en: 'Reviewer' },

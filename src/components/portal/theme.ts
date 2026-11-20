@@ -26,20 +26,6 @@ export type PortalTheme = {
 
 // Literal class strings so Tailwind's scanner picks them up.
 export const PORTAL_THEMES: Record<PortalId, PortalTheme> = {
-  student: {
-    id: 'student',
-    name: { ar: 'بوابة الطالب', en: 'Student Portal' },
-    tagline: { ar: 'دراستك القانونية في مكان واحد', en: 'Your legal studies, organised' },
-    badge: 'STUDENT',
-    logo: 'from-indigo-500 to-violet-700 ring-indigo-400/30',
-    active: 'bg-indigo-500/15 text-indigo-800 dark:text-indigo-300 border-e-2 border-indigo-500',
-    activePill: 'bg-indigo-600 text-white',
-    chip: 'bg-indigo-500/15 text-indigo-800 dark:text-indigo-300 border-indigo-500/25',
-    glowA: 'bg-indigo-600/10',
-    glowB: 'bg-violet-600/10',
-    text: 'text-indigo-600 dark:text-indigo-300',
-    hero: 'from-indigo-600/20 via-violet-600/10 to-transparent',
-  },
   lawyer: {
     id: 'lawyer',
     name: { ar: 'بوابة المحامي', en: 'Lawyer Portal' },

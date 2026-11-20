@@ -270,13 +270,6 @@ test.describe('deep workspace flows', () => {
         body: JSON.stringify({ status: 'sent' }),
       })
       expect(sentAttempt.status).toBe(200)
-
-      // Unconfigured ZATCA Phase 2 integration must fail explicitly (503, not a silent no-op)
-      const zatcaAttempt = await api(page, '/api/zatca', {
-        method: 'POST',
-        body: JSON.stringify({ invoiceId: draftInvoice.id }),
-      })
-      expect(zatcaAttempt.status).toBe(503)
     } finally {
       await api(page, `/api/invoices/${draftInvoice.id}`, {
         method: 'PATCH',

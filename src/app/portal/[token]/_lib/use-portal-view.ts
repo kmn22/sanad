@@ -340,7 +340,7 @@ export function usePortalView({
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'تعذر استكمال السداد')
 
-      toast.success('تم تأكيد السداد وإصدار إشعار الفاتورة الضريبية ZATCA!')
+      toast.success('تم تسجيل تأكيد السداد لدى مكتب المحاماة!')
       setSelectedInvoiceForPay(null)
       setPaymentPending(false)
       router.refresh()

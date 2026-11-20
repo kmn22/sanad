@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { logError } from '@/lib/observability'
+import { logError, logEvent } from '@/lib/observability'
 
 export type NotificationChannel = 'in_app' | 'email' | 'sms' | 'whatsapp';
 
@@ -58,8 +58,8 @@ export async function publishNotification(
   for (const channel of channels) {
     if (channel === 'in_app') continue;
     try {
-      await deliverToChannel(channel, recipients, payload, workspaceId);
-      deliveredChannels.push(channel);
+      const ok = await deliverToChannel(channel, recipients, payload, workspaceId);
+      if (ok) deliveredChannels.push(channel);
     } catch (error) {
       logError(error, { workspaceId, userIds: recipients, msg: `[notification-bus] failed to deliver via ${channel}`, action: 'notify-deliver' });
     }
@@ -76,7 +76,7 @@ async function deliverToChannel(
   userIds: string[],
   payload: NotificationPayload,
   workspaceId: string
-): Promise<void> {
+): Promise<boolean> {
   switch (channel) {
     case 'email': {
       const { enqueueJob } = await import('@/lib/jobs');
@@ -87,22 +87,46 @@ async function deliverToChannel(
         body: payload.body,
         link: payload.link,
       }, { workspaceId });
-      break;
+      return true;
     }
     case 'sms':
-      console.log(`[notification-bus] sms channel: ${payload.title}`, {
+      logEvent('warn', '[notification-bus] sms channel not configured — delivery skipped', {
         workspaceId,
         userIds,
-        payload,
+        action: 'notify-sms-skipped',
       });
-      break;
-    case 'whatsapp':
-      console.log(`[notification-bus] whatsapp channel: ${payload.title}`, {
-        workspaceId,
-        userIds,
-        payload,
+      return false;
+    case 'whatsapp': {
+      const apiUrl = process.env.WHATSAPP_BUSINESS_API_URL;
+      const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+      const recipientPhone = typeof payload.metadata?.recipientPhone === 'string' ? payload.metadata.recipientPhone.trim() : '';
+      if (!apiUrl || !accessToken || !recipientPhone) {
+        logEvent('warn', '[notification-bus] whatsapp channel unconfigured or missing recipientPhone — delivery skipped', {
+          workspaceId,
+          userIds,
+          action: 'notify-whatsapp-skipped',
+        });
+        return false;
+      }
+      const res = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          to: recipientPhone,
+          type: 'text',
+          text: { body: `${payload.title}\n${payload.body}${payload.link ? `\n${payload.link}` : ''}` },
+        }),
+        signal: AbortSignal.timeout(10_000),
       });
-      break;
+      if (!res.ok) {
+        throw new Error(`WhatsApp Cloud API returned HTTP ${res.status}`);
+      }
+      return true;
+    }
     default:
       throw new Error(`Unsupported notification channel: ${channel}`);
   }

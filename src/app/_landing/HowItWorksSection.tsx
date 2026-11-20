@@ -1,63 +1,59 @@
-import { FileText, SearchCheck, CheckCircle2 } from 'lucide-react'
+import { FolderKanban, MessageSquareShare, BellRing } from 'lucide-react'
+
+const STEPS = [
+  {
+    number: '01',
+    icon: FolderKanban,
+    title: 'أنشئ مكتبك وملفات قضاياك في دقائق',
+    desc: 'أضف الموكلين والقضايا ومواعيد الجلسات والمستندات المشفرة في مساحة عمل مرتبة تدعم العمل الفردي أو فريقاً حتى ١٠ مقاعد.',
+  },
+  {
+    number: '02',
+    icon: MessageSquareShare,
+    title: 'شارك بوابة الموكل عبر واتساب بنقرة',
+    desc: 'أصدر رابطاً زمنياً مقيّداً برمز تحقق (OTP) للموكّل ليتابع حالة ملفه، ويرفع المستندات المطلوبة، ويطّلع على بيان الأتعاب بهدوء.',
+  },
+  {
+    number: '03',
+    icon: BellRing,
+    title: 'اضبط التراخيص والوكالات والساعات والأتعاب',
+    desc: 'تلقَّ تنبيهات تلقائية قبل انتهاء الوكالات أو رخصة المحاماة أو الإقامات، وسجّل ساعات العمل وأصدر بيانات الأتعاب بوضوح.',
+  },
+]
 
 export function HowItWorksSection() {
-  const steps = [
-    {
-      step: '01',
-      title: 'الصق البند أو اختر قالباً',
-      desc: 'ضع مسودة الشرط التعاقدي أو اختر قالباً جاهزاً من مكتبة العقود العمالية والمدنية المعتمدة.',
-      icon: FileText,
-    },
-    {
-      step: '02',
-      title: 'الفحص اللحظي ضد الأنظمة',
-      desc: 'يراجع المحرك النص فوراً مقابل نصوص مواد نظام العمل ونظام المعاملات المدنية ويرصد مواضع التعارض.',
-      icon: SearchCheck,
-    },
-    {
-      step: '03',
-      title: 'استلم صياغة متوافقة ببدائل مقترحة',
-      desc: 'تحصل على تنبيه مدعوم برقم المادة النظامية مع صياغة بديلة دقيقة ومحمية قضائياً قبل اعتمادها.',
-      icon: CheckCircle2,
-    },
-  ]
-
   return (
-    <section className="py-14 px-4 sm:px-6 lg:px-8 mx-auto max-w-5xl">
-      <div className="text-center mb-10">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1B281F] font-heading">
-          كيف يعمل «مقر» في منشأتك ومكتبك؟
-        </h2>
-        <p className="text-sm text-[#4A5D50] mt-1.5 max-w-lg mx-auto">
-          ثلاث خطوات واضحة ومباشرة تحول الصياغة اليدوية إلى تجربة مدققة تضمن سلامة الموقف النظامي.
-        </p>
-      </div>
+    <section id="how-it-works" className="py-16 md:py-20 px-4 sm:px-6 lg:px-8 border-t border-[#CCD8CE] bg-white">
+      <div className="max-w-7xl mx-auto">
+        <div className="max-w-2xl mb-12">
+          <p className="text-xs font-bold text-[#1F7A46] uppercase tracking-wider mb-2">آلية العمل اليومية</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#1B281F] font-heading">
+            من استقبال الموكّل إلى تنظيم الملف والأتعاب — في ٣ خطوات
+          </h2>
+          <p className="text-sm text-[#4A5D50] mt-2">
+            صُمم «مقر» ليقلل اتصالات المتابعة المتكررة ويجمع ملفات مكتبك بعيداً عن مجموعات المحادثة المبعثرة.
+          </p>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {steps.map((item) => {
-          const Icon = item.icon
-          return (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {STEPS.map((step) => (
             <div
-              key={item.step}
-              className="bg-white rounded-2xl border border-[#CCD8CE] p-6 relative transition-all hover:border-[#1F7A46] shadow-xs"
+              key={step.number}
+              className="rounded-2xl border border-[#CCD8CE] bg-[#F5F7F5] p-6 space-y-4 hover:border-[#1F7A46]/50 transition-colors"
             >
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-2xl font-black text-[#1F7A46] font-mono">
-                  {item.step}
-                </span>
-                <div className="w-10 h-10 rounded-xl bg-[#E8EFE9] text-[#1F7A46] flex items-center justify-center">
-                  <Icon className="w-5 h-5" />
+              <div className="flex items-center justify-between">
+                <div className="w-11 h-11 rounded-xl bg-[#1F7A46] text-white grid place-items-center">
+                  <step.icon className="w-5 h-5" />
                 </div>
+                <span className="text-xs font-mono font-bold text-[#1F7A46] bg-white px-2.5 py-1 rounded-full border border-[#CCD8CE]">
+                  {step.number}
+                </span>
               </div>
-              <h3 className="text-base font-bold text-[#1B281F] mb-2 font-heading">
-                {item.title}
-              </h3>
-              <p className="text-xs sm:text-sm text-[#4A5D50] leading-relaxed">
-                {item.desc}
-              </p>
+              <h3 className="text-base font-bold text-[#1B281F] font-heading">{step.title}</h3>
+              <p className="text-xs text-[#4A5D50] leading-relaxed">{step.desc}</p>
             </div>
-          )
-        })}
+          ))}
+        </div>
       </div>
     </section>
   )

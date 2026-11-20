@@ -47,12 +47,12 @@ export function MaqarAdaptiveSidebar({
         ? 'الشركات والحوكمة'
         : 'Enterprise Legal'
       : role === 'LAW_FIRM'
-      ? lang === 'ar'
-        ? 'مكاتب المحاماة'
-        : 'Law Practice'
-      : lang === 'ar'
-      ? 'الباحث والأكاديمية'
-      : 'Legal Academy'
+        ? lang === 'ar'
+          ? 'مكاتب المحاماة'
+          : 'Law Practice'
+        : lang === 'ar'
+          ? 'الباحث والأكاديمية'
+          : 'Legal Academy'
 
   return (
     <aside className="hidden lg:flex flex-col w-72 shrink-0 select-none">
@@ -87,11 +87,10 @@ export function MaqarAdaptiveSidebar({
                 key={item.id}
                 type="button"
                 onClick={() => onSelectModule(item)}
-                className={`relative w-full flex items-start gap-3 px-3 py-2.5 rounded-xl text-start transition-colors cursor-pointer group ${
-                  isActive
-                    ? 'text-foreground'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/70'
-                }`}
+                className={`relative w-full flex items-start gap-3 px-3 py-2.5 rounded-xl text-start transition-colors cursor-pointer group ${isActive
+                  ? 'text-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/70'
+                  }`}
               >
                 {isActive && (
                   <motion.div
@@ -102,11 +101,10 @@ export function MaqarAdaptiveSidebar({
                 )}
 
                 <div
-                  className={`relative z-10 mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all ${
-                    isActive
-                      ? 'bg-[#1F7A46] text-white border-[#1F7A46] shadow-2xs'
-                      : 'bg-muted/80 text-muted-foreground border-border group-hover:scale-105'
-                  }`}
+                  className={`relative z-10 mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all ${isActive
+                    ? 'bg-[#1F7A46] text-white border-[#1F7A46] shadow-2xs'
+                    : 'bg-muted/80 text-muted-foreground border-border group-hover:scale-105'
+                    }`}
                 >
                   <Icon className="h-4 w-4" />
                 </div>

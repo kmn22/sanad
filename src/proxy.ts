@@ -3,12 +3,9 @@ import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 import { PRIVACY_NOTICE_VERSION } from '@/lib/compliance'
 import {
-  canAccessMaqarDashboard,
   canAccessPortal,
   homePathFor,
   portalForPath,
-  resolveMaqarDashboardPath,
-  resolveMaqarPersona,
 } from '@/lib/auth/portals'
 import {
   evaluateEdgeRateLimit,
@@ -104,14 +101,12 @@ export async function proxy(req: NextRequest) {
     pathname === '/api/health' ||
     pathname === '/api/auth/register' ||
     pathname.startsWith('/api/auth/') ||
-    pathname === '/api/billing/webhook' ||
     pathname === '/api/privacy/requests' ||
     pathname === '/api/invitations/preview' ||
     pathname === '/api/waitlist' ||
     pathname === '/api/analytics/events' ||
     pathname === '/api/ai/check-clause' ||
     pathname === '/api/ai/summarize-contract' ||
-    pathname === '/api/ai/legal-query' ||
     pathname.startsWith('/api/portal/') ||
     pathname.startsWith('/api/cron/')
 
@@ -231,35 +226,8 @@ export async function proxy(req: NextRequest) {
     if (legacySection) {
       return withSecureHeaders(req, requestId, NextResponse.redirect(new URL(`${home}/${legacySection}`, req.url)))
     }
-    // Maqar Multi-Tenant Dynamic Dashboard Router:
-    // Inspects active organization type & user metadata:
-    //   'ENTERPRISE_CORP' -> /dashboard/corporate
-    //   'LAW_FIRM'        -> /dashboard/practice
-    //   'LAW_STUDENT'     -> /dashboard/academy
     if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
-      const onboardingCookie = req.cookies.get('maqar_onboarding_status')?.value
-      // Signed JWT claim takes precedence over unsigned client cookies
-      const onboardingStatus =
-        (token.onboardingStatus as string | undefined) || onboardingCookie
-      if (onboardingStatus === 'pending' || onboardingStatus === 'in_progress') {
-        return withSecureHeaders(req, requestId, NextResponse.redirect(new URL('/onboarding', req.url)))
-      }
-
-      const cookieOrgType = req.cookies.get('maqar_persona')?.value
-      const routingCtx = {
-        organizationType:
-          (token.organizationType as string | undefined) || cookieOrgType,
-        userType: token.userType as string | undefined,
-        workspaceType: token.workspaceType as string | undefined,
-        role,
-      }
-      const resolvedPersona = resolveMaqarPersona(routingCtx)
-      const targetDashboard = resolveMaqarDashboardPath(routingCtx)
-
-      if (pathname === '/dashboard' || !canAccessMaqarDashboard(resolvedPersona, pathname, role)) {
-        return withSecureHeaders(req, requestId, NextResponse.redirect(new URL(targetDashboard, req.url)))
-      }
-      return withSecureHeaders(req, requestId, nextWithRequestId(req, requestId, verifiedTenantHeaders))
+      return withSecureHeaders(req, requestId, NextResponse.redirect(new URL(home, req.url)))
     }
     // Portal guard: wrong-role users are sent to their own portal.
     if (portal && !canAccessPortal(role, portal)) {
@@ -270,7 +238,7 @@ export async function proxy(req: NextRequest) {
       return withSecureHeaders(req, requestId, NextResponse.redirect(new URL(home, req.url)))
     }
     // Workflow tooling is for practice staff only.
-    if (pathname.startsWith('/workflow') && (role === 'client' || role === 'student')) {
+    if (pathname.startsWith('/workflow') && role === 'client') {
       return withSecureHeaders(req, requestId, NextResponse.redirect(new URL(home, req.url)))
     }
     return withSecureHeaders(req, requestId, nextWithRequestId(req, requestId, verifiedTenantHeaders))
@@ -291,7 +259,6 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.json|manifest.webmanifest|og-preview.png|logo.svg|icon-192.png|icon-512.png|icons/).*)',
     '/api/:path*',
     '/dashboard/:path*', '/dashboard',
-    '/student/:path*', '/student',
     '/lawyer/:path*', '/lawyer',
     '/firm/:path*', '/firm',
     '/client/:path*', '/client',

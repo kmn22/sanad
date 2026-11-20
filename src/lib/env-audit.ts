@@ -1,35 +1,16 @@
 /**
  * ============================================================================
- * Maqar (مقر) — Runtime Environment Variable Schema & Release Validator
+ * Maqar (مقر) — Runtime Environment Audit & Startup Validation
  * (`src/lib/env-audit.ts`)
  * ============================================================================
- *
- * Centralizes validation of all Maqar server environment variables across:
- *   1. Database & Vector Store (`DATABASE_URL`, `VECTOR_DATABASE_URL`)
- *   2. Authentication & Multi-Tenant Governance (`NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `PLATFORM_ADMIN_EMAILS`)
- *   3. Sovereign Cryptographic Vault & WORM Audit Log (`BACKUP_ENCRYPTION_KEY`, `MFA_ENCRYPTION_KEY`,
- *      `FILE_ENCRYPTION_KEY`, `DOCUMENT_SIGNATURE_KEY`, `VAULT_MASTER_KMS_KEY`, `AUDIT_LOG_HMAC_SECRET`)
- *   4. AI & Statutory RAG (`OPENAI_API_KEY`, `OPENAI_EMBEDDING_MODEL`, `MAQAR_USE_OPENAI_EMBEDDINGS`,
- *      `MAQAR_ENABLE_LIVE_LLM`, `OLLAMA_URL`, `OLLAMA_MODEL`, `OLLAMA_HOST_URL`)
- *   5. Automated Procedural Notifications & Webhooks (`CRON_SECRET`, `WHATSAPP_BUSINESS_API_URL`,
- *      `WHATSAPP_ACCESS_TOKEN`, `SMS_PROVIDER_API_URL`, `SMS_PROVIDER_API_KEY`, `SMS_SENDER_ID`,
- *      `TRANSACTIONAL_EMAIL_WEBHOOK_URL`, `TRANSACTIONAL_EMAIL_API_KEY`, `MAQAR_MESSAGING_WEBHOOK_URL`,
- *      `NAJIZ_WEBHOOK_SECRET`)
- *   6. E-Signature Service (`ESIGNATURE_SIGNING_SECRET`, `NAFATH_SIGN_API_URL`, `NAFATH_CLIENT_ID`,
- *      `DOCUSIGN_BASE_URL`, `DOCUSIGN_INTEGRATION_KEY`)
- *   7. ZATCA Fatoora Phase-2 & Billing (`ZATCA_ENVIRONMENT`, `ZATCA_API_BASE_URL`,
- *      `ZATCA_SELLER_VAT_NUMBER`, `ZATCA_CSID_PUBLIC_KEY`, `ZATCA_CSID_PRIVATE_KEY`,
- *      `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`)
  */
 
 export type EnvModuleCategory =
-  | 'DATABASE_AND_VECTOR'
+  | 'DATABASE'
   | 'AUTH_AND_TENANT_ISOLATION'
   | 'CRYPTO_AND_PDPL_VAULT'
-  | 'AI_AND_STATUTORY_RAG'
-  | 'PROCEDURAL_NOTIFICATIONS'
-  | 'ESIGNATURE'
-  | 'ZATCA_AND_BILLING'
+  | 'AI_OPTIONAL'
+  | 'NOTIFICATIONS_AND_CRON'
   | 'EMAIL_AND_OBSERVABILITY'
 
 export interface EnvVarSpec {
@@ -61,41 +42,31 @@ const isStrongSecret = (v: string): boolean =>
   !v.includes('generate-a-') &&
   !v.includes('your-domain.com')
 
-const isZatcaVat = (v: string): boolean => /^3\d{13}3$/.test(v.trim())
-
 export const MAQAR_ENV_SPECS: readonly EnvVarSpec[] = [
-  // 1. Database & Vector Store
+  // 1. Database
   {
     key: 'DATABASE_URL',
-    category: 'DATABASE_AND_VECTOR',
+    category: 'DATABASE',
     requiredInProduction: true,
-    description: 'Primary PostgreSQL connection string for Prisma ORM',
+    description: 'Primary PostgreSQL connection string for multi-tenant practice data',
     formatValidator: isPostgresUrl,
-    formatHint: 'postgresql://user:pass@host:5432/dbname',
-  },
-  {
-    key: 'VECTOR_DATABASE_URL',
-    category: 'DATABASE_AND_VECTOR',
-    requiredInProduction: false,
-    description: 'PostgreSQL pgvector / Supabase Vector connection string for Statutory RAG',
-    formatValidator: isPostgresUrl,
-    formatHint: 'postgresql://user:pass@host:5432/dbname',
+    formatHint: 'postgresql://user:pass@host:5432/db',
   },
 
-  // 2. Authentication & Multi-Tenant Governance
+  // 2. Authentication & Session
   {
     key: 'NEXTAUTH_SECRET',
     category: 'AUTH_AND_TENANT_ISOLATION',
     requiredInProduction: true,
-    description: 'NextAuth JWT encryption & signing secret (minimum 32 bytes recommended)',
+    description: 'High-entropy NextAuth JWT/session signing key (min 32 bytes)',
     formatValidator: isStrongSecret,
-    formatHint: '32+ character high-entropy random secret',
+    formatHint: 'hex or base64 random secret (>= 16 chars)',
   },
   {
     key: 'NEXTAUTH_URL',
     category: 'AUTH_AND_TENANT_ISOLATION',
     requiredInProduction: true,
-    description: 'Canonical public origin URL of the Maqar deployment',
+    description: 'Canonical public application URL for NextAuth callbacks & CORS',
     formatValidator: isUrl,
     formatHint: 'https://maqar.sa',
   },
@@ -103,252 +74,104 @@ export const MAQAR_ENV_SPECS: readonly EnvVarSpec[] = [
     key: 'PLATFORM_ADMIN_EMAILS',
     category: 'AUTH_AND_TENANT_ISOLATION',
     requiredInProduction: false,
-    description: 'Comma-separated allowlist of platform operator emails allowed cross-tenant inspection',
+    description: 'Comma-separated list of platform operator admin emails',
   },
 
-  // 3. Cryptographic Keys & Sovereign Legal Vault Security (PDPL / CCC-2)
+  // 3. Encryption & Audit Keys
   {
     key: 'BACKUP_ENCRYPTION_KEY',
     category: 'CRYPTO_AND_PDPL_VAULT',
     requiredInProduction: true,
-    description: 'AES-256 encryption passphrase for PostgreSQL automated backups',
+    description: 'AES-256 backup archive encryption key',
     formatValidator: isStrongSecret,
   },
   {
     key: 'MFA_ENCRYPTION_KEY',
     category: 'CRYPTO_AND_PDPL_VAULT',
     requiredInProduction: true,
-    description: 'AES-256-GCM key for encrypting user TOTP secrets at rest',
-    formatValidator: isStrongSecret,
+    description: '32-byte hex/base64 encryption key for user TOTP MFA secrets',
+    formatValidator: (v) => v.trim().length >= 32 && !v.includes('generate-a-'),
+    formatHint: '64 hex chars (32 bytes)',
   },
   {
     key: 'FILE_ENCRYPTION_KEY',
     category: 'CRYPTO_AND_PDPL_VAULT',
     requiredInProduction: true,
-    description: 'Key for encrypting uploaded workspace documents at rest',
+    description: 'Encryption key for uploaded files and case attachments',
     formatValidator: isStrongSecret,
   },
   {
     key: 'DOCUMENT_SIGNATURE_KEY',
     category: 'CRYPTO_AND_PDPL_VAULT',
     requiredInProduction: true,
-    description: 'HMAC signing secret for document integrity and version verification',
+    description: 'HMAC-SHA256 integrity key for document checksum verification',
     formatValidator: isStrongSecret,
   },
   {
     key: 'VAULT_MASTER_KMS_KEY',
     category: 'CRYPTO_AND_PDPL_VAULT',
     requiredInProduction: true,
-    description: 'Master root key for HKDF-SHA256 per-tenant KEK derivation in Legal Vault envelope encryption',
+    description: 'Master root secret for HKDF tenant Key Encryption Keys (KEK) in Legal Vaults',
     formatValidator: isStrongSecret,
   },
   {
     key: 'AUDIT_LOG_HMAC_SECRET',
     category: 'CRYPTO_AND_PDPL_VAULT',
     requiredInProduction: true,
-    description: 'HMAC-SHA256 secret for immutable WORM digital audit log chain verification',
+    description: 'HMAC-SHA256 key chaining Immutable Audit Log records',
     formatValidator: isStrongSecret,
   },
+  {
+    key: 'UPLOAD_ROOT',
+    category: 'CRYPTO_AND_PDPL_VAULT',
+    requiredInProduction: false,
+    description: 'Filesystem path for encrypted uploads storage',
+  },
 
-  // 4. AI & Statutory RAG Engine
+  // 4. Optional Workspace AI (Ollama)
   {
     key: 'OLLAMA_URL',
-    category: 'AI_AND_STATUTORY_RAG',
+    category: 'AI_OPTIONAL',
     requiredInProduction: false,
-    description: 'Internal Ollama inference endpoint URL',
+    description: 'Self-hosted Ollama server endpoint URL for authenticated draft assistance',
     formatValidator: isUrl,
   },
   {
     key: 'OLLAMA_MODEL',
-    category: 'AI_AND_STATUTORY_RAG',
+    category: 'AI_OPTIONAL',
     requiredInProduction: false,
-    description: 'Default Arabic legal reasoning LLM model tag for Ollama',
-  },
-  {
-    key: 'OLLAMA_HOST_URL',
-    category: 'AI_AND_STATUTORY_RAG',
-    requiredInProduction: false,
-    description: 'Host-side Ollama URL used by scripts/warm-ai.sh',
-    formatValidator: isUrl,
-  },
-  {
-    key: 'OPENAI_API_KEY',
-    category: 'AI_AND_STATUTORY_RAG',
-    requiredInProduction: false,
-    description: 'OpenAI API key for text-embedding-3-small statutory vector indexing',
-  },
-  {
-    key: 'OPENAI_EMBEDDING_MODEL',
-    category: 'AI_AND_STATUTORY_RAG',
-    requiredInProduction: false,
-    description: 'Embedding model identifier (defaults to text-embedding-3-small)',
-  },
-  {
-    key: 'MAQAR_USE_OPENAI_EMBEDDINGS',
-    category: 'AI_AND_STATUTORY_RAG',
-    requiredInProduction: false,
-    description: 'Boolean toggle ("true"/"false") to enable live OpenAI embeddings over local deterministic fallback',
-    formatValidator: (v) => v === 'true' || v === 'false',
-  },
-  {
-    key: 'MAQAR_ENABLE_LIVE_LLM',
-    category: 'AI_AND_STATUTORY_RAG',
-    requiredInProduction: false,
-    description: 'Boolean toggle ("true"/"false") to invoke live LLM synthesis in /api/ai/legal-query',
-    formatValidator: (v) => v === 'true' || v === 'false',
+    description: 'Ollama model identifier for workspace drafting and analysis',
   },
 
-  // 5. Automated Multi-Channel Procedural Notifications & Webhooks
+  // 5. Notifications, Cache & Scheduled Jobs
   {
     key: 'CRON_SECRET',
-    category: 'PROCEDURAL_NOTIFICATIONS',
+    category: 'NOTIFICATIONS_AND_CRON',
     requiredInProduction: true,
-    description: 'Bearer secret authenticating /api/cron/* procedural alert and reminder workers',
+    description: 'Bearer / X-Cron-Secret authentication key protecting /api/cron/* endpoints',
     formatValidator: isStrongSecret,
   },
   {
-    key: 'WHATSAPP_BUSINESS_API_URL',
-    category: 'PROCEDURAL_NOTIFICATIONS',
+    key: 'REDIS_URL',
+    category: 'NOTIFICATIONS_AND_CRON',
     requiredInProduction: false,
-    description: 'Meta WhatsApp Cloud API messages endpoint URL',
+    description: 'Optional Redis URL for distributed rate limiting',
+  },
+  {
+    key: 'WHATSAPP_BUSINESS_API_URL',
+    category: 'NOTIFICATIONS_AND_CRON',
+    requiredInProduction: false,
+    description: 'Meta WhatsApp Cloud API endpoint URL (optional)',
     formatValidator: isUrl,
   },
   {
     key: 'WHATSAPP_ACCESS_TOKEN',
-    category: 'PROCEDURAL_NOTIFICATIONS',
+    category: 'NOTIFICATIONS_AND_CRON',
     requiredInProduction: false,
-    description: 'WhatsApp Business API permanent system-user bearer token',
-  },
-  {
-    key: 'SMS_PROVIDER_API_URL',
-    category: 'PROCEDURAL_NOTIFICATIONS',
-    requiredInProduction: false,
-    description: 'CITC-compliant Saudi SMS gateway endpoint (e.g., Unifonic / Taqnyat)',
-    formatValidator: isUrl,
-  },
-  {
-    key: 'SMS_PROVIDER_API_KEY',
-    category: 'PROCEDURAL_NOTIFICATIONS',
-    requiredInProduction: false,
-    description: 'API key for Saudi SMS gateway dispatch',
-  },
-  {
-    key: 'SMS_SENDER_ID',
-    category: 'PROCEDURAL_NOTIFICATIONS',
-    requiredInProduction: false,
-    description: 'Registered CITC alphanumeric SMS sender ID (e.g., MAQAR)',
-  },
-  {
-    key: 'TRANSACTIONAL_EMAIL_WEBHOOK_URL',
-    category: 'PROCEDURAL_NOTIFICATIONS',
-    requiredInProduction: false,
-    description: 'Transactional email HTTP webhook endpoint for procedural alerts',
-    formatValidator: isUrl,
-  },
-  {
-    key: 'TRANSACTIONAL_EMAIL_API_KEY',
-    category: 'PROCEDURAL_NOTIFICATIONS',
-    requiredInProduction: false,
-    description: 'Transactional email HTTP webhook bearer API key',
-  },
-  {
-    key: 'MAQAR_MESSAGING_WEBHOOK_URL',
-    category: 'PROCEDURAL_NOTIFICATIONS',
-    requiredInProduction: false,
-    description: 'Unified webhook URL for litigation deadline escalation notifications',
-    formatValidator: isUrl,
-  },
-  {
-    key: 'NAJIZ_WEBHOOK_SECRET',
-    category: 'PROCEDURAL_NOTIFICATIONS',
-    requiredInProduction: false,
-    description: 'HMAC shared secret for authenticating inbound Najiz court sync webhooks',
+    description: 'Meta WhatsApp Business API access token (optional)',
   },
 
-  // 6. E-Signature Dispatch
-  {
-    key: 'ESIGNATURE_SIGNING_SECRET',
-    category: 'ESIGNATURE',
-    requiredInProduction: true,
-    description: 'HMAC-SHA256 secret for signing E-Signature envelopes and audit trail certificates',
-    formatValidator: isStrongSecret,
-  },
-  {
-    key: 'NAFATH_SIGN_API_URL',
-    category: 'ESIGNATURE',
-    requiredInProduction: false,
-    description: 'Saudi National Single Sign-On (Nafath) digital signature gateway URL',
-    formatValidator: isUrl,
-  },
-  {
-    key: 'NAFATH_CLIENT_ID',
-    category: 'ESIGNATURE',
-    requiredInProduction: false,
-    description: 'Nafath relying-party client identifier',
-  },
-  {
-    key: 'DOCUSIGN_BASE_URL',
-    category: 'ESIGNATURE',
-    requiredInProduction: false,
-    description: 'DocuSign eSignature REST API base URL',
-    formatValidator: isUrl,
-  },
-  {
-    key: 'DOCUSIGN_INTEGRATION_KEY',
-    category: 'ESIGNATURE',
-    requiredInProduction: false,
-    description: 'DocuSign OAuth integration key',
-  },
-
-  // 7. ZATCA Fatoora Phase-2 & Stripe Billing
-  {
-    key: 'ZATCA_ENVIRONMENT',
-    category: 'ZATCA_AND_BILLING',
-    requiredInProduction: false,
-    description: 'ZATCA Fatoora environment mode ("sandbox" | "simulation" | "production")',
-    formatValidator: (v) => ['sandbox', 'simulation', 'production'].includes(v),
-  },
-  {
-    key: 'ZATCA_API_BASE_URL',
-    category: 'ZATCA_AND_BILLING',
-    requiredInProduction: false,
-    description: 'ZATCA Fatoora Phase-2 clearance & reporting gateway base URL',
-    formatValidator: isUrl,
-  },
-  {
-    key: 'ZATCA_SELLER_VAT_NUMBER',
-    category: 'ZATCA_AND_BILLING',
-    requiredInProduction: false,
-    description: '15-digit Saudi VAT registration number starting and ending with 3',
-    formatValidator: isZatcaVat,
-    formatHint: '3XXXXXXXXXXXXX3 (15 digits)',
-  },
-  {
-    key: 'ZATCA_CSID_PUBLIC_KEY',
-    category: 'ZATCA_AND_BILLING',
-    requiredInProduction: false,
-    description: 'ZATCA Cryptographic Stamp Identifier (CSID) ECDSA public key / certificate',
-  },
-  {
-    key: 'ZATCA_CSID_PRIVATE_KEY',
-    category: 'ZATCA_AND_BILLING',
-    requiredInProduction: false,
-    description: 'ZATCA Cryptographic Stamp Identifier (CSID) ECDSA secp256k1 private key',
-  },
-  {
-    key: 'STRIPE_SECRET_KEY',
-    category: 'ZATCA_AND_BILLING',
-    requiredInProduction: false,
-    description: 'Stripe secret API key for SaaS subscription checkout',
-  },
-  {
-    key: 'STRIPE_WEBHOOK_SECRET',
-    category: 'ZATCA_AND_BILLING',
-    requiredInProduction: false,
-    description: 'Stripe webhook signing secret (`whsec_...`)',
-  },
-
-  // 8. Email & Observability
+  // 6. Email, Observability & Beta Controls
   {
     key: 'SMTP_HOST',
     category: 'EMAIL_AND_OBSERVABILITY',
@@ -363,6 +186,24 @@ export const MAQAR_ENV_SPECS: readonly EnvVarSpec[] = [
     formatValidator: (v) => /^\d+$/.test(v) && Number(v) > 0 && Number(v) <= 65535,
   },
   {
+    key: 'SMTP_SECURE',
+    category: 'EMAIL_AND_OBSERVABILITY',
+    requiredInProduction: false,
+    description: 'Use TLS for SMTP connection (true/false)',
+  },
+  {
+    key: 'SMTP_USER',
+    category: 'EMAIL_AND_OBSERVABILITY',
+    requiredInProduction: false,
+    description: 'SMTP authentication username',
+  },
+  {
+    key: 'SMTP_PASSWORD',
+    category: 'EMAIL_AND_OBSERVABILITY',
+    requiredInProduction: false,
+    description: 'SMTP authentication password',
+  },
+  {
     key: 'EMAIL_FROM',
     category: 'EMAIL_AND_OBSERVABILITY',
     requiredInProduction: false,
@@ -373,6 +214,36 @@ export const MAQAR_ENV_SPECS: readonly EnvVarSpec[] = [
     category: 'EMAIL_AND_OBSERVABILITY',
     requiredInProduction: false,
     description: 'Sentry error reporting DSN',
+  },
+  {
+    key: 'BETA_MAX_WORKSPACES',
+    category: 'EMAIL_AND_OBSERVABILITY',
+    requiredInProduction: false,
+    description: 'Maximum active workspaces allowed during beta (0 = unlimited)',
+  },
+  {
+    key: 'BETA_AI_DAILY_LIMIT',
+    category: 'EMAIL_AND_OBSERVABILITY',
+    requiredInProduction: false,
+    description: 'Daily per-workspace AI request cap (0 = plan default)',
+  },
+  {
+    key: 'ENABLE_DEMO_PORTAL',
+    category: 'EMAIL_AND_OBSERVABILITY',
+    requiredInProduction: false,
+    description: 'Enable demo portal token outside production (true/false)',
+  },
+  {
+    key: 'MAQAR_ALLOW_DESTRUCTIVE_SEED',
+    category: 'EMAIL_AND_OBSERVABILITY',
+    requiredInProduction: false,
+    description: 'Explicit opt-in required to run scripts/seed.ts locally (1)',
+  },
+  {
+    key: 'SEED_WORKSPACE_ID',
+    category: 'EMAIL_AND_OBSERVABILITY',
+    requiredInProduction: false,
+    description: 'Target workspace ID for scripts/seed_clients.ts',
   },
 ] as const
 

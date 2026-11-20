@@ -24,7 +24,6 @@ import {
   type Client,
 } from '@/lib/core/types'
 import { CaseDetailDrawer } from './CaseDetailDrawer'
-import { DraftingHub } from './DraftingHub'
 import { ConflictCheckModal } from './ConflictCheckModal'
 import { StatTile } from '@/components/portal/PortalShell'
 import { ShieldAlert } from 'lucide-react'
@@ -42,8 +41,6 @@ interface Props {
 export function CasesView({ cases, clients = [], onChange }: Props) {
   const { lang, t } = useLang()
   const [open, setOpen] = useState(false)
-  const [draftingOpen, setDraftingOpen] = useState(false)
-  const [draftingCase, setDraftingCase] = useState<LegalCase | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null)
   const [editingCase, setEditingCase] = useState<LegalCase | null>(null)
@@ -159,15 +156,6 @@ export function CasesView({ cases, clients = [], onChange }: Props) {
             <ShieldAlert className="h-3.5 w-3.5 text-primary" />
             <span>{lang === 'ar' ? 'فحص تضارب المصالح' : 'Conflict Check'}</span>
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setDraftingOpen(true)}
-            className="h-8 text-xs gap-1.5 border-primary/30 text-primary hover:bg-primary/5 rounded-full cursor-pointer"
-          >
-            <Scale className="h-3.5 w-3.5" />
-            <span>{lang === 'ar' ? 'إعداد مذكرة' : 'Draft Pleading'}</span>
-          </Button>
           <AddCaseDialog open={open} onOpenChange={setOpen} clients={clients} onSaved={() => { onChange(); setOpen(false) }} />
         </div>
       </div>
@@ -186,20 +174,6 @@ export function CasesView({ cases, clients = [], onChange }: Props) {
         cases={cases}
       />
 
-      <DraftingHub
-        open={draftingOpen || !!draftingCase}
-        onOpenChange={(isOpen) => {
-          if (!isOpen) {
-            setDraftingOpen(false)
-            setDraftingCase(null)
-          }
-        }}
-        cases={cases}
-        initialTemplateId="defense"
-        initialCaseId={draftingCase?.id}
-        onDocumentSaved={onChange}
-      />
-
       {view === 'kanban' ? (
         <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -211,7 +185,6 @@ export function CasesView({ cases, clients = [], onChange }: Props) {
                 onCaseClick={(id) => setSelectedCaseId(id)}
                 onCaseEdit={(c) => setEditingCase(c)}
                 onCaseDelete={(id) => deleteCase(id)}
-                onCaseDraftPleading={(c) => setDraftingCase(c)}
               />
             ))}
           </div>

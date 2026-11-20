@@ -8,7 +8,6 @@ import {
 import { TenantIsolationViolationError } from '../src/lib/security/tenant-guard'
 import { validateTenantJwtClaims } from '../src/lib/security/edge-rate-limiter'
 import { isPlatformSuperAdmin } from '../src/lib/auth/workspace'
-import { runDailyProceduralNotificationsWorker } from '../src/services/procedural-notifications'
 
 const hasDb = Boolean(process.env.DATABASE_URL)
 const describeWithDb = hasDb ? describe : describe.skip
@@ -285,17 +284,6 @@ describe('Maqar Multi-Tenant Security Audit — Prisma Extension, Session & Priv
       )
       expect(scopedContracts.length).toBeGreaterThanOrEqual(2)
       expect(scopedContracts.every((c) => c.orgId === tenant1Ctx.orgId)).toBe(true)
-    })
-
-    it('scopes runDailyProceduralNotificationsWorker strictly to caller tenant when invoked without global CRON_SECRET', async () => {
-      // Tenant 1 has 0 CaseSessions; Tenant 2 has active CaseSessions in the seed data.
-      // Scoping worker to Tenant 1 must scan 0 sessions and leak 0 alerts from Tenant 2.
-      const scopedReport = await runDailyProceduralNotificationsWorker(new Date(), {
-        orgId: tenant1Ctx.orgId,
-        workspaceId: tenant1Ctx.workspaceId,
-      })
-      expect(scopedReport.scannedSessionsCount).toBe(0)
-      expect(scopedReport.alerts).toHaveLength(0)
     })
   })
 })

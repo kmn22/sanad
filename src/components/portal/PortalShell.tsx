@@ -41,7 +41,6 @@ const ROLE_LABELS: Record<string, Bilingual> = {
   lawyer: { ar: 'محامٍ', en: 'Lawyer' },
   staff: { ar: 'فريق المكتب', en: 'Staff' },
   auditor: { ar: 'مدقق (قراءة فقط)', en: 'Auditor (read-only)' },
-  student: { ar: 'طالب قانون', en: 'Law student' },
   client: { ar: 'موكّل', en: 'Client' },
 }
 
@@ -302,9 +301,8 @@ export function PortalShell({ portal, sections, children, onRefresh, refreshing,
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
-                    active ? `${theme.activePill} font-semibold shadow-xs` : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
-                  }`}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${active ? `${theme.activePill} font-semibold shadow-xs` : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
+                    }`}
                 >
                   <Icon className="h-3.5 w-3.5" />
                   {L(item.label)}
@@ -329,9 +327,8 @@ export function PortalShell({ portal, sections, children, onRefresh, refreshing,
                         key={item.href}
                         href={item.href}
                         id={`nav-${item.href.replaceAll('/', '-').slice(1)}`}
-                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-all group ${
-                          active ? `${theme.active} font-semibold shadow-2xs` : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground'
-                        }`}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-all group ${active ? `${theme.active} font-semibold shadow-2xs` : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground'
+                          }`}
                       >
                         <Icon className="h-4 w-4 shrink-0 transition-transform group-hover:scale-110" />
                         <span className="truncate">{L(item.label)}</span>

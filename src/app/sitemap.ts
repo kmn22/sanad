@@ -8,16 +8,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const routes = [
     '',
-    '/solutions',
-    '/solutions/enterprise',
-    '/solutions/firms',
-    '/solutions/academy',
     '/pricing',
-    '/onboarding',
-    '/sandbox',
     '/about',
     '/security',
-    '/build',
     '/login',
     '/signup',
     '/register',
@@ -30,6 +23,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     url: `${baseUrl}${route}`,
     lastModified: currentDate,
     changeFrequency: route === '' || route === '/pricing' ? 'daily' : 'weekly',
-    priority: route === '' ? 1.0 : route === '/pricing' ? 0.9 : route === '/sandbox' ? 0.8 : 0.5,
+    priority: route === '' ? 1.0 : route === '/pricing' ? 0.9 : 0.5,
   }))
 }

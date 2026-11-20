@@ -7,7 +7,7 @@ import { rateLimit } from '@/lib/rate-limit'
 import { canInviteWorkspaceMember } from '@/lib/saas/entitlements'
 
 const hashToken = (token: string) => createHash('sha256').update(token).digest('hex')
-const ALLOWED_ROLES = new Set(['lawyer', 'staff', 'student', 'auditor'])
+const ALLOWED_ROLES = new Set(['lawyer', 'staff', 'auditor'])
 
 export async function GET() {
   const auth = await getAuthContext()

@@ -3,8 +3,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useSession } from 'next-auth/react'
 import { getLawyerDashboard } from '@/app/actions/dashboard'
-import { getStudentDashboard } from '@/app/actions/studentDashboard'
-import type { DashboardData, StudentDashboardData } from '@/lib/core/types'
+import type { DashboardData } from '@/lib/core/types'
 import { getFirmDashboard, type FirmDashboard } from '@/app/actions/firmDashboard'
 
 /**
@@ -16,16 +15,6 @@ export function useLawyerDashboard() {
   const query = useQuery<DashboardData>({
     queryKey: ['dashboard', 'lawyer'],
     queryFn: async () => (await getLawyerDashboard()) as unknown as DashboardData,
-    enabled: status === 'authenticated',
-  })
-  return { ...query, data: query.data ?? null, busy: query.isLoading || query.isRefetching }
-}
-
-export function useStudentDashboard() {
-  const { status } = useSession()
-  const query = useQuery<StudentDashboardData>({
-    queryKey: ['dashboard', 'student'],
-    queryFn: async () => (await getStudentDashboard()) as unknown as StudentDashboardData,
     enabled: status === 'authenticated',
   })
   return { ...query, data: query.data ?? null, busy: query.isLoading || query.isRefetching }

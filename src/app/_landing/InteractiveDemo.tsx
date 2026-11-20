@@ -11,6 +11,7 @@ import {
   RotateCcw,
   Scale,
   ShieldCheck,
+  HelpCircle,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { trackEvent, ANALYTICS_EVENTS } from '@/lib/analytics/events'
@@ -40,13 +41,13 @@ const PRESET_CLAUSES: PresetClause[] = [
   },
   {
     id: 'probation',
-    title: 'فترة التجربة (180 يوماً أولية)',
-    law: 'نظام العمل (م/53)',
-    text: 'يخضع الطرف الثاني لفترة تجربة مدتها ستة أشهر (180 يوماً) تبدأ من تاريخ مباشرة العمل، ويحق للطرف الأول إنهاء العقد خلالها دون مكافأة أو إشعار.',
-    score: 48,
-    article: 'المادة (53) من نظام العمل السعودي',
-    violation: 'الحد الأقصى لفترة التجربة الأصلية هو 90 يوماً فقط؛ ولا يجوز تمديدها إلى 180 يوماً إلا باتفاق كتابي صريح يتم بعد بدء سريان العقد ومباشرة العمل.',
-    recommendation: 'يخضع الطرف الثاني لفترة تجربة مدتها (90) يوماً من تاريخ مباشرة العمل الفعلي، ويجوز باتفاق كتابي لاحق تمديدها بما لا يتجاوز 180 يوماً وفق المادة 53 من نظام العمل.',
+    title: 'فترة تجربة تتجاوز 180 يوماً (9 أشهر)',
+    law: 'نظام العمل (م/53 المعدلة 2025)',
+    text: 'يخضع الطرف الثاني لفترة تجربة مدتها تسعة أشهر (270 يوماً) تبدأ من تاريخ مباشرة العمل، ويحق للطرف الأول إنهاء العقد خلالها دون مكافأة أو إشعار.',
+    score: 45,
+    article: 'المادة (53) من نظام العمل السعودي — تعديلات المرسوم الملكي م/44',
+    violation: 'الحد الأقصى النظامي لفترة التجربة وفق التعديلات السارية من فبراير 2025 هو 180 يوماً كحد أقصى مكتوب في عقد العمل؛ وما زاد على 180 يوماً مخالف للنظام.',
+    recommendation: 'يخضع الطرف الثاني لفترة تجربة لا تتجاوز (180) يوماً من تاريخ مباشرة العمل، وتُثبت مدتها كتابةً في عقد العمل الموحد وفق المادة (53) من نظام العمل المعدلة.',
   },
   {
     id: 'liquidated-damages',
@@ -63,6 +64,7 @@ const PRESET_CLAUSES: PresetClause[] = [
 function presetToOutcome(preset: PresetClause): ClauseCheckResult {
   return {
     valid: false,
+    status: 'flagged',
     score: preset.score,
     law: preset.law,
     article: preset.article,
@@ -131,7 +133,7 @@ export function InteractiveDemo() {
         }
       }
     } catch {
-      // Offline or transient network error — keep deterministic outcome
+      // Keep deterministic outcome
     }
 
     setAuditResult(outcome)
@@ -143,207 +145,175 @@ export function InteractiveDemo() {
       violationFound: !outcome.valid,
       article: outcome.article,
     })
-    toast.success('اكتمل الفحص النظامي للبند بنجاح')
+    toast.success('اكتمل الفحص الأولي للبند')
   }
 
   const handleCopyAlternative = () => {
     navigator.clipboard.writeText(auditResult.recommendation)
     setCopied(true)
-    toast.success('تم نسخ الصياغة المتوافقة')
+    toast.success('تم نسخ الصياغة المقترحة')
     setTimeout(() => setCopied(false), 2000)
   }
+
+  const isNeedsLawyerReview = auditResult.status === 'needs_lawyer_review'
+  const isFlagged = !isNeedsLawyerReview && !auditResult.valid
 
   return (
     <section id="checker" className="px-4 sm:px-6 lg:px-8 mx-auto max-w-5xl pb-16 scroll-mt-24">
       {/* Section Header */}
-      <div className="text-center mb-6">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E8EFE9] border border-[#CCD8CE] text-[#1F7A46] text-xs font-bold mb-2">
+      <div className="text-center mb-6 space-y-2">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E8EFE9] border border-[#CCD8CE] text-[#1F7A46] text-xs font-bold">
           <Sparkles className="w-3.5 h-3.5" />
-          <span>المعرض الحي: افحص البند في ثوانٍ</span>
+          <span>أداة مساعدة أولية مجانية لقراءة البنود</span>
         </div>
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1B281F] font-heading">
-          جرّب دقة الفحص النظامي قبل التسجيل
+        <h2 className="text-2xl sm:text-3xl font-black text-[#1B281F] font-heading">
+          اختبر قراءة البنود التعاقدية الشائعة (عرض توضيحي مجاني)
         </h2>
-        <p className="text-sm text-[#4A5D50] mt-1 max-w-xl mx-auto">
-          اختر أحد النماذج الشائعة أو الصق نص بندك وشاهد كيف يلتقط النظام المخالفة ويقترح البديل المتوافق.
+        <p className="text-xs sm:text-sm text-[#4A5D50] max-w-2xl mx-auto">
+          يعرض هذا الفاحص تنبيهات أولية لقواعد تعاقدية معروفة بقواعد برمجية ثابتة — ولا يمثّل فتاوى نظامية شاملة أو استشارة قانونية بديلة عن محامٍ مرخّص.
         </p>
       </div>
 
-      {/* Main Checker Card */}
-      <div className="bg-white rounded-2xl border border-[#CCD8CE] shadow-sm overflow-hidden">
-        {/* Preset Selector Tabs */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-[#CCD8CE] bg-[#F5F7F5] p-1.5 gap-1.5 text-xs">
-          {PRESET_CLAUSES.map((preset) => {
-            const isSelected = selectedPreset === preset.id
-            return (
+      {/* Interactive Workbench Card */}
+      <div className="bg-white rounded-3xl border border-[#CCD8CE] shadow-sm overflow-hidden">
+        {/* Preset Selector Bar */}
+        <div className="p-4 sm:p-5 bg-[#F5F7F5] border-b border-[#CCD8CE] flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-[#4A5D50] ml-1">نماذج بنود للفحص:</span>
+            {PRESET_CLAUSES.map((preset) => (
               <button
                 key={preset.id}
                 type="button"
                 onClick={() => handleSelectPreset(preset)}
-                className={`py-2.5 px-3 rounded-lg font-bold transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer ${
-                  isSelected
-                    ? 'bg-white text-[#1F7A46] shadow-xs border border-[#CCD8CE]'
-                    : 'text-[#4A5D50] hover:text-[#1B281F] hover:bg-white/60'
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                  selectedPreset === preset.id
+                    ? 'bg-[#1F7A46] text-white border-[#1F7A46] shadow-2xs'
+                    : 'bg-white text-[#1B281F] border-[#CCD8CE] hover:border-[#1F7A46]'
                 }`}
               >
-                <Scale className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">{preset.title}</span>
+                {preset.title}
               </button>
-            )
-          })}
+            ))}
+          </div>
+
+          {isDirty && (
+            <button
+              type="button"
+              onClick={handleRestorePreset}
+              className="text-xs font-semibold text-[#1F7A46] hover:underline inline-flex items-center gap-1 cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>استعادة المثال</span>
+            </button>
+          )}
         </div>
 
-        {/* Checker Workspace */}
-        <div className="p-5 sm:p-7 space-y-5">
-          {/* Textarea Input Block */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <label htmlFor="clause-input" className="font-bold text-[#1B281F]">
-                نص البند التعاقدي المراد تدقيقه:
+        <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x lg:divide-x-reverse divide-[#CCD8CE]">
+          {/* Input Pane */}
+          <div className="lg:col-span-6 p-5 sm:p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <label htmlFor="clause-demo-input" className="text-xs font-bold text-[#1B281F]">
+                نص البند التعاقدي:
               </label>
-              <span className="text-[#566A5C] font-mono text-[11px]">
-                المرجع المستهدف: {auditResult.law}
-              </span>
+              <span className="text-[11px] font-mono text-[#566A5C]">{clauseText.length} / 3000</span>
             </div>
+
             <textarea
-              id="clause-input"
-              rows={3}
+              id="clause-demo-input"
+              rows={6}
               value={clauseText}
               onChange={(e) => {
                 setClauseText(e.target.value)
                 setIsDirty(true)
               }}
-              className="w-full bg-[#F5F7F5] border border-[#CCD8CE] rounded-xl p-3.5 text-xs sm:text-sm text-[#1B281F] leading-relaxed focus:bg-white focus:outline-none focus:border-[#1F7A46] focus:ring-1 focus:ring-[#1F7A46] transition-all font-sans"
-              placeholder="اكتب أو الصق نص البند القانوني هنا..."
+              placeholder="ألصق نص أي بند تعاقدي هنا لفحص القواعد الأولية..."
+              className="w-full rounded-2xl border border-[#CCD8CE] bg-[#F5F7F5] p-4 text-xs sm:text-sm text-[#1B281F] leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#1F7A46]"
             />
+
+            <Button
+              type="button"
+              disabled={isAnalyzing}
+              onClick={handleRunCheck}
+              className="w-full h-11 bg-[#1F7A46] hover:bg-[#165832] text-white font-bold text-xs sm:text-sm cursor-pointer"
+            >
+              <Scale className="w-4 h-4 ml-2" />
+              {isAnalyzing ? 'جارٍ الفحص الأولي...' : 'تشغيل الفحص الأولي للبند'}
+            </Button>
           </div>
 
-          {/* Action Row */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
-            <div className="text-[11px] text-[#566A5C] flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-[#1F7A46]" />
-              <span>
-                {isDirty
-                  ? 'تم تعديل النص — اضغط «افحص البند نظامياً» لتحديث النتيجة'
-                  : 'فحص آلي معزول محلياً ضد الأنظمة السعودية السارية'}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleRestorePreset}
-                className="text-xs border-[#CCD8CE] text-[#4A5D50] hover:text-[#1B281F] cursor-pointer"
-              >
-                <RotateCcw className="w-3.5 h-3.5 ml-1" />
-                استعادة النموذج
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                onClick={handleRunCheck}
-                disabled={isAnalyzing}
-                className="bg-[#1F7A46] hover:bg-[#165832] text-white text-xs font-bold px-5 h-9 cursor-pointer shadow-xs transition-all"
-              >
-                <Sparkles className="w-3.5 h-3.5 ml-1.5" />
-                {isAnalyzing ? 'جارٍ الفحص والمطابقة...' : 'افحص البند نظامياً'}
-              </Button>
-            </div>
-          </div>
-
-          {/* Instant Audit Result — stays mounted to prevent layout jump */}
-          <div
-            className={`mt-4 pt-5 border-t border-[#CCD8CE] space-y-4 transition-opacity duration-200 ${
-              isDirty || isAnalyzing ? 'opacity-60' : 'opacity-100'
-            }`}
-          >
-            {/* Status Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-[#F5F7F5] p-3 rounded-xl border border-[#CCD8CE]">
+          {/* Result Pane */}
+          <div className="lg:col-span-6 p-5 sm:p-6 space-y-4 bg-[#FAFBF9]">
+            <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <div
-                  className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${
-                    auditResult.valid ? 'bg-[#E8EFE9] text-[#1F7A46]' : 'bg-[#FEE2E2] text-[#B91C1C]'
-                  }`}
-                >
-                  {auditResult.valid ? '✓' : '!'}
-                </div>
-                <div>
-                  <span className={`font-bold text-xs sm:text-sm ${auditResult.valid ? 'text-[#1F7A46]' : 'text-[#B91C1C]'}`}>
-                    {auditResult.valid ? 'متوافق مع الضوابط النظامية العامة' : 'تنبيه: رُصد تعارض مع المقتضى النظامي'}
-                  </span>
-                  <span className="text-[11px] text-[#566A5C] block sm:inline sm:mr-2">
-                    ({auditResult.article})
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 self-start sm:self-auto">
-                {auditResult.engine === 'ollama' && (
-                  <span className="px-2 py-0.5 rounded-md bg-[#E8EFE9] text-[#1F7A46] text-[10px] font-bold">
-                    تحليل الذكاء الاصطناعي السيادي
-                  </span>
+                {isNeedsLawyerReview ? (
+                  <HelpCircle className="w-5 h-5 text-amber-600 shrink-0" />
+                ) : isFlagged ? (
+                  <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0" />
+                ) : (
+                  <CheckCircle2 className="w-5 h-5 text-[#1F7A46] shrink-0" />
                 )}
-                <div
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-[#CCD8CE] text-xs font-mono font-bold ${
-                    auditResult.valid ? 'text-[#1F7A46]' : 'text-[#B91C1C]'
+                <span className="text-xs sm:text-sm font-bold text-[#1B281F]">
+                  {isNeedsLawyerReview
+                    ? 'خارج القواعد الثابتة — يتطلب مراجعة محامٍ مختص'
+                    : isFlagged
+                      ? 'تم رصد مؤشر مخالفة أولي في البند'
+                      : 'لم يرصد تجاوزاً في القاعدة المفحوصة'}
+                </span>
+              </div>
+
+              {!isNeedsLawyerReview && (
+                <span
+                  className={`text-xs font-mono font-bold px-2.5 py-1 rounded-full border ${
+                    isFlagged
+                      ? 'bg-rose-50 text-rose-700 border-rose-200'
+                      : 'bg-[#E8EFE9] text-[#1F7A46] border-[#CCD8CE]'
                   }`}
                 >
-                  <span>درجة الامتثال:</span>
-                  <span>{auditResult.score} / 100</span>
-                </div>
-              </div>
+                  المؤشر الأولي: {auditResult.score}/100
+                </span>
+              )}
             </div>
 
-            {/* Grid: Violation vs Alternative */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Violation / Observation Box */}
-              <div
-                className={`p-4 rounded-xl border text-xs space-y-1.5 ${
-                  auditResult.valid
-                    ? 'bg-[#F5F7F5] border-[#CCD8CE]'
-                    : 'bg-[#FEF2F2] border-[#FECACA]'
-                }`}
-              >
-                <div className={`flex items-center gap-1.5 font-bold ${auditResult.valid ? 'text-[#1B281F]' : 'text-[#991B1B]'}`}>
-                  {auditResult.valid ? (
-                    <CheckCircle2 className="w-4 h-4 text-[#1F7A46]" />
-                  ) : (
-                    <AlertTriangle className="w-4 h-4 text-[#DC2626]" />
-                  )}
-                  <span>{auditResult.valid ? 'نتيجة الفحص النظامي:' : 'وجه المخالفة النظامية:'}</span>
-                </div>
-                <p className={`leading-relaxed ${auditResult.valid ? 'text-[#4A5D50]' : 'text-[#7F1D1D]'}`}>
-                  {auditResult.violation}
-                </p>
+            {/* Article / Scope Box */}
+            <div
+              className={`rounded-2xl p-4 border text-xs space-y-2 ${
+                isNeedsLawyerReview
+                  ? 'bg-amber-50/70 border-amber-200 text-amber-950'
+                  : isFlagged
+                    ? 'bg-rose-50/70 border-rose-200 text-rose-950'
+                    : 'bg-[#E8EFE9]/60 border-[#CCD8CE] text-[#1B281F]'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2 font-bold">
+                <span>{auditResult.law}</span>
+                <span className="text-[10px] font-mono">{auditResult.article}</span>
               </div>
+              <p className="leading-relaxed">{auditResult.violation}</p>
+            </div>
 
-              {/* Compliant Alternative Box */}
-              <div className="p-4 rounded-xl bg-[#E8EFE9] border border-[#CCD8CE] text-xs space-y-2">
+            {/* Suggested Revision */}
+            {auditResult.recommendation && (
+              <div className="rounded-2xl border border-[#CCD8CE] bg-white p-4 space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 font-bold text-[#1F7A46]">
-                    <CheckCircle2 className="w-4 h-4 text-[#1F7A46]" />
-                    <span>الصياغة البديلة المتوافقة:</span>
-                  </div>
+                  <span className="text-xs font-bold text-[#1F7A46]">
+                    {isNeedsLawyerReview ? 'النص المُدخل (يُوصى بعرضه على محامٍ):' : 'صياغة استرشادية بديلة:'}
+                  </span>
                   <button
                     type="button"
                     onClick={handleCopyAlternative}
-                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#1F7A46] hover:underline cursor-pointer"
+                    className="text-[11px] font-bold text-[#1F7A46] hover:underline inline-flex items-center gap-1 cursor-pointer"
                   >
-                    {copied ? (
-                      <>
-                        <Check className="w-3.5 h-3.5" /> تم النسخ
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5" /> نسخ البديل
-                      </>
-                    )}
+                    {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copied ? 'تم النسخ' : 'نسخ النص'}</span>
                   </button>
                 </div>
-                <p className="text-[#1B281F] leading-relaxed font-medium bg-white/70 p-2.5 rounded-lg border border-[#CCD8CE]">
-                  «{auditResult.recommendation}»
-                </p>
+                <p className="text-xs text-[#4A5D50] leading-relaxed">{auditResult.recommendation}</p>
               </div>
+            )}
+
+            <div className="flex items-center gap-2 text-[11px] text-[#566A5C]">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#1F7A46] shrink-0" />
+              <span>تعمل هذه الأداة بقواعد برمجية حتمية محلية دون إرسال بياناتك لنماذج خارجية.</span>
             </div>
           </div>
         </div>

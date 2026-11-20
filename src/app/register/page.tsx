@@ -13,25 +13,23 @@ import {
   Mail,
   Lock,
   User,
-  GraduationCap,
   Briefcase,
   Building2,
   MailCheck,
   Check,
   Globe,
-  Sparkles,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { PRIVACY_NOTICE_VERSION } from '@/lib/privacy-version'
 
-type AccountType = 'student' | 'lawyer' | 'firm'
+type AccountType = 'lawyer' | 'firm'
 type Invitation = { workspaceName: string; role: string; email: string }
 
 const ACCOUNT_OPTIONS: {
   id: AccountType
   title: string
   desc: string
-  icon: typeof GraduationCap
+  icon: typeof Briefcase
   ring: string
   tile: string
   perks: string[]
@@ -39,36 +37,26 @@ const ACCOUNT_OPTIONS: {
   {
     id: 'lawyer',
     title: 'محامٍ مستقل',
-    desc: 'صياغة ممتثلة وتدقيق عقود وإدارة قضايا ومحاكم',
+    desc: 'إدارة القضايا والمستندات المشفرة ومتابعة التراخيص والوكالات وبوابة الموكّل',
     icon: Briefcase,
     ring: 'hover:border-[#1F7A46] data-[on=true]:border-[#1F7A46] data-[on=true]:bg-[#E8EFE9] data-[on=true]:shadow-xs',
     tile: 'bg-[#E8EFE9] text-[#1F7A46] border-[#CCD8CE]',
-    perks: ['فحص لحظي للأنظمة', 'حاسبة المواعيد القضائية', 'بوابة الموكل'],
+    perks: ['لوحة قضايا ومهام', 'بوابة موكّل وواتساب', '١٩٩ ر.س/شهر بعد التجربة'],
   },
   {
     id: 'firm',
-    title: 'مكتب محاماة أو إدارة قانونية',
-    desc: 'إدارة القضايا والمحاكم، العقود المؤسسية (CLM)، وصلاحيات الفريق',
+    title: 'مكتب محاماة صغير (٢–١٠ مقاعد)',
+    desc: 'توزيع القضايا والمهام، عزل الملفات السرية، الموافقات الداخلية، وبوابة الموكلين',
     icon: Building2,
     ring: 'hover:border-[#1F7A46] data-[on=true]:border-[#1F7A46] data-[on=true]:bg-[#E8EFE9] data-[on=true]:shadow-xs',
     tile: 'bg-[#E8EFE9] text-[#1F7A46] border-[#CCD8CE]',
-    perks: ['إدارة الفريق والصلاحيات', 'حوكمة العقود CLM', 'تقارير الشركاء'],
-  },
-  {
-    id: 'student',
-    title: 'طالب قانون أو باحث أكاديمي',
-    desc: 'بنك السوابق القضائية والأنظمة والتدريب على الصياغة القضائية',
-    icon: GraduationCap,
-    ring: 'hover:border-[#1F7A46] data-[on=true]:border-[#1F7A46] data-[on=true]:bg-[#E8EFE9] data-[on=true]:shadow-xs',
-    tile: 'bg-[#E8EFE9] text-[#1F7A46] border-[#CCD8CE]',
-    perks: ['بنك السوابق والأنظمة', 'بطاقات الاستذكار', 'مجاني للجامعات'],
+    perks: ['حتى ١٠ مقاعد', 'عزل القضايا السرية', '٤٤٩ ر.س/شهر بعد التجربة'],
   },
 ]
 
 const ROLE_AR: Record<string, string> = {
   lawyer: 'محامٍ',
   staff: 'فريق المكتب',
-  student: 'متدرب',
   auditor: 'مدقق',
   client: 'موكّل (بوابة الموكّل)',
 }
@@ -107,10 +95,8 @@ export default function RegisterPage() {
         ? 'firm'
         : params.get('plan') === 'solo'
           ? 'lawyer'
-          : params.get('plan') === 'student'
-            ? 'student'
-            : null)
-    if (preset === 'student' || preset === 'lawyer' || preset === 'firm') {
+          : null)
+    if (preset === 'lawyer' || preset === 'firm') {
       setAccountType(preset)
       setStep('details')
     }
@@ -234,26 +220,26 @@ export default function RegisterPage() {
                 </>
               ) : (
                 <>
-                  Digital HQ for Legal Operations <br />
-                  <span className="text-[#1F7A46]">& Corporate Governance</span>
+                  Digital HQ for <br />
+                  <span className="text-[#1F7A46]">Solo Lawyers & Small Offices</span>
                 </>
               )}
             </h1>
             <p className="text-[#4A5D50] text-xs leading-relaxed mb-6">
               {isAr
-                ? 'أنشئ مساحة عملك السيادية اليوم وابدأ إدارة العقود والقضايا والأبحاث النظامية في بيئة معزولة.'
-                : 'Create your sovereign workspace today to manage contracts, court cases, and statutory research.'}
+                ? 'أنشئ مساحة مكتبك اليوم وابدأ إدارة القضايا والملفات المشفرة وبوابة الموكلين بخطوات بسيطة.'
+                : 'Create your workspace today to manage cases, encrypted files, and client portals effortlessly.'}
             </p>
             <ul className="space-y-2.5 text-xs text-[#1B281F] font-medium">
-              <li className="flex items-center gap-2"><Building2 className="h-4 w-4 text-[#1F7A46]" /> حوكمة العقود للشركات (CLM)</li>
-              <li className="flex items-center gap-2"><Briefcase className="h-4 w-4 text-[#1F7A46]" /> إدارة المحاكم لمكاتب المحاماة</li>
-              <li className="flex items-center gap-2"><GraduationCap className="h-4 w-4 text-[#1F7A46]" /> بنك السوابق للباحثين والطلاب</li>
-              <li className="flex items-center gap-2"><User className="h-4 w-4 text-[#1F7A46]" /> بوابة الموكل السيادية المشفرة</li>
+              <li className="flex items-center gap-2"><Briefcase className="h-4 w-4 text-[#1F7A46]" /> إدارة القضايا والجلسات والمهام</li>
+              <li className="flex items-center gap-2"><Building2 className="h-4 w-4 text-[#1F7A46]" /> صلاحيات الفريق من ١ إلى ١٠ مقاعد</li>
+              <li className="flex items-center gap-2"><User className="h-4 w-4 text-[#1F7A46]" /> بوابة الموكّل عبر رابط وواتساب بنقرة</li>
+              <li className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[#1F7A46]" /> متابعة الوكالات والتراخيص والأتعاب</li>
             </ul>
           </div>
           <div className="mt-8 flex items-center gap-2 text-xs text-[#566A5C] font-medium pt-4 border-t border-[#CCD8CE]">
             <ShieldCheck className="w-4 h-4 text-[#1F7A46]" />
-            <span>بياناتك معزولة ومحلية بالكامل داخل المملكة</span>
+            <span>عزل كامل لكل مكتب • تشفير ملفات AES-256-GCM</span>
           </div>
         </div>
 
@@ -354,24 +340,6 @@ export default function RegisterPage() {
               >
                 متابعة التسجيل <ArrowLeft className="w-4 h-4 ms-2" />
               </Button>
-
-              {/* Unified SSO / Magic Link quick bar */}
-              <div className="mt-4 pt-3 border-t border-[#CCD8CE]/70 flex flex-wrap items-center justify-between gap-2 text-[11px]">
-                <Link
-                  href="/login"
-                  className="text-[#1F7A46] font-bold hover:underline inline-flex items-center gap-1"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>التسجيل بالرابط السحري (Magic Link)</span>
-                </Link>
-                <Link
-                  href="/login"
-                  className="text-[#4A5D50] hover:text-[#1B281F] font-semibold inline-flex items-center gap-1"
-                >
-                  <Building2 className="w-3.5 h-3.5 text-[#1F7A46]" />
-                  <span>التسجيل الموحد للمنشآت (SSO)</span>
-                </Link>
-              </div>
             </div>
           ) : (
             <div className="animate-in fade-in-0 duration-200">
@@ -423,7 +391,7 @@ export default function RegisterPage() {
                   <Input id="reg-name" type="text" autoComplete="name" placeholder="محمد العبدالله" value={name} onChange={(e) => setName(e.target.value)} required className={inputCls} />
                 </Field>
 
-                {!invitation && accountType && accountType !== 'student' && (
+                {!invitation && accountType && (
                   <Field id="reg-org" label={accountType === 'firm' ? 'اسم المكتب أو المنشأة' : 'اسم المكتب (اختياري)'} icon={Building2}>
                     <Input id="reg-org" type="text" autoComplete="organization" placeholder="مكتب العبدالله للمحاماة" value={orgName} onChange={(e) => setOrgName(e.target.value)} required={accountType === 'firm'} className={inputCls} />
                   </Field>
