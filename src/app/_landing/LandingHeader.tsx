@@ -62,9 +62,8 @@ export function LandingHeader() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`hover:text-[#1F7A46] transition-colors ${
-                    item.highlight ? 'font-bold text-[#1F7A46]' : item.subtle ? 'text-xs text-[#4A5D50]' : ''
-                  }`}
+                  className={`hover:text-[#1F7A46] transition-colors ${item.highlight ? 'font-bold text-[#1F7A46]' : item.subtle ? 'text-xs text-[#4A5D50]' : ''
+                    }`}
                 >
                   {item.label}
                 </Link>

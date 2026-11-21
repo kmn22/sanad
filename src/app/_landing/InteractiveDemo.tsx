@@ -185,11 +185,10 @@ export function InteractiveDemo() {
                 key={preset.id}
                 type="button"
                 onClick={() => handleSelectPreset(preset)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
-                  selectedPreset === preset.id
-                    ? 'bg-[#1F7A46] text-white border-[#1F7A46] shadow-2xs'
-                    : 'bg-white text-[#1B281F] border-[#CCD8CE] hover:border-[#1F7A46]'
-                }`}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${selectedPreset === preset.id
+                  ? 'bg-[#1F7A46] text-white border-[#1F7A46] shadow-2xs'
+                  : 'bg-white text-[#1B281F] border-[#CCD8CE] hover:border-[#1F7A46]'
+                  }`}
               >
                 {preset.title}
               </button>
@@ -263,11 +262,10 @@ export function InteractiveDemo() {
 
               {!isNeedsLawyerReview && (
                 <span
-                  className={`text-xs font-mono font-bold px-2.5 py-1 rounded-full border ${
-                    isFlagged
-                      ? 'bg-rose-50 text-rose-700 border-rose-200'
-                      : 'bg-[#E8EFE9] text-[#1F7A46] border-[#CCD8CE]'
-                  }`}
+                  className={`text-xs font-mono font-bold px-2.5 py-1 rounded-full border ${isFlagged
+                    ? 'bg-rose-50 text-rose-700 border-rose-200'
+                    : 'bg-[#E8EFE9] text-[#1F7A46] border-[#CCD8CE]'
+                    }`}
                 >
                   المؤشر الأولي: {auditResult.score}/100
                 </span>
@@ -276,13 +274,12 @@ export function InteractiveDemo() {
 
             {/* Article / Scope Box */}
             <div
-              className={`rounded-2xl p-4 border text-xs space-y-2 ${
-                isNeedsLawyerReview
-                  ? 'bg-amber-50/70 border-amber-200 text-amber-950'
-                  : isFlagged
-                    ? 'bg-rose-50/70 border-rose-200 text-rose-950'
-                    : 'bg-[#E8EFE9]/60 border-[#CCD8CE] text-[#1B281F]'
-              }`}
+              className={`rounded-2xl p-4 border text-xs space-y-2 ${isNeedsLawyerReview
+                ? 'bg-amber-50/70 border-amber-200 text-amber-950'
+                : isFlagged
+                  ? 'bg-rose-50/70 border-rose-200 text-rose-950'
+                  : 'bg-[#E8EFE9]/60 border-[#CCD8CE] text-[#1B281F]'
+                }`}
             >
               <div className="flex items-center justify-between gap-2 font-bold">
                 <span>{auditResult.law}</span>

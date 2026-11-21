@@ -81,9 +81,8 @@ export function FeedbackButton({ compact = false }: { compact?: boolean }) {
                 key={item.value}
                 type="button"
                 onClick={() => setType(item.value)}
-                className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                  type === item.value ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'
-                }`}
+                className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${type === item.value ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'
+                  }`}
               >
                 {item.label}
               </button>

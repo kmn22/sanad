@@ -103,7 +103,7 @@ export function usePortalView({
           setIsActivated(true)
         }
       }
-    } catch {}
+    } catch { }
     setCheckingSession(false)
   }, [token])
 
@@ -139,7 +139,7 @@ export function usePortalView({
         month: 'long',
         year: 'numeric',
       }).format(dateObj)
-    } catch {}
+    } catch { }
     return { gregorian, hijri }
   }
 

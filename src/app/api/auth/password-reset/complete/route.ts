@@ -12,10 +12,10 @@ export async function POST(req: Request) {
   }
   const reset = await db.passwordResetToken.findUnique({ where: { tokenHash: hash(token) } })
   if (!reset || reset.usedAt || reset.expiresAt <= new Date()) return NextResponse.json({ error: 'Token is invalid or expired' }, { status: 400 })
-  const user = await db.user.findUnique({ where: { email: reset.email }, select: { id: true, workspaceId: true } })
+  const user = await db.user.findUnique({ where: { email: reset.email }, select: { id: true, workspaceId: true, emailVerified: true } })
   if (!user) return NextResponse.json({ error: 'Token is invalid or expired' }, { status: 400 })
   await db.$transaction([
-    db.user.update({ where: { id: user.id }, data: { password: hashPassword(password), passwordChangedAt: new Date(), failedLoginAttempts: 0, lockedUntil: null, sessionVersion: { increment: 1 } } }),
+    db.user.update({ where: { id: user.id }, data: { password: hashPassword(password), passwordChangedAt: new Date(), emailVerified: user.emailVerified ?? new Date(), failedLoginAttempts: 0, lockedUntil: null, sessionVersion: { increment: 1 } } }),
     db.passwordResetToken.update({ where: { id: reset.id }, data: { usedAt: new Date() } }),
     db.auditLog.create({ data: { workspaceId: user.workspaceId, userId: user.id, action: 'auth.password_reset', entityType: 'User', entityId: user.id } }),
   ])

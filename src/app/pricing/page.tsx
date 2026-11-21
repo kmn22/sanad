@@ -135,11 +135,10 @@ export default function PricingPage() {
               type="button"
               data-testid="billing-monthly"
               onClick={() => setCycle('monthly')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                cycle === 'monthly'
-                  ? 'bg-[#1F7A46] text-white shadow-xs'
-                  : 'text-[#4A5D50] hover:text-[#1B281F]'
-              }`}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${cycle === 'monthly'
+                ? 'bg-[#1F7A46] text-white shadow-xs'
+                : 'text-[#4A5D50] hover:text-[#1B281F]'
+                }`}
             >
               اشتراك شهري
             </button>
@@ -151,20 +150,18 @@ export default function PricingPage() {
               className="w-10 h-5 rounded-full bg-[#E8EFE9] border border-[#CCD8CE] relative px-0.5 cursor-pointer flex items-center"
             >
               <span
-                className={`w-4 h-4 rounded-full bg-[#1F7A46] transition-transform ${
-                  cycle === 'yearly' ? '-translate-x-4' : 'translate-x-0'
-                }`}
+                className={`w-4 h-4 rounded-full bg-[#1F7A46] transition-transform ${cycle === 'yearly' ? '-translate-x-4' : 'translate-x-0'
+                  }`}
               />
             </button>
             <button
               type="button"
               data-testid="billing-yearly"
               onClick={() => setCycle('yearly')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                cycle === 'yearly'
-                  ? 'bg-[#1F7A46] text-white shadow-xs'
-                  : 'text-[#4A5D50] hover:text-[#1B281F]'
-              }`}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${cycle === 'yearly'
+                ? 'bg-[#1F7A46] text-white shadow-xs'
+                : 'text-[#4A5D50] hover:text-[#1B281F]'
+                }`}
             >
               <span>اشتراك سنوي</span>
               <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px]">
@@ -183,11 +180,10 @@ export default function PricingPage() {
               <div
                 key={tier.id}
                 data-testid={tier.testId}
-                className={`rounded-3xl p-7 flex flex-col justify-between transition-all ${
-                  tier.highlight
-                    ? 'bg-white border-2 border-[#1F7A46] shadow-md'
-                    : 'bg-white border border-[#CCD8CE] shadow-xs'
-                }`}
+                className={`rounded-3xl p-7 flex flex-col justify-between transition-all ${tier.highlight
+                  ? 'bg-white border-2 border-[#1F7A46] shadow-md'
+                  : 'bg-white border border-[#CCD8CE] shadow-xs'
+                  }`}
               >
                 <div className="space-y-5">
                   <div className="flex items-start justify-between gap-3">
@@ -229,11 +225,10 @@ export default function PricingPage() {
                 <div className="pt-6 mt-6 border-t border-[#CCD8CE]">
                   <Link href={tier.ctaHref}>
                     <Button
-                      className={`w-full h-11 font-bold text-xs cursor-pointer ${
-                        tier.highlight
-                          ? 'bg-[#1F7A46] hover:bg-[#165832] text-white'
-                          : 'bg-[#1B281F] hover:bg-[#34543F] text-white'
-                      }`}
+                      className={`w-full h-11 font-bold text-xs cursor-pointer ${tier.highlight
+                        ? 'bg-[#1F7A46] hover:bg-[#165832] text-white'
+                        : 'bg-[#1B281F] hover:bg-[#34543F] text-white'
+                        }`}
                     >
                       <span>{tier.ctaLabel}</span>
                       <ArrowLeft className="w-4 h-4 mr-1.5" />
