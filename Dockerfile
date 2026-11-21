@@ -1,6 +1,6 @@
 FROM postgres:16-bookworm AS postgres-tools
 
-FROM node:22-slim AS builder
+FROM node:26-slim AS builder
 WORKDIR /app
 RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json ./
@@ -9,7 +9,7 @@ RUN npm ci --legacy-peer-deps
 COPY . .
 RUN rm -rf .next dist tsconfig.tsbuildinfo && npx prisma generate && npm run typecheck && (npm run build || npm run build)
 
-FROM node:22-slim
+FROM node:26-slim
 WORKDIR /app
 RUN apt-get update && apt-get install -y openssl libpq5 libzstd1 liblz4-1 && rm -rf /var/lib/apt/lists/*
 RUN npm install --global prisma@6.19.3
