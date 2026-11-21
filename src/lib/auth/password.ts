@@ -21,10 +21,21 @@ export function isStrongPassword(password: string): boolean {
 export function verifyPassword(password: string, storedHash: string): boolean {
   try {
     if (!storedHash || !storedHash.includes(':')) return false
-    const [salt, key] = storedHash.split(':')
-    const keyBuffer = Buffer.from(key, 'hex')
-    const derivedKey = crypto.scryptSync(password, salt, 64)
-    return crypto.timingSafeEqual(keyBuffer, derivedKey)
+    const candidates = password.trim() && password.trim() !== password ? [password, password.trim()] : [password]
+    for (const entry of storedHash.split(',')) {
+      const trimmedEntry = entry.trim()
+      if (!trimmedEntry.includes(':')) continue
+      const [salt, key] = trimmedEntry.split(':')
+      if (!salt || !key) continue
+      const keyBuffer = Buffer.from(key, 'hex')
+      for (const candidate of candidates) {
+        const derivedKey = crypto.scryptSync(candidate, salt, 64)
+        if (keyBuffer.length === derivedKey.length && crypto.timingSafeEqual(keyBuffer, derivedKey)) {
+          return true
+        }
+      }
+    }
+    return false
   } catch {
     return false
   }

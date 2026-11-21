@@ -72,7 +72,7 @@ export default function LoginPage() {
     try {
       const result = await signIn('credentials', {
         email: email.trim(),
-        password,
+        password: password.trim() || password,
         otp: otp.trim(),
         redirect: false,
       })
