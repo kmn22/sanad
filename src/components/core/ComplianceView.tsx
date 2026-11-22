@@ -24,11 +24,11 @@ import { useLang } from '@/lib/core/i18n'
 import {
   COMPLIANCE_COLORS,
   daysUntil,
-  formatDate,
   getDaysUntilBg,
   getDaysUntilColor,
   type ComplianceItem,
 } from '@/lib/core/types'
+import { formatDualHijriGregorian } from '@/lib/dates'
 
 interface Props {
   items: ComplianceItem[]
@@ -161,9 +161,9 @@ function ComplianceCard({ item, onChange }: { item: ComplianceItem; onChange: ()
         </div>
 
         <div className="space-y-1.5 pt-1">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <span className="text-xs text-muted-foreground">{t('comp.expiry')}</span>
-            <span className="text-xs font-medium">{formatDate(item.expiryDate, lang)}</span>
+            <span className="text-xs font-medium text-end">{formatDualHijriGregorian(item.expiryDate, lang).combined}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">{t('comp.time_remaining')}</span>

@@ -17,7 +17,8 @@ import {
   ChevronLeft,
 } from 'lucide-react'
 import { useLang } from '@/lib/core/i18n'
-import { daysUntil, formatDate } from '@/lib/core/types'
+import { daysUntil } from '@/lib/core/types'
+import { formatDualHijriGregorian } from '@/lib/dates'
 
 // ---- Types ----
 
@@ -337,10 +338,10 @@ function DateHeader({ dateStr }: { dateStr: string }) {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 flex-wrap">
       <h3 className={`text-sm ${tone}`}>{label}</h3>
       <span className="text-[11px] text-muted-foreground">
-        {formatDate(dateStr, lang)}
+        {formatDualHijriGregorian(dateStr, lang).combined}
       </span>
     </div>
   )
@@ -435,7 +436,7 @@ function EventCard({
             <div className="flex items-center gap-3 mt-1.5 flex-wrap">
               <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
-                {formatDate(ev.date, lang)}
+                {formatDualHijriGregorian(ev.date, lang).combined}
               </span>
               <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
                 <Clock className="h-3 w-3" />

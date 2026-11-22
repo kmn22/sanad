@@ -22,6 +22,8 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLang } from '@/lib/core/i18n'
+import { buildPortalWhatsAppMessage, buildWhatsAppShareUrl } from '@/lib/whatsapp'
+import { formatDualHijriGregorian } from '@/lib/dates'
 
 interface Props {
   caseId: string
@@ -151,12 +153,17 @@ export default function CasePortalTab({
 
   function handleShareWhatsApp() {
     if (!activeUrl) return
-    const cleanPhone = clientPhone ? clientPhone.replace(/\D/g, '') : ''
-    const msg = `السلام عليكم ورحمة الله وبركاته،\nالأستاذ/ة ${clientName}،\n\nتجدون عبر هذا الرابط الآمن بوابة متابعة ملفكم وقضيتكم (${caseTitle}) لدى مكتبنا لمتابعة الحالة وإرسال الطلبات والملفات:\n${activeUrl}\n\nيرجى عدم مشاركة الرابط مع أي شخص آخر.`
-    const waUrl = cleanPhone
-      ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`
-      : `https://wa.me/?text=${encodeURIComponent(msg)}`
-    window.open(waUrl, '_blank')
+    const msg = buildPortalWhatsAppMessage({
+      clientName,
+      caseTitle,
+      portalUrl: activeUrl,
+      lang,
+    })
+    const waUrl = buildWhatsAppShareUrl({
+      phone: clientPhone,
+      text: msg,
+    })
+    window.open(waUrl, '_blank', 'noopener,noreferrer')
   }
 
   if (loading) {

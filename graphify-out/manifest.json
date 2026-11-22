@@ -312,8 +312,8 @@
     "semantic_hash": ""
   },
   "src/app/_landing/UnderConstructionSection.tsx": {
-    "mtime": 1795345487.7323236,
-    "seen": 1795345519.561927,
+    "mtime": 1795346817.6488883,
+    "seen": 1795347726.1706276,
     "ast_hash": "31a2bcfa2149c590ca3e59c53820fddf",
     "semantic_hash": ""
   },
@@ -492,9 +492,9 @@
     "semantic_hash": ""
   },
   "src/app/api/ai/draft/route.ts": {
-    "mtime": 1791800302.3310997,
-    "seen": 1795271153.60521,
-    "ast_hash": "00781c241909211eaa3fc6ac4b20405d",
+    "mtime": 1795347607.0639331,
+    "seen": 1795347726.1734164,
+    "ast_hash": "392cf7916e3f567a6f43101e0bea80e1",
     "semantic_hash": ""
   },
   "src/app/api/ai/summarize-contract/route.ts": {
@@ -594,8 +594,8 @@
     "semantic_hash": ""
   },
   "src/app/api/cases/[id]/route.ts": {
-    "mtime": 1795345350.7534387,
-    "seen": 1795345519.566086,
+    "mtime": 1795346818.668895,
+    "seen": 1795347726.1745913,
     "ast_hash": "67f351bd79f65e340cc68067abb55760",
     "semantic_hash": ""
   },
@@ -738,8 +738,8 @@
     "semantic_hash": ""
   },
   "src/app/api/invoices/[id]/route.ts": {
-    "mtime": 1795345346.8754137,
-    "seen": 1795345519.5688367,
+    "mtime": 1795346818.9280686,
+    "seen": 1795347726.1759815,
     "ast_hash": "1993b0b3637e471fb86087b9f49d48ea",
     "semantic_hash": ""
   },
@@ -798,8 +798,8 @@
     "semantic_hash": ""
   },
   "src/app/api/portal-links/route.ts": {
-    "mtime": 1795345341.5353792,
-    "seen": 1795345519.5700061,
+    "mtime": 1795346820.0293467,
+    "seen": 1795347726.176636,
     "ast_hash": "6c77c4c31620d5723c3afe0b4a1520fd",
     "semantic_hash": ""
   },
@@ -990,9 +990,9 @@
     "semantic_hash": ""
   },
   "src/app/firm/_components/FirmSettingsPage.tsx": {
-    "mtime": 1795271238.1875985,
-    "seen": 1795272089.8554401,
-    "ast_hash": "556d5a6f7434cf927939a1d7419d98ec",
+    "mtime": 1795347663.1672914,
+    "seen": 1795347726.1783435,
+    "ast_hash": "da7b2b0a3f089bd01980a14b2b937e37",
     "semantic_hash": ""
   },
   "src/app/firm/_components/FirmTeamPage.tsx": {
@@ -1170,14 +1170,14 @@
     "semantic_hash": ""
   },
   "src/app/portal/[token]/_components/HomeTab.tsx": {
-    "mtime": 1795345476.7382526,
-    "seen": 1795345519.5759056,
+    "mtime": 1795346820.1629045,
+    "seen": 1795347726.1799083,
     "ast_hash": "f14e1ed9cdf110f8064f1bfdebfe081b",
     "semantic_hash": ""
   },
   "src/app/portal/[token]/_components/InvoicesTab.tsx": {
-    "mtime": 1795345479.8322725,
-    "seen": 1795345519.5759091,
+    "mtime": 1795346820.7906973,
+    "seen": 1795347726.1799116,
     "ast_hash": "3a514dc61dc0b0a45946552e91f5003f",
     "semantic_hash": ""
   },
@@ -1194,8 +1194,8 @@
     "semantic_hash": ""
   },
   "src/app/portal/[token]/_components/PaymentModal.tsx": {
-    "mtime": 1795345548.455716,
-    "seen": 1795345624.70117,
+    "mtime": 1795346820.9684405,
+    "seen": 1795347726.1800327,
     "ast_hash": "45c49854bdc3e9620d7bd8d0ff2dd4f2",
     "semantic_hash": ""
   },
@@ -1248,8 +1248,8 @@
     "semantic_hash": ""
   },
   "src/app/portal/[token]/_lib/use-portal-view.ts": {
-    "mtime": 1795345484.1823008,
-    "seen": 1795345519.5765088,
+    "mtime": 1795346821.7459147,
+    "seen": 1795347726.180503,
     "ast_hash": "d46b4003d27263cb8b6ce9b7514927d6",
     "semantic_hash": ""
   },
@@ -2364,9 +2364,9 @@
     "semantic_hash": ""
   },
   "src/components/core/CalendarView.tsx": {
-    "mtime": 1795271238.1905985,
-    "seen": 1795272089.8586247,
-    "ast_hash": "9d6a6a701749233b351e956e92090877",
+    "mtime": 1795347600.6318922,
+    "seen": 1795347726.1818414,
+    "ast_hash": "95a0fbdd404da48c0eb4506b332d061e",
     "semantic_hash": ""
   },
   "src/components/core/CaseDetailDrawer.tsx": {
@@ -2376,9 +2376,9 @@
     "semantic_hash": ""
   },
   "src/components/core/CasePortalTab.tsx": {
-    "mtime": 1795271238.1910357,
-    "seen": 1795272089.8586316,
-    "ast_hash": "bf48a30b0e851ab5f330c96df66a5025",
+    "mtime": 1795347595.0688565,
+    "seen": 1795347726.1818962,
+    "ast_hash": "dc1bbc90246cc2e9d3ceca4d86e142e3",
     "semantic_hash": ""
   },
   "src/components/core/CasesView.tsx": {
@@ -2388,8 +2388,8 @@
     "semantic_hash": ""
   },
   "src/components/core/ClientsView.tsx": {
-    "mtime": 1795345464.6581745,
-    "seen": 1795345519.5783024,
+    "mtime": 1795346821.9939163,
+    "seen": 1795347726.181951,
     "ast_hash": "3b2647be7626064c4f22ac8f8271d065",
     "semantic_hash": ""
   },
@@ -2406,9 +2406,9 @@
     "semantic_hash": ""
   },
   "src/components/core/ComplianceView.tsx": {
-    "mtime": 1795271238.1910357,
-    "seen": 1795272089.8586502,
-    "ast_hash": "765c400f5072ae4f3020325840c1fa9c",
+    "mtime": 1795347603.8289125,
+    "seen": 1795347726.182054,
+    "ast_hash": "736378f6c3eb1ac0d271bbf666880404",
     "semantic_hash": ""
   },
   "src/components/core/ConflictCheckModal.tsx": {
@@ -2442,8 +2442,8 @@
     "semantic_hash": ""
   },
   "src/components/core/InvoicesView.tsx": {
-    "mtime": 1795345470.0202093,
-    "seen": 1795345519.5789256,
+    "mtime": 1795346822.6789207,
+    "seen": 1795347726.1823015,
     "ast_hash": "e6266c07f2d2662845ffc0932cd7cbc3",
     "semantic_hash": ""
   },
@@ -2622,9 +2622,9 @@
     "semantic_hash": ""
   },
   "src/components/core/documents/AiDraftDialog.tsx": {
-    "mtime": 1795271238.1940796,
-    "seen": 1795272089.8587716,
-    "ast_hash": "774f3a48f0bff077b807ac4491e3ff19",
+    "mtime": 1795347659.2592666,
+    "seen": 1795347726.1837354,
+    "ast_hash": "d4c4dcea6fc00fd5862a543c0e731be2",
     "semantic_hash": ""
   },
   "src/components/core/documents/ContractSummaryDialog.tsx": {
@@ -2670,8 +2670,8 @@
     "semantic_hash": ""
   },
   "src/components/core/invoices/InvoicePreviewDialog.tsx": {
-    "mtime": 1795345475.0812418,
-    "seen": 1795345519.5804799,
+    "mtime": 1795346822.9999228,
+    "seen": 1795347726.1840022,
     "ast_hash": "bd4cc302d47dc46a7957077986773860",
     "semantic_hash": ""
   },

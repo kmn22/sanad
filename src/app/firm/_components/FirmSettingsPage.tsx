@@ -25,6 +25,34 @@ export function FirmSettingsPage() {
   const [deletePassword, setDeletePassword] = useState('')
   const [deleting, setDeleting] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [upgradingPlan, setUpgradingPlan] = useState<'solo' | 'office' | null>(null)
+
+  async function startMoyasarUpgrade(planId: 'solo' | 'office') {
+    setUpgradingPlan(planId)
+    try {
+      const res = await fetch('/api/payments/moyasar/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planId, cycle: 'yearly' }),
+      })
+      const result = await res.json().catch(() => ({}))
+      if (res.ok && result.checkoutUrl) {
+        window.location.assign(result.checkoutUrl)
+        return
+      }
+      toast.info(
+        result.message ||
+          L({
+            ar: 'الدفع الآلي عبر Moyasar (مدى / Apple Pay) قيد التفعيل؛ يمكنك الترقية عبر التحويل البنكي أو متابعة تجربتك المجانية.',
+            en: 'Moyasar checkout is pending merchant key activation; bank transfer activation is available.',
+          })
+      )
+    } catch {
+      toast.error(L({ ar: 'تعذر بدء جلسة الدفع الإلكتروني', en: 'Could not start payment session' }))
+    } finally {
+      setUpgradingPlan(null)
+    }
+  }
 
   useEffect(() => {
     if (!data) return
@@ -116,6 +144,38 @@ export function FirmSettingsPage() {
         <StatTile label={L({ ar: 'رفعات البوابة', en: 'Portal uploads' })} value={`${saasStatus.usage.portalUploads.used}/${saasStatus.usage.portalUploads.limit ?? '∞'}`} icon={FileText} tone={saasStatus.usage.portalUploads.limit != null && saasStatus.usage.portalUploads.used >= saasStatus.usage.portalUploads.limit ? 'warn' : 'good'} />
         <StatTile label={L({ ar: 'التخزين المستخدم', en: 'Storage used' })} value={`${Math.round(saasStatus.usage.storage.usedBytes / 1024 / 1024)}/${saasStatus.usage.storage.limitBytes ? Math.round(saasStatus.usage.storage.limitBytes / 1024 / 1024) : '∞'} MB`} icon={FileText} tone={saasStatus.usage.storage.limitBytes != null && saasStatus.usage.storage.usedBytes >= saasStatus.usage.storage.limitBytes ? 'warn' : 'good'} />
       </div>}
+      <div className="mb-5 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="font-semibold text-sm">{L({ ar: 'ترقية الاشتراك والدفع الإلكتروني (مدى • Apple Pay)', en: 'Subscription Upgrade (Mada • Apple Pay)' })}</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {L({
+              ar: 'فعّل باقة المحامي المستقل (١٥٩ ر.س/شهرياً سنوياً) أو باقة المكتب الصغير (٣٥٩ ر.س/شهرياً سنوياً) عبر Moyasar أو التحويل البنكي.',
+              en: 'Activate Solo Lawyer (159 SAR/mo billed yearly) or Small Office (359 SAR/mo billed yearly) via Moyasar or Bank Transfer.',
+            })}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={upgradingPlan !== null}
+            onClick={() => startMoyasarUpgrade('solo')}
+            className="text-xs cursor-pointer"
+          >
+            {upgradingPlan === 'solo' ? '...' : L({ ar: 'تفعيل باقة مستقل (مدى / Apple Pay)', en: 'Upgrade Solo Plan' })}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            disabled={upgradingPlan !== null}
+            onClick={() => startMoyasarUpgrade('office')}
+            className="bg-emerald-700 hover:bg-emerald-600 text-white text-xs cursor-pointer"
+          >
+            {upgradingPlan === 'office' ? '...' : L({ ar: 'تفعيل باقة مكتب (٢–١٠ مقاعد)', en: 'Upgrade Small Office' })}
+          </Button>
+        </div>
+      </div>
       <form onSubmit={saveWorkspace} className="mb-5 rounded-2xl border border-border/60 bg-card/70 p-5 shadow-sm backdrop-blur-sm">
         <div className="mb-4 flex items-start justify-between gap-4"><div><h2 className="font-semibold">{L({ ar: 'هوية المكتب', en: 'Firm identity' })}</h2><p className="mt-1 text-xs text-muted-foreground">{L({ ar: 'تظهر هذه البيانات للفريق وفي بوابة الموكل.', en: 'These details appear to your team and in the client portal.' })}</p></div><Building2 className="h-5 w-5 text-amber-600" /></div>
         <div className="grid gap-4 sm:grid-cols-2">
