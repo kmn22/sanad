@@ -8,6 +8,7 @@ import {
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { formatDualHijriGregorian } from '@/lib/dates'
 import type { PortalView } from '../_lib/use-portal-view'
 
 export function InvoicesTab({ v }: { v: PortalView }) {
@@ -88,7 +89,7 @@ export function InvoicesTab({ v }: { v: PortalView }) {
                     {/* Action Row */}
                     <div className="flex items-center justify-between pt-1">
                       <span className="text-[11px] text-muted-foreground">
-                        تاريخ الإصدار: {new Date(inv.issueDate).toLocaleDateString('ar-SA')}
+                        تاريخ الإصدار: {formatDualHijriGregorian(inv.issueDate, 'ar').combined}
                       </span>
 
                       <div className="flex items-center gap-2">

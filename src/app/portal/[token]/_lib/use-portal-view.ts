@@ -319,33 +319,45 @@ export function usePortalView({
     }
   }
 
-  // S6: Pay Invoice
+  // S6: Pay Invoice (Moyasar Checkout or Bank Transfer Notification)
   async function handleConfirmPayment() {
     if (!selectedInvoiceForPay) return
     setPayingBusy(true)
     setPaymentPending(true)
     try {
-      // Simulate gateway reconciliation
-      await new Promise((resolve) => setTimeout(resolve, 1200))
+      if (paymentMethod === 'sadad') {
+        await handleSendChatMessage(
+          `إشعار سداد بتحويل بنكي لبيان الأتعاب رقم ${selectedInvoiceForPay.number} بمبلغ ${selectedInvoiceForPay.total.toLocaleString('ar-SA')} ر.س.`
+        )
+        toast.success('تم إرسال إشعار التحويل البنكي إلى مكتب المحاماة لتوثيق السداد!')
+        setSelectedInvoiceForPay(null)
+        setPaymentPending(false)
+        return
+      }
 
-      const res = await fetch(`/api/portal/${token}`, {
+      const res = await fetch('/api/payments/moyasar/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'pay_invoice',
+          portalToken: token,
           invoiceId: selectedInvoiceForPay.id,
           paymentMethod,
         }),
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'تعذر استكمال السداد')
-
-      toast.success('تم تسجيل تأكيد السداد لدى مكتب المحاماة!')
-      setSelectedInvoiceForPay(null)
-      setPaymentPending(false)
-      router.refresh()
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && data.checkoutUrl) {
+        window.location.assign(data.checkoutUrl)
+        return
+      }
+      if (data.code === 'MOYASAR_NOT_CONFIGURED') {
+        setPaymentMethod('sadad')
+        toast.info(data.message || 'بوابة الدفع الإلكتروني غير مفعّلة حالياً؛ يمكنك إرسال إشعار التحويل البنكي للمكتب.')
+        setPaymentPending(false)
+        return
+      }
+      throw new Error(data.error || 'تعذر استكمال السداد')
     } catch (err: any) {
-      toast.error(err.message || 'فشلت عملية السداد، يرجى المحاولة ببطاقة أخرى')
+      toast.error(err.message || 'فشلت عملية السداد، يرجى المحاولة لاحقاً أو اختيار التحويل البنكي')
       setPaymentPending(false)
     } finally {
       setPayingBusy(false)

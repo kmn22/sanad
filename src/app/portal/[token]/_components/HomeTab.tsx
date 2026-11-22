@@ -67,7 +67,10 @@ export function HomeTab({ v }: { v: PortalView }) {
           {/* Invoice Badge Card when payment is due */}
           {unpaidInvoices.length > 0 && (
             <div
-              onClick={() => setActiveTab('invoices')}
+              onClick={() => {
+                setActiveTab('invoices')
+                v.setSelectedInvoiceForPay(unpaidInvoices[0])
+              }}
               className="cursor-pointer rounded-2xl border border-amber-300 bg-amber-50/90 dark:bg-amber-950/30 p-4 shadow-xs hover:border-amber-400 transition-all flex items-center justify-between"
             >
               <div className="flex items-center gap-3">
@@ -77,19 +80,19 @@ export function HomeTab({ v }: { v: PortalView }) {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-sm text-amber-950 dark:text-amber-100">
-                      فاتورة جديدة — {unpaidInvoices[0].total.toLocaleString('ar-SA')} ر.س
+                      بيان أتعاب مستحق — {unpaidInvoices[0].total.toLocaleString('ar-SA')} ر.س
                     </span>
                     <Badge variant="outline" className="border-amber-400 text-amber-800 text-[10px]">
                       تستحق خلال 5 أيام
                     </Badge>
                   </div>
                   <p className="text-xs text-amber-800 dark:text-amber-200 mt-0.5">
-                    الفاتورة رقم {unpaidInvoices[0].number} • الدفع الإلكتروني غير متاح حالياً
+                    البيان رقم {unpaidInvoices[0].number} • متاح للسداد عبر مدى / Apple Pay أو التحويل البنكي
                   </p>
                 </div>
               </div>
-              <Button size="sm" disabled className="bg-amber-600 text-white text-xs h-8">
-                الدفع غير متاح
+              <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white text-xs h-8 cursor-pointer">
+                خيارات السداد
               </Button>
             </div>
           )}

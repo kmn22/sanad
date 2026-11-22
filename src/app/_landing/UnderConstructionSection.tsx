@@ -54,13 +54,13 @@ export function UnderConstructionSection() {
           <div className="space-y-2 max-w-xl">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#E8EFE9] text-[#1F7A46] text-xs font-bold">
               <Clock className="w-3.5 h-3.5" />
-              <span>خارطة المرحلة الثانية</span>
+              <span>تحديثات المرحلة الثانية مفعّلة</span>
             </div>
             <h3 className="text-lg sm:text-xl font-bold text-[#1B281F] font-heading">
-              الدفع الإلكتروني عبر مدى وApple Pay، وتقارير التحصيل الموسّعة
+              مشاركة واتساب بنقرة، تقويم هجري/ميلادي مزدوج، وتصدير تقارير التحصيل (CSV / Excel)
             </h3>
             <p className="text-xs sm:text-sm text-[#4A5D50] leading-relaxed">
-              تعمل مساحة إدارة المكتب وبوابة الموكّل اليوم بالكامل، ونعمل تدريجياً على إضافة الدفع الآلي عبر Moyasar (مدى / Apple Pay) وتحسين التقويم الهجري وتصدير التقارير. سجّل بريدك لتصلك التحديثات عند إطلاقها.
+              تعمل مساحة إدارة المكتب وبوابة الموكّل اليوم بالكامل مع التقويم الهجري (أم القرى)، ومشاركة الروابط وبيانات الأتعاب عبر واتساب، وتكامل بوابة الدفع Moyasar (مدى / Apple Pay) والتحويل البنكي. سجّل بريدك لتصلك تحديثات القوالب القانونية القادمة.
             </p>
           </div>
 

@@ -4,10 +4,11 @@ import { useMemo, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Table, TableHeader, TableBody, TableHead, TableRow } from '@/components/ui/table'
-import { Plus, FileText, DollarSign, Clock, CheckCircle2 } from 'lucide-react'
+import { Plus, FileText, DollarSign, Clock, CheckCircle2, Download } from 'lucide-react'
 import { toast } from 'sonner'
 import { useLang } from '@/lib/core/i18n'
 import { formatSAR, formatDuration, type Invoice, type Client, type LegalCase, type TimeEntry } from '@/lib/core/types'
+import { formatDualHijriGregorian } from '@/lib/dates'
 import { STATUS_FILTERS } from './invoices/meta'
 import { StatTile } from './invoices/StatTile'
 import { InvoiceRow } from './invoices/InvoiceRow'
@@ -87,6 +88,56 @@ export function InvoicesView({ invoices, clients, cases, timeEntries, stats, onC
     }
   }
 
+  const handleExportCsv = () => {
+    if (filtered.length === 0) {
+      toast.error(lang === 'ar' ? 'لا توجد بيانات أتعاب لتصديرها' : 'No fee statements to export')
+      return
+    }
+    const headers = [
+      'رقم البيان / Number',
+      'الموكل / Client',
+      'القضية / Case',
+      'تاريخ الإصدار (ميلادي) / Issue Date',
+      'تاريخ الإصدار (هجري) / Hijri Date',
+      'تاريخ الاستحقاق / Due Date',
+      'المبلغ قبل الضريبة (SAR) / Subtotal',
+      'ضريبة القيمة المضافة 15% (SAR) / VAT',
+      'الإجمالي (SAR) / Total',
+      'الحالة / Status',
+    ]
+    const escapeCell = (val: string | number | null | undefined) => {
+      const s = String(val ?? '').replace(/"/g, '""')
+      return `"${s}"`
+    }
+    const rows = filtered.map((inv) => {
+      const dualIssue = formatDualHijriGregorian(inv.issueDate, 'ar')
+      const dualDue = inv.dueDate ? formatDualHijriGregorian(inv.dueDate, 'ar').combined : '—'
+      return [
+        inv.number,
+        inv.client?.name || '—',
+        inv.case?.title || '—',
+        dualIssue.gregorian,
+        dualIssue.hijri,
+        dualDue,
+        inv.subtotal.toFixed(2),
+        inv.vatAmount.toFixed(2),
+        inv.total.toFixed(2),
+        inv.status,
+      ]
+        .map(escapeCell)
+        .join(',')
+    })
+    const csvContent = `\uFEFF${headers.map(escapeCell).join(',')}\n${rows.join('\n')}`
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `maqar-fee-statements-${new Date().toISOString().slice(0, 10)}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+    toast.success(lang === 'ar' ? 'تم تصدير تقرير الأتعاب والتحصيل (CSV / Excel)' : 'Fee statements CSV exported')
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -94,7 +145,18 @@ export function InvoicesView({ invoices, clients, cases, timeEntries, stats, onC
           <h2 className="text-xl font-semibold tracking-tight">{t('invoices.title')}</h2>
           <p className="text-sm text-muted-foreground">{t('invoices.subtitle')}</p>
         </div>
-        <CreateInvoiceDialog
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleExportCsv}
+            className="h-8 text-xs gap-1.5 cursor-pointer"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span>{lang === 'ar' ? 'تصدير CSV / Excel' : 'Export CSV'}</span>
+          </Button>
+          <CreateInvoiceDialog
           open={open}
           onOpenChange={(v) => {
             setOpen(v)
@@ -109,7 +171,8 @@ export function InvoicesView({ invoices, clients, cases, timeEntries, stats, onC
             setOpen(false)
             setSelectAllOnOpen(false)
           }}
-        />
+          />
+        </div>
       </div>
 
       {/* Stats row */}

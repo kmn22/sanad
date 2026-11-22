@@ -11,7 +11,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!hasRole(auth, ['admin', 'workspace_owner', 'lawyer', 'staff'])) return forbiddenJson()
     const { id } = await params
     const parsed = updateInvoiceSchema.parse(await req.json())
-    if ((parsed.status === 'paid' || parsed.paidAt !== undefined || parsed.paidAmount !== undefined) && !hasRole(auth, ['admin', 'workspace_owner', 'staff'])) return forbiddenJson()
+    if ((parsed.status === 'paid' || parsed.paidAt !== undefined || parsed.paidAmount !== undefined) && !hasRole(auth, ['admin', 'workspace_owner', 'lawyer', 'staff']) && !auth.isOwner) return forbiddenJson()
     const invoice = await db.invoice.findFirst({ where: { id, workspaceId: auth.workspaceId, deletedAt: null }, select: { id: true, status: true, total: true, caseId: true } })
     if (!invoice || (invoice.caseId && !(await canAccessCase(auth, invoice.caseId)))) return notFoundJson()
     if (invoice.status === 'paid' && Object.keys(parsed).some((field) => field !== 'notes')) {
@@ -60,7 +60,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await getAuthContext()
   if (!auth) return unauthorizedJson()
-  if (!hasRole(auth, ['admin', 'workspace_owner'])) return forbiddenJson()
+  if (!hasRole(auth, ['admin', 'workspace_owner', 'lawyer']) && !auth.isOwner) return forbiddenJson()
   const { id } = await params
   const invoice = await db.invoice.findFirst({ where: { id, workspaceId: auth.workspaceId, deletedAt: null }, select: { id: true, status: true } })
   if (!invoice) return notFoundJson()

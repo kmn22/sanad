@@ -7,6 +7,8 @@ import { hashPortalToken } from '@/lib/portal'
 import { rateLimit } from '@/lib/rate-limit'
 import { canAccessCase, caseLinkedAccessWhere } from '@/lib/auth/capabilities'
 import { hasEntitlement } from '@/lib/saas/entitlements'
+import { publishNotification } from '@/lib/notifications/bus'
+import { buildPortalWhatsAppMessage, buildWhatsAppShareUrl, normalizeSaudiPhone } from '@/lib/whatsapp'
 
 export async function GET() {
   const auth = await getAuthContext()
@@ -45,12 +47,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid client or expiry' }, { status: 400 })
   }
 
-  const client = await db.client.findFirst({ where: { id: clientId, workspaceId: auth.workspaceId }, select: { id: true, name: true, email: true } })
+  const [client, workspace] = await Promise.all([
+    db.client.findFirst({ where: { id: clientId, workspaceId: auth.workspaceId }, select: { id: true, name: true, email: true, phone: true } }),
+    db.workspace.findUnique({ where: { id: auth.workspaceId }, select: { name: true } }),
+  ])
   if (!client) return notFoundJson()
+  let caseTitle: string | null = null
   if (caseId) {
-    const legalCase = await db.legalCase.findFirst({ where: { id: caseId, workspaceId: auth.workspaceId, deletedAt: null }, select: { id: true, clientId: true } })
+    const legalCase = await db.legalCase.findFirst({ where: { id: caseId, workspaceId: auth.workspaceId, deletedAt: null }, select: { id: true, clientId: true, title: true } })
     if (!legalCase || (legalCase.clientId && legalCase.clientId !== client.id)) return notFoundJson()
     if (!(await canAccessCase(auth, caseId))) return notFoundJson()
+    caseTitle = legalCase.title
   }
 
   const token = randomBytes(32).toString('hex')
@@ -72,7 +79,18 @@ export async function POST(req: NextRequest) {
   })
 
   const url = publicAppUrl(`/portal/${token}`)
-  let delivery: 'manual' | 'email' = 'manual'
+  const whatsappMessage = buildPortalWhatsAppMessage({
+    clientName: client.name,
+    workspaceName: workspace?.name,
+    caseTitle,
+    portalUrl: url,
+  })
+  const whatsappUrl = buildWhatsAppShareUrl({
+    phone: client.phone,
+    text: whatsappMessage,
+  })
+
+  let delivery: 'manual' | 'email' | 'whatsapp' = 'manual'
   if (client.email && body?.sendEmail === true && emailConfigured()) {
     await sendTransactionalEmail({
       to: client.email,
@@ -84,10 +102,25 @@ export async function POST(req: NextRequest) {
     })
     delivery = 'email'
   }
+  const normalizedPhone = normalizeSaudiPhone(client.phone)
+  if (normalizedPhone && body?.sendWhatsapp === true) {
+    await publishNotification(auth.workspaceId, [auth.userId], {
+      type: 'portal',
+      title: 'رابط بوابة الموكّل',
+      body: whatsappMessage,
+      link: url,
+      entityType: 'PortalAccess',
+      entityId: access.id,
+      channels: ['whatsapp'],
+      metadata: { recipientPhone: normalizedPhone },
+    })
+    delivery = 'whatsapp'
+  }
 
   return NextResponse.json({
     portal: { id: access.id, clientId: access.clientId, caseId: access.caseId, expiresAt: access.expiresAt, allowUpload: access.allowUpload },
     url,
+    whatsappUrl,
     delivery,
   }, { status: 201 })
 }

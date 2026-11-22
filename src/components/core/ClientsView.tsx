@@ -173,22 +173,35 @@ function ClientCard({
   const counts = client._count ?? { cases: 0, invoices: 0, communications: 0 }
   const num = (n: number) => (lang === 'ar' ? n.toLocaleString('ar-EG') : n.toString())
   const [portalLink, setPortalLink] = useState('')
+  const [whatsappLink, setWhatsappLink] = useState('')
   const [issuingLink, setIssuingLink] = useState(false)
   const [inviting, setInviting] = useState(false)
 
-  async function issuePortalLink() {
+  async function issuePortalLink(openWhatsApp = false) {
     setIssuingLink(true)
     try {
       const res = await fetch('/api/portal-links', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientId: client.id, sendEmail: true }),
+        body: JSON.stringify({ clientId: client.id, sendEmail: true, sendWhatsapp: openWhatsApp }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error || 'تعذر إنشاء رابط بوابة الموكل')
       setPortalLink(data.url || '')
+      setWhatsappLink(data.whatsappUrl || '')
       if (data.url) await navigator.clipboard.writeText(data.url).catch(() => {})
-      toast.success(lang === 'ar' ? 'تم إنشاء ونسخ رابط بوابة الموكل لرفع الملفات ومتابعة القضية' : 'Client portal link copied')
+      if (openWhatsApp && data.whatsappUrl) {
+        window.open(data.whatsappUrl, '_blank', 'noopener,noreferrer')
+      }
+      toast.success(
+        openWhatsApp
+          ? lang === 'ar'
+            ? 'تم إنشاء الرابط وفتح واتساب لمشاركته مع الموكل'
+            : 'Portal link created and opened in WhatsApp'
+          : lang === 'ar'
+            ? 'تم إنشاء ونسخ رابط بوابة الموكل لرفع الملفات ومتابعة القضية'
+            : 'Client portal link copied'
+      )
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'تعذر إنشاء الرابط')
     } finally {
@@ -350,11 +363,28 @@ function ClientCard({
             variant="outline"
             size="sm"
             disabled={issuingLink}
-            onClick={issuePortalLink}
+            onClick={() => issuePortalLink(false)}
             className="h-7 text-[11px] gap-1 flex-1 cursor-pointer"
           >
             <Link2 className="h-3 w-3 text-primary" />
             <span>{issuingLink ? '...' : lang === 'ar' ? 'رابط بوابة الموكل' : 'Portal Link'}</span>
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={issuingLink}
+            onClick={() => {
+              if (whatsappLink) {
+                window.open(whatsappLink, '_blank', 'noopener,noreferrer')
+              } else {
+                issuePortalLink(true)
+              }
+            }}
+            className="h-7 text-[11px] gap-1 flex-1 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 cursor-pointer"
+          >
+            <MessageSquare className="h-3 w-3 text-emerald-600" />
+            <span>{lang === 'ar' ? 'إرسال عبر واتساب' : 'WhatsApp Link'}</span>
           </Button>
           {client.email && (
             <Button

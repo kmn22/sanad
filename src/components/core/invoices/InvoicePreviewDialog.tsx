@@ -5,9 +5,11 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { FileText, Printer, ShieldCheck } from 'lucide-react'
+import { FileText, MessageSquare, Printer, ShieldCheck } from 'lucide-react'
 import { useLang } from '@/lib/core/i18n'
-import { formatSAR, formatDate, type Invoice } from '@/lib/core/types'
+import { formatSAR, type Invoice } from '@/lib/core/types'
+import { formatDualHijriGregorian } from '@/lib/dates'
+import { buildFeeStatementWhatsAppMessage, buildWhatsAppShareUrl } from '@/lib/whatsapp'
 import { STATUS_COLORS } from './meta'
 
 export function InvoicePreviewDialog({
@@ -27,6 +29,22 @@ export function InvoicePreviewDialog({
     window.print()
   }
 
+  const issueDual = formatDualHijriGregorian(inv.issueDate, lang)
+  const dueDual = inv.dueDate ? formatDualHijriGregorian(inv.dueDate, lang) : null
+
+  const handleShareWhatsApp = () => {
+    const msg = buildFeeStatementWhatsAppMessage({
+      clientName: inv.client?.name || (lang === 'ar' ? 'الموكّل الكريم' : 'Client'),
+      invoiceNumber: inv.number,
+      totalFormatted: formatSAR(inv.total, lang),
+      dueDateLabel: dueDual?.combined || null,
+      caseTitle: inv.case?.title || null,
+      lang,
+    })
+    const url = buildWhatsAppShareUrl({ text: msg })
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl overflow-y-auto max-h-[90vh]">
@@ -37,10 +55,21 @@ export function InvoicePreviewDialog({
               {lang === 'ar' ? 'تفاصيل الفاتورة' : 'Invoice Details'} — {inv.number}
             </span>
           </DialogTitle>
-          <Button variant="outline" size="sm" onClick={handlePrint} className="h-8 gap-1.5 ms-auto me-8 print:hidden">
-            <Printer className="h-4 w-4" />
-            <span>{lang === 'ar' ? 'طباعة' : 'Print'}</span>
-          </Button>
+          <div className="flex items-center gap-1.5 ms-auto me-8 print:hidden">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleShareWhatsApp}
+              className="h-8 gap-1.5 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 cursor-pointer"
+            >
+              <MessageSquare className="h-3.5 w-3.5" />
+              <span>{lang === 'ar' ? 'مشاركة عبر واتساب' : 'WhatsApp'}</span>
+            </Button>
+            <Button variant="outline" size="sm" onClick={handlePrint} className="h-8 gap-1.5 cursor-pointer">
+              <Printer className="h-4 w-4" />
+              <span>{lang === 'ar' ? 'طباعة' : 'Print'}</span>
+            </Button>
+          </div>
         </DialogHeader>
 
         {/* Fee Statement Notice */}
@@ -89,12 +118,12 @@ export function InvoicePreviewDialog({
                 </p>
                 <p>
                   <span className="text-muted-foreground">{lang === 'ar' ? 'تاريخ الإصدار:' : 'Issue Date:'}</span>{' '}
-                  <span>{formatDate(inv.issueDate, lang)}</span>
+                  <span>{issueDual.combined}</span>
                 </p>
-                {inv.dueDate && (
+                {dueDual && (
                   <p>
                     <span className="text-muted-foreground">{lang === 'ar' ? 'تاريخ الاستحقاق:' : 'Due Date:'}</span>{' '}
-                    <span>{formatDate(inv.dueDate, lang)}</span>
+                    <span>{dueDual.combined}</span>
                   </p>
                 )}
                 <p>
